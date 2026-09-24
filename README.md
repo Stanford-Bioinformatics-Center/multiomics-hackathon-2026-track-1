@@ -2,7 +2,7 @@
 
 ## Exercise as Medicine
 
-What relationships connect exercise-responsive biology with human disease?
+*What relationships connect exercise-responsive biology with human disease?*
 
 ### Challenge
 
@@ -10,7 +10,7 @@ Integrate MoTrPAC results with disease genes, pathways, variants, biomarkers, or
 
 ### Data
 
-Human acute-exercise results together with resources such as Open Targets, GWAS Catalog, DisGeNET, ClinVar, OMIM, and approved CFDE resources.
+Human acute-exercise results together with resources such as [Open Targets](https://platform.opentargets.org/), [GWAS Catalog](https://www.ebi.ac.uk/gwas/), [DisGeNET](https://www.disgenet.com/), [ClinVar](https://www.ncbi.nlm.nih.gov/clinvar/), [OMIM](https://omim.org/), and approved [CFDE](https://commonfund.nih.gov/dataecosystem) resources.
 
 ### Potential Outputs
 
@@ -18,3 +18,6 @@ Human acute-exercise results together with resources such as Open Targets, GWAS 
 - Prioritization score
 - Reproducible enrichment workflow
 - Evidence explorer
+
+> [!IMPORTANT]
+> Molecular overlap or signature reversal does not demonstrate clinical benefit or justify medical recommendations. Team should select a single disease prior to the hackathon.
