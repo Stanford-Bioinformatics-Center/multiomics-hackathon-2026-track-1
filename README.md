@@ -1,4 +1,4 @@
-# Multi-omics Hackathon 2026 Track 1
+# Stanford Multi-omics Hackathon 2026 Track 1
 
 ## Exercise as Medicine
 
