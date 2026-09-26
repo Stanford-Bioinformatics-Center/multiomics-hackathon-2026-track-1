@@ -18,6 +18,10 @@
 #
 # Structural NAs: adipose protein exists only at 4 h (0.5 h and 24 h are NA by design).
 #
+# Uncertainty (used by 04): 01_nodes_<arm>_se.csv holds each value's standard error on the same scale,
+# and 01_nodes_arm_corr.csv the correlation between a gene's EE and RE estimates (they share the
+# control group), derived from the SEs of EE-CON, RE-CON and EE-RE.
+#
 # Many-to-one: when several features map to one gene within a tissue x ome, the feature with
 # the highest AveExpr is kept (arm- and contrast-independent, so no selection on the response).
 # The chosen feature ids are written to a separate provenance file.
@@ -46,12 +50,15 @@ cells <- CJ(tissue = TISSUES, ome = names(OMES), sorted = FALSE)
 da <- rbindlist(lapply(seq_len(nrow(cells)), function(i) {
   tis <- cells$tissue[i]; ome <- cells$ome[i]
   obj <- if (ome == "rna") paste0(toupper(tis), "_TRNSCRPT_DA") else PROT_OBJ[[tis]]
-  x <- as.data.table(get(obj))[contrast_category %in% ARMS & Timepoint %in% TPS,
+  x <- as.data.table(get(obj))[contrast_category %in% c(ARMS, "EE-RE") & Timepoint %in% TPS,
          .(assay, feature_id, arm = as.character(contrast_category),
-           tp = names(TPS)[match(as.character(Timepoint), TPS)], logFC, AveExpr)]
+           tp = names(TPS)[match(as.character(Timepoint), TPS)], logFC, AveExpr,
+           se = (CI.R - CI.L) / (2 * qt(0.975, degrees_of_freedom)))]
   x[, `:=`(tissue = tis, ome = ome)]
   merge(x, map, by = c("assay", "feature_id"))
 }))
+arm_diff <- da[arm == "EE-RE"]          # EE-RE = EE-CON - RE-CON exactly; used only for its SE
+da <- da[arm %in% ARMS]
 
 # ---- universe: genes present in all 6 tissue x ome cells --------------------------------
 genes_by_cell <- da[, .(genes = list(unique(entrez_gene))), by = .(tissue, ome)]
@@ -68,12 +75,21 @@ chosen <- feat_expr[, .SD[1], by = .(tissue, ome, entrez_gene)]
 da <- da[chosen[, .(tissue, ome, entrez_gene, feature_id)], on = .(tissue, ome, entrez_gene, feature_id)]
 stopifnot(!anyDuplicated(da[, .(tissue, ome, entrez_gene, arm, tp)]))
 
+# ---- correlation between the EE-CON and RE-CON estimates (they share the control group) --
+# Var(EE-RE) = Var(EE) + Var(RE) - 2 Cov  =>  rho = (se_EE^2 + se_RE^2 - se_diff^2) / (2 se_EE se_RE)
+arm_diff <- arm_diff[chosen[, .(tissue, ome, entrez_gene, feature_id)], on = .(tissue, ome, feature_id), nomatch = NULL]
+se_w <- dcast(da, tissue + ome + entrez_gene + tp ~ arm, value.var = "se")
+se_w <- arm_diff[, .(tissue, ome, entrez_gene, tp, se_diff = se)][se_w, on = .(tissue, ome, entrez_gene, tp)]
+stopifnot(!anyNA(se_w$se_diff))
+se_w[, rho := pmin(1, pmax(-1, (`EE-CON`^2 + `RE-CON`^2 - se_diff^2) / (2 * `EE-CON` * `RE-CON`)))]
+da <- se_w[, .(tissue, ome, entrez_gene, tp, rho)][da, on = .(tissue, ome, entrez_gene, tp)]
+
 # ---- per-block RMS scaling --------------------------------------------------------------
 scale_f <- da[, .(rms_logFC = sqrt(mean(logFC^2)), n_values = .N,
                   timepoints = paste(names(TPS)[names(TPS) %in% tp], collapse = ",")),
               by = .(tissue, ome)]
 da <- scale_f[, .(tissue, ome, rms_logFC)][da, on = .(tissue, ome)]
-da[, scaled := logFC / rms_logFC]
+da[, `:=`(scaled = logFC / rms_logFC, scaled_se = se / rms_logFC)]
 fwrite(scale_f, file.path(OUT, "01_scale_factors.csv"))
 print(scale_f)
 
@@ -100,8 +116,11 @@ for (a in ARMS) {
   f <- file.path(OUT, sprintf("01_nodes_%s.csv", tag))
   fwrite(to_wide(a, "scaled"), f)
   fwrite(to_wide(a, "logFC"), file.path(OUT, sprintf("01_nodes_%s_raw_logFC.csv", tag)))
+  fwrite(to_wide(a, "scaled_se"), file.path(OUT, sprintf("01_nodes_%s_se.csv", tag)))
   message(sprintf("%s: 471 nodes x 18 dims -> %s", a, f))
 }
+
+fwrite(to_wide("EE-CON", "rho"), file.path(OUT, "01_nodes_arm_corr.csv"))   # same for both arms
 
 prov <- dcast(chosen, entrez_gene ~ paste(tissue, ome, sep = "_"),
               value.var = c("feature_id", "n_candidates"))

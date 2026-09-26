@@ -9,6 +9,8 @@ vs control (RE), to compare against each other.
   network rules of El-Kebir et al. 2015. STRING gates whether an edge exists.
 - **Step 3 — edge weights** (`03_edge_weights.R`): each STRING edge is weighted by the dot product
   of its two genes' embeddings, once per arm, giving the EE and RE weighted networks.
+- **Step 4 — compare arms** (`04_compare_arms.R`): which edges and genes are wired differently in
+  EE vs RE, with bootstrap uncertainty from each estimate's standard error.
 
 ## Run
 
@@ -16,6 +18,7 @@ vs control (RE), to compare against each other.
 Rscript network/01_node_embeddings.R
 Rscript network/02_string_edges.R
 Rscript network/03_edge_weights.R
+Rscript network/04_compare_arms.R      # ~10 s; N_BOOT (default 10000) sets the draws
 ```
 
 Requires R with `data.table`, `igraph`, `nanoparquet` and `MotrpacHumanPreSuspensionAnalysis`
@@ -84,6 +87,8 @@ depend on the exercise response, so this does not select for responsive features
 | `01_nodes_EE.csv`, `01_nodes_RE.csv` | **The node tables.** 471 rows: `entrez_gene`, `gene_symbol`, 18 scaled dimensions |
 | `01_nodes_EE_raw_logFC.csv`, `01_nodes_RE_raw_logFC.csv` | Same layout, unscaled logFC |
 | `01_scale_factors.csv` | The RMS divisor for each tissue × ome block |
+| `01_nodes_EE_se.csv`, `01_nodes_RE_se.csv` | Standard error of every embedding value, same scale (from the model's 95% CI) |
+| `01_nodes_arm_corr.csv` | Correlation between each gene's EE and RE estimate per dimension (shared controls; median ~0.5–0.65) |
 | `01_nodes_feature_provenance.csv` | The feature id behind each gene in each block, and how many candidates it was chosen from |
 
 The script checks that the universe is exactly 471 genes and that each table is 471 × 18.
@@ -147,6 +152,9 @@ w_EE(u,v) = z_u(EE) · z_v(EE)        w_RE(u,v) = z_u(RE) · z_v(RE)        w_di
   directions; near 0 = at least one barely responds. Large values need both genes to respond strongly.
 - **Untransformed**, so both arms are on the same scale (the embeddings share scale factors) and
   `w_diff` is directly interpretable.
+- **Sigmoid version for positive-only methods:** `sig_EE`, `sig_RE` = 1 / (1 + e^(−w)), in 0–1
+  (negative w → below 0.5). Because raw weights are large, it saturates: 116 EE and 146 RE edges
+  are above 0.99 or below 0.01.
 
 | | EE | RE |
 |---|---|---|
@@ -159,4 +167,44 @@ HSPA1A–DNAJB1: +22.9 in EE, −3.1 in RE).
 
 | File | Contents |
 |------|----------|
-| `03_weighted_edges.csv` | One row per edge: Entrez and symbol for both ends, `combined_score`, `w_EE`, `w_RE`, `w_diff` |
+| `03_weighted_edges.csv` | One row per edge: Entrez and symbol for both ends, `combined_score`, `w_EE`, `w_RE`, `w_diff`, `sig_EE`, `sig_RE` |
+
+## Step 4: compare EE vs RE
+
+Same topology, two sets of weights, so the comparison is per edge (`w_diff = w_EE − w_RE`) and per
+gene (**strength** = sum of a gene's edge weights; `delta_strength` = EE − RE, signed, plus the same
+on sigmoid weights).
+
+**Uncertainty: parametric bootstrap.** Every embedding value is an estimate with a standard error.
+In each of 10,000 draws, each gene's EE and RE value in every dimension is resampled from a
+bivariate normal centred on the estimate, using the two SEs and their correlation (the arms share
+one control group; `EE-RE` in the package equals `EE-CON − RE-CON` exactly, so
+ρ = (se_EE² + se_RE² − se_EE−RE²) / (2·se_EE·se_RE)). All weights are recomputed per draw.
+Two-sided p = 2 × min(share of draws ≤ 0, share ≥ 0); BH within edges and within genes; 95%
+percentile intervals reported. Errors are treated as independent across genes.
+
+An arm-label swap permutation was tried first and **rejected**: swapping a gene's EE and RE vectors
+only flips the sign of an edge's `w_diff` when both ends swap, so half the draws reproduce |w_diff|
+exactly and no edge can reach p < ~0.5.
+
+**Result.** The two networks are broadly similar: cor(w_EE, w_RE) = 0.64 (bootstrap 95% interval
+0.34–0.69; noise pulls it down). Most responses are small relative to their error (median
+|value| / SE = 0.78), so the test has little power:
+
+| | |
+|---|---|
+| Edges at FDR < 0.1 | 0 (12 at nominal p < 0.05) |
+| Genes at FDR < 0.1 | 1: **HSPB1** (FDR 0.057; stronger in RE) |
+
+The nominal edges form small, coherent modules (exploratory tier in `04_diff_subnetworks.csv`):
+
+- **Heat-shock chaperones:** HSPA1A–DNAJB1 stronger in EE; HSPA1A–HSPB1 and HSPB1–BAG3 stronger in RE.
+- **Lactate transport:** SLC16A1 (MCT1)–BSG (basigin) stronger in EE.
+- **CEBPB–FOXO1** stronger in EE; **LPL–SORT1**, **ITGAV–ITGB1/MFGE8**, **CD55–CD59** stronger in RE.
+
+| File | Contents |
+|------|----------|
+| `04_edge_diff.csv` | Per edge: weights, `w_diff` with 95% interval, `p_boot`, `fdr`, `stronger_in`, `sign_change` |
+| `04_node_diff.csv` | Per gene with ≥1 edge: degree, signed and sigmoid strength per arm, deltas with interval, p, FDR |
+| `04_diff_subnetworks.csv` | Connected modules of FDR < 0.1 edges (none yet) and of p < 0.05 edges (exploratory) |
+| `04_summary.csv` | The counts above |
