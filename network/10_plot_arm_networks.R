@@ -18,9 +18,9 @@
 #     networks contain different genes (orthology), whereas here both networks contain exactly the same
 #     nodes and edges by construction, so such lines would carry no information. With identical positions,
 #     the eye compares what actually differs between arms: edge widths and signs, node sizes.
-#   - Node colour: the node's mean response across all its dimensions (scaled logFC from steps 1 / 1b;
-#     violet = down, white = little change, orange = up; limits -2 to 2, values beyond are shown at the
-#     limit), in the same palette as figure 3.1.
+#   - Node colour: the node's mean response across all its dimensions (normalised logFC from steps 1 / 1b;
+#     violet = down, white = little change, orange = up; limits symmetric at the 95th percentile of
+#     |mean response|, values beyond are shown at the limit), in the same palette as figure 3.1.
 #   - Node size: the node's strength in that arm (sum of the sizes of its edge weights).
 #   - Edge width: the size of the edge weight in that arm. Solid = positive weight (the two nodes respond
 #     in the same direction on balance); dashed = negative weight (opposite directions).
@@ -58,10 +58,12 @@ NLAB <- 10
 # ---- figure style (copied from week 5 figure 3.1 / week_4/R/fig.R theme_pub) ---------------------
 # Text, axis, muted and strip colours.
 INK <- "#1A1A1A"; HAIR <- "#3A3A3A"; MUT <- "#6B7278"; STRIP_BG <- "#EDF0F2"; STRIP_INK <- "#20262B"
-# Node colour scale: violet (down) - white - orange (up), limits -2..2, as in figure 3.1.
-sc_fill <- scale_fill_gradient2(low = "#6A3D9A", mid = "white", high = "#E66100", midpoint = 0,
-                                limits = c(-2, 2), oob = scales::squish,
-                                name = "mean response (scaled logFC)")
+# Node colour scale: violet (down) - white - orange (up), as in figure 3.1. After the step 1 / 1b
+# normalisation (values in -1..+1) a node's mean response is small, so the limits are set from the data:
+# symmetric at the 95th percentile of |mean response| in that figure (values beyond are shown at the limit).
+sc_fill <- function(lim) scale_fill_gradient2(low = "#6A3D9A", mid = "white", high = "#E66100", midpoint = 0,
+                                              limits = c(-lim, lim), oob = scales::squish,
+                                              name = "mean response (normalised logFC)")
 # The publication theme: small text, no axes (a network has no meaningful axes), legend at the bottom.
 theme_net <- function(base = 8) {
   theme_classic(base_size = base) %+replace% theme(
@@ -159,7 +161,7 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
     scale_linewidth(range = c(0.1, 1.2), guide = "none") +
     scale_size(range = c(0.8, 4.5), name = "node strength (sum |w|)") +
     scale_shape_manual(values = shape_values, name = shape_name) +
-    sc_fill +
+    sc_fill(as.numeric(quantile(abs(N$resp), 0.95))) +
     # room on the left for the layer names
     coord_cartesian(xlim = c(-0.1, 1.02), ylim = c(-0.02, 1.02), clip = "off") +
     # legends: shapes drawn grey so they read as shape only

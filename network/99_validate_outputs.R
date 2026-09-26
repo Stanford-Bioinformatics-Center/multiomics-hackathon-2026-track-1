@@ -59,11 +59,16 @@ SEE <- rd("01_nodes_EE_se.csv"); check(all(as.matrix(SEE[, setdiff(dims, empty),
 RHO <- rd("01_nodes_arm_corr.csv"); r <- as.matrix(RHO[, setdiff(dims, empty), with = FALSE])
 # Check the correlations are in range.
 check(all(r >= -1 & r <= 1), "step 1: EE/RE correlation within -1..1")
-# Scaling is exactly raw logFC / scale factor (check one block: muscle RNA 4 h, endurance).
+# Normalisation is exactly raw logFC / the ome's max |logFC| (check muscle RNA 4 h, endurance).
 sf <- rd("01_scale_factors.csv"); raw <- rd("01_nodes_EE_raw_logFC.csv")
 # Check the scaling.
-check(isTRUE(all.equal(EE$muscle_rna_4h, raw$muscle_rna_4h / sf[tissue == "muscle" & ome == "rna", rms_logFC])),
-      "step 1: scaled = raw / scale factor")
+check(isTRUE(all.equal(EE$muscle_rna_4h, raw$muscle_rna_4h / sf[ome == "rna", max_abs_logFC])),
+      "step 1: scaled = raw / max |logFC| of the ome")
+# Every normalised gene value lies within -1..+1, and the extreme in each ome is exactly 1.
+vals <- as.matrix(rbind(EE, RE)[, setdiff(dims, empty), with = FALSE])
+# (all within -1..+1; the RNA extreme and the protein extreme are each exactly 1)
+check(max(abs(vals)) <= 1 + 1e-12 && abs(max(abs(vals[, grepl("_rna_", colnames(vals))])) - 1) < 1e-9 &&
+      abs(max(abs(vals[, grepl("_prot_", colnames(vals))])) - 1) < 1e-9, "step 1: values in -1..1, max = 1 per ome")
 # Expected headline: median EE/RE correlation of estimates.
 note("step1_median_arm_corr", round(median(r), 2), 0.63)
 
@@ -73,6 +78,10 @@ ME <- rd("01b_metab_nodes_EE.csv"); MR <- rd("01b_metab_nodes_RE.csv")
 # 450 metabolites, 1 name column + 9 dimensions, nothing missing, same order in both arms.
 check(nrow(ME) == 450 && ncol(ME) == 10 && !anyNA(ME) && !anyNA(MR) && identical(ME$metabolite, MR$metabolite),
       "step 1b: 450 x 9, complete, same order")
+# Every normalised metabolite value lies within -1..+1 and the extreme is exactly 1.
+mv <- as.matrix(rbind(ME, MR)[, -1])
+# (all within -1..+1; the extreme is exactly 1)
+check(max(abs(mv)) <= 1 + 1e-12 && abs(max(abs(mv)) - 1) < 1e-9, "step 1b: values in -1..1, max = 1")
 # Metabolite names are unique.
 check(!anyDuplicated(ME$metabolite), "step 1b: unique metabolite names")
 
@@ -127,9 +136,9 @@ s <- median(abs(c(w$w_EE, w$w_RE)))
 # Check both arms' sigmoid values.
 check(isTRUE(all.equal(w$sig_EE, plogis(w$w_EE / s))) && isTRUE(all.equal(w$sig_RE, plogis(w$w_RE / s))), "step 3: sigmoid")
 # Expected headline numbers.
-note("step3_sigmoid_scale", round(s, 3), 2.667); note("step3_cor_EE_RE", round(cor(w$w_EE, w$w_RE), 2), 0.64)
+note("step3_sigmoid_scale", round(s, 3), 0.042); note("step3_cor_EE_RE", round(cor(w$w_EE, w$w_RE), 2), 0.45)
 # Record the sign changes.
-note("step3_sign_changes", sum(sign(w$w_EE) != sign(w$w_RE)), 130)
+note("step3_sign_changes", sum(sign(w$w_EE) != sign(w$w_RE)), 152)
 
 # ---- steps 5-7: metabolite-protein links (Rhea), metabolite networks, hub report ---------------------
 # Metabolite-protein links: every metabolite is one of the 450 and every gene one of the 471.

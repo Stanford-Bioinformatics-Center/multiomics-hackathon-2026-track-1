@@ -35,7 +35,7 @@ molecules change, which is closer to how exercise is thought to act on disease p
   three tissues (450), connected through shared enzymes (Rhea).
 - **Success means:** (a) both networks and their per-edge differences are built transparently from
   exercise-independent edges; (b) later, differences are tested against measurement noise and the overall
-  similarity (r = 0.64 for genes) is compared with a noise-only reference (*not yet done*, see roadmap);
+  similarity (r = 0.45 for genes) is compared with a noise-only reference (*not yet done*, see roadmap);
   (c) anyone can rerun the pipeline and get the numbers in section 7.
 
 ## 3. Workflow
@@ -143,7 +143,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 1 | `01_nodes_{EE,RE}_raw_logFC.csv` | same, before scaling |
 | 1 | `01_nodes_{EE,RE}_se.csv` | standard error of every value, same scale |
 | 1 | `01_nodes_arm_corr.csv` | correlation between the *errors* of each gene's EE and RE estimates (shared control group; not a similarity of responses) |
-| 1 | `01_scale_factors.csv` | the divisor for each tissue × layer |
+| 1 | `01_scale_factors.csv` | the normalisation divisor for each ome (its maximum \|logFC\|) and the gene / tissue / time / arm that sets it |
 | 1 | `01_nodes_feature_provenance.csv` | which transcript/protein was used for each gene, and how many candidates it was chosen from |
 | 1b | `01b_metab_nodes_EE.csv`, `01b_metab_nodes_RE.csv` | **Metabolite node tables.** 450 rows: `metabolite`, 9 scaled dimensions |
 | 1b | `01b_metab_nodes_{EE,RE}_raw_logFC.csv`, `..._se.csv`, `01b_metab_nodes_arm_corr.csv`, `01b_metab_scale_factors.csv` | as for genes |
@@ -201,6 +201,42 @@ missing.
   sex or group; names standardised to RefMet; one platform per metabolite per tissue, the lowest-CV
   one. Models as above plus `codedsiteid`; untargeted adds `raw_intensity_post`.
 
+### Critical QC step: normalising log fold changes before the dot products
+
+**What.** Before any network is built, each ome's log fold changes are divided by that ome's **maximum
+absolute log fold change**, taken across all tissues, all timepoints and both arms (team decision,
+2026-09-26):
+
+| Ome | Divisor (max \|logFC\|) | Set by | Values after normalisation |
+|---|---|---|---|
+| RNA (adipose, blood, muscle) | 2.746 | ENAH, muscle, 4 h, resistance | −1 … +1 |
+| Protein (adipose MS, blood OLINK, muscle MS) | 1.763 | PMVK, blood, 24 h, resistance | −1 … +1 |
+| Metabolites (adipose, blood, muscle) | 4.204 | hypoxanthine, blood, 0.5 h, resistance | −1 … +1 |
+
+**Why it is critical.** Every edge weight in this project is a **dot product**: the sum, over all
+dimensions, of one node's value times the other's. A sum of products is only meaningful if its terms are
+in comparable units. Raw log fold changes are not: RNA, MS proteomics, OLINK and metabolomics have
+different dynamic ranges, so without a common scale the ome with the largest raw changes would dominate
+every edge weight through its units alone, not through biology. Dividing each ome by one fixed number
+puts all omes on the same −1..+1 footing, so each contributes to the dot products on an equal scale.
+
+**What it preserves.** The divisor is one number per ome, shared by all tissues, timepoints and both arms.
+Every difference *within* an ome (endurance vs resistance, 0.5 vs 4 vs 24 h, one tissue vs another) is
+kept exactly; signs and zero are unchanged. Using the same divisor for both arms is what keeps the
+endurance-vs-resistance comparison honest: a separate divisor per arm would rescale each arm to its own
+extreme and could hide a genuine difference.
+
+**What to be aware of.** (1) A maximum is set by one measurement, so a single extreme value defines each
+ome's scale; the value and what sets it are recorded (`01_scale_factors.csv`, `01b_metab_scale_factors.csv`)
+and re-checked by the validator. (2) Tissues share their ome's divisor, so tissues with larger raw changes
+(e.g. blood OLINK vs muscle MS protein) carry more weight in the dot products. This changed the results
+compared with the earlier per-tissue scaling (gene-network correlation between arms 0.64 → 0.45).
+
+**How it is verified.** `99_validate_outputs.R` checks that every normalised value is within −1..+1,
+that each ome's most extreme value is exactly ±1, and that normalised = raw ÷ divisor. Following the
+hackathon's documentation guidance (methods with provenance, and validation with expected outputs), the
+divisors, the features that set them and the checks are all recorded here and in the scripts.
+
 ### Our choices
 
 | Step | Choice | Why |
@@ -208,12 +244,12 @@ missing.
 | 1 | Delta-delta contrasts EE-CON and RE-CON at 0.5 / 4 / 24 h | removes changes that happen to controls too |
 | 1 | Genes measured in all six tissue × layer combinations, matched by Entrez ID (471) | every node has a complete vector; blood OLINK is the limit (without it: 4,878) |
 | 1 | One feature per gene: highest `AveExpr` | never looks at the exercise response (for MS proteins AveExpr is a log-ratio, so this is a fixed tie-break; 20 genes affected) |
-| 1 | Divide each tissue × layer by its root-mean-square logFC, one divisor shared by both arms | common unit that keeps real arm and time differences; mostly equalises noise, so scaled values are not cross-block effect sizes |
+| 1 | **Critical QC:** divide each ome's logFC by that ome's maximum \|logFC\| across tissues, times and both arms (team decision) | puts RNA, protein and metabolites on one −1..+1 scale so dot products are not dominated by an ome's units; see “Critical QC step” below |
 | 1 | Standard error = logFC / t | exact; the stored degrees of freedom are not the ones the confidence interval used |
 | 1b | Metabolites in all three tissues, exact RefMet names (450) | lipid punctuation is meaningful (`PC 16:0/20:4` ≠ `PC 16:0_20:4`) |
 | 2 | El-Kebir et al. 2015 §3.3 network rules on the curated STRING file | published construction; note the background network differs from theirs (below) |
 | 3 | Edge weight = dot product of the whole 16-dimension vectors, per arm | encoder–decoder node-similarity framework (Hamilton, Ying & Leskovec 2017) |
-| 3 | 0–1 weights σ(w / s), s = median \|w\| over both arms (2.667) | temperature scaling; s set by analogy with the median heuristic |
+| 3 | 0–1 weights σ(w / s), s = median \|w\| over both arms (0.042) | temperature scaling; s set by analogy with the median heuristic |
 | 5 | Metabolite–protein = Rhea enzyme–substrate, human proteins among our 471 genes; our ChEBI IDs also matched in their pH 7.3 form | curated, keyed by ChEBI and UniProt; Rhea writes molecules as they exist at physiological pH |
 | 6 | Metabolite edge = shares ≥ 1 of our 471 genes' proteins AND same RefMet super class (14; team rule, chosen after step 8); weight = dot product of 9-number vectors | exercise-independent gate, as for genes; restricting to our measured genes is the more rigorous choice; inferred functional links, not physical |
 | 7 | Hubs reported with the El-Kebir cutoff (Q75 + 40 × IQR) and the Tukey fence (Q75 + 1.5 × IQR); none removed | team decision: inspect before removing |
@@ -221,13 +257,14 @@ missing.
 ### Step details
 
 **Step 1 — gene nodes.** Values are the delta-delta logFC (exercise arm's change from pre-exercise
-minus the control group's change). Scale divisors (RMS logFC): adipose RNA 0.112, blood RNA 0.206,
-muscle RNA 0.216, adipose protein 0.178 (4 h only), blood OLINK 0.378, muscle protein 0.100. The error
+minus the control group's change), normalised by the ome's maximum |logFC| (critical QC step below):
+RNA 2.746 (set by ENAH, muscle 4 h, resistance), protein 1.763 (PMVK, blood 24 h, resistance). The error
 correlation between arms has median 0.63 (per-dimension medians 0.49–0.67). Several features for one
 gene: 12 genes in muscle protein, 9 in adipose protein, 2 per tissue in RNA.
 
 **Step 1b — metabolite nodes.** 450 metabolites (428 on untargeted platforms in all three tissues; 22
-use a targeted panel in at least one). Divisors: adipose 0.249, blood 0.231, muscle 0.307. Error
+use a targeted panel in at least one). Normalisation divisor (maximum |logFC|): 4.204, set by
+hypoxanthine, blood 0.5 h, resistance. Error
 correlation median 0.65. Note: "EPA" and "Eicosapentaenoic acid" are both nodes: RefMet keeps two
 records (the specific all-cis structure, measured on a reversed-phase platform, and an unspecified
 isomer, measured on the lipid platform), and they are not merged.
@@ -280,11 +317,12 @@ cell-surface proteins because blood protein is the OLINK panel.
 
 **Step 3 — weights.** w = dot product of the two genes' 16 observed dimensions, per arm. Large positive
 = on balance the same direction, strongly; large negative = on balance opposite; near zero = weak
-responses *or* dimensions that cancel. Medians 1.24 (EE) / 1.89 (RE); ranges −14.8 to 66.2 / −54.0
-to 66.8; 145 / 137 negative. The 0–1 version σ(w / s): the sigmoid of a dot product is the edge
+responses *or* dimensions that cancel. Medians 0.013 (EE) / 0.029 (RE); ranges −0.31 to 0.44 / −0.27
+to 0.54; 169 / 141 negative. The 0–1 version σ(w / s): the sigmoid of a dot product is the edge
 decoder of LINE (Tang et al. 2015) and graph autoencoders (Kipf & Welling 2016). Dividing by s is
-temperature scaling (Hinton, Vinyals & Dean 2015; Guo et al. 2017); without it about 30% of weights
-sit above 0.99 or below 0.01, with it about 6%. s is set by analogy with the median heuristic for
+temperature scaling (Hinton, Vinyals & Dean 2015; Guo et al. 2017). After normalisation the weights
+are small, so plain σ(w) would squeeze every edge into about 0.43–0.62 and hide the differences; with s
+they spread over 0–1 (about 7% end up above 0.99 or below 0.01). s is set by analogy with the median heuristic for
 kernel widths (Gretton et al. 2012), and it is one constant for both arms: a unit of measurement, so a
 real arm difference passes through unchanged, whereas a separate s per arm could hide one. Because the
 sigmoid is curved, similarity-vs-difference conclusions use raw w.
@@ -309,7 +347,7 @@ set (bounded by the blood OLINK panel) has few metabolic enzymes, and most lipid
 back to the 50 main classes). 161 metabolite pairs share a protein; **122 also share a super class and
 become edges**, among **44 metabolites** in 5 components (largest 15): nucleic acids 54 edges, fatty
 acyls 35, organic acids 23, sphingolipids 10. Same edges in both arms; weights per arm (sigmoid scale
-s = 1.82). The two arms' metabolite edge weights correlate at r = 0.15 and 41 of 122 edges change sign
+s = 0.0074). The two arms' metabolite edge weights correlate at r = 0.16 and 42 of 122 edges change sign
 (no noise reference or test yet). The edge table keeps
 both metabolites' main classes (`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
 
@@ -325,8 +363,8 @@ The other flagged mediating proteins are MGLL (8 fatty acids, supports 28 edges)
 acids, ATP, AMP; 11 edges). With the super class, purines and pyrimidines share a class, so NT5E links
 all nine of its nucleotides to each other (36 edges, up from 16 under the main class). The largest
 shared-protein support is ATP–ADP (20 shared kinases and other ATP-using enzymes), the classic
-"currency metabolite" effect. Hub *strength* differs by arm: e.g. CD34 (gene) 121.7 in EE vs 43.8 in
-RE; NT5E (protein) 103.6 vs 328.4.
+"currency metabolite" effect. Hub *strength* differs by arm: e.g. NT5E as a gene node 0.40 in EE vs
+0.90 in RE, and as the protein behind the nucleotide block 0.46 vs 1.17 (normalised units).
 
 **Step 8 — metabolite rule experiments (report only; steps 5–6 outputs unchanged).** One change at a
 time from the original main-class rule (shared protein only, no hub removal). The team then adopted
@@ -361,8 +399,8 @@ symmetric at the 95th percentile of |w_diff|). No significance marks (the test i
 Nodes are grey, sized by the absolute difference in strength (sum of |w_EE| minus sum of |w_RE|);
 in 11b each metabolite group is labelled with its super-class name.
 **Read with care:** the difference is of *signed* weights, so for an edge that is negative in both arms,
-red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −9.2 in EE, −54.0 in
-RE). The legend therefore says "higher", not "stronger"; the weights are in `03_weighted_edges.csv` /
+red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −0.035 in EE, −0.246
+in RE). The legend therefore says "higher", not "stronger"; the weights are in `03_weighted_edges.csv` /
 `06_metabolite_edges.csv`.
 
 **Metabolite edge rule, STRING neighbours (checked 2026-09-26, not adopted).** Letting two metabolites
@@ -396,9 +434,9 @@ connect through *interacting* proteins (STRING ≥ 700) instead of only a shared
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **25 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **27 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
-product of the node vectors; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules) and compares the headline numbers below, printing "same" or "CHANGED".
+product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules) and compares the headline numbers below, printing "same" or "CHANGED".
 
 | Result | Expected (2026-09-26) |
 |---|---|
@@ -406,17 +444,17 @@ product of the node vectors; sigmoid correct; class counts add up to 450; metabo
 | Metabolites with ChEBI | 213 |
 | Metabolites in lipid super classes | 320 |
 | Edges / isolated genes / largest component / hubs removed | 431 / 185 / 230 / 0 |
-| Sigmoid scale s | 2.667 |
-| cor(w_EE, w_RE) / edges changing sign | 0.64 / 130 |
+| Sigmoid scale s | 0.042 |
+| cor(w_EE, w_RE) / edges changing sign | 0.45 / 152 |
 | Metabolites / genes linked through Rhea | 60 / 80 |
 | Metabolite edges / metabolites in the network (super class) | 122 / 44 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
 
-**Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.64 (metabolite edges:
-r = 0.15), and 130 of 431 gene edges (41 of 122 metabolite edges) change sign between arms. Without a
+**Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.45 (metabolite edges:
+r = 0.16), and 152 of 431 gene edges (42 of 122 metabolite edges) change sign between arms. Without a
 test against measurement noise, none of these differences is established: most responses are small
 relative to their error (median |value| / SE = 0.83 for genes, 0.80 for metabolites), so many sign
-changes are near-zero weights flipping within noise. Whether r = 0.64 means "similar" or "different"
+changes are near-zero weights flipping within noise. Whether r = 0.45 means "similar" or "different"
 also needs a noise-only reference (roadmap).
 
 **Known failure modes and limits**
@@ -425,7 +463,10 @@ also needs a noise-only reference (roadmap).
   2026-09-26) and a rerun can differ slightly as databases change.
 - Arm differences are not tested against measurement noise (the bootstrap test is removed for now).
 - "0.5h" and "4h" are the package's collection windows, not exact minutes, and differ slightly by tissue.
-- Adipose protein exists at 4 h only, and its scale divisor uses 4 h only.
+- Adipose protein exists at 4 h only.
+- The normalisation divisor of each ome is set by a single extreme value; if that value changes (new data
+  release, corrected feature), the whole ome is rescaled. Tissues keep their raw scale differences within
+  an ome, so e.g. blood OLINK weighs more than muscle MS protein in the dot products.
 - The universe is limited to 471 genes by the OLINK panel, biasing the network to secreted and
   surface proteins.
 - A new STRING file changes steps 2–4; the validator will flag the changed numbers.

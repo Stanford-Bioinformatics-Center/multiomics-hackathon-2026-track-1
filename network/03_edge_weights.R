@@ -25,8 +25,9 @@
 #   Bulletin; Stanford CS224W lecture on node embeddings) scores the similarity of two nodes u, v as the
 #   dot product of their vectors, z_u . z_v. Our vectors are measured exercise responses rather than
 #   learned coordinates, so we use the dot product directly as the edge weight. The raw weight w is the
-#   primary quantity: it is signed, untransformed, and on the same scale in both arms (step 1 used one
-#   shared scale factor per tissue x layer), so w_diff can be read directly.
+#   primary quantity: it is signed, untransformed, and on the same scale in both arms (step 1 divides each
+#   ome by one shared maximum |logFC|, the critical normalisation that makes these dot products meaningful
+#   across RNA and protein), so w_diff can be read directly.
 #
 # THE 0-1 VERSION (sig_EE, sig_RE) AND WHY IT IS DIVIDED BY THE MEDIAN
 #   Some network methods (random walks, community detection, shortest paths) need weights that are all
@@ -36,9 +37,10 @@
 #   LINE (Tang et al. 2015) and graph autoencoders (Kipf & Welling 2016), and it appears in the
 #   negative-sampling training of DeepWalk / node2vec.
 #   Why divide by s first: those methods LEARN vectors whose dot products naturally sit in the few-units
-#   range where the sigmoid is informative. Our vectors are not learned, and their dot products run from
-#   about -54 to +67, so a plain sigmoid(w) puts about 30% of the weights above 0.99 or below 0.01 and can
-#   no longer tell a strong edge from a very strong one (after dividing by s: about 6%). Dividing by s is
+#   range where the sigmoid is informative. Our vectors are not learned: after the step 1 normalisation
+#   (values in -1..+1) their dot products are small (about -0.3 to +0.5), so a plain sigmoid(w) would
+#   squeeze every weight into roughly 0.43-0.62 and hide the differences between edges. Dividing by s
+#   spreads them over the 0-1 range (about 7% then end up above 0.99 or below 0.01). Dividing by s is
 #   called "temperature scaling" (Hinton, Vinyals & Dean 2015; Guo et al. 2017 for calibration): it
 #   changes how steep the sigmoid is, not the order of the edges or their signs.
 #   Why the median: by analogy with the "median heuristic", the standard default for setting the width of

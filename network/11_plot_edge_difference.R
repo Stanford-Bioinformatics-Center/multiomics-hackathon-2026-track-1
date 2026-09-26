@@ -13,7 +13,7 @@
 #   READ WITH CARE: the difference is of SIGNED weights. For an edge that is positive in both arms, red means
 #   the endurance co-response is stronger. For an edge that is NEGATIVE in both arms (the two nodes respond
 #   in opposite directions), red means the endurance edge is closer to zero, i.e. the RESISTANCE edge is the
-#   more strongly negative one (e.g. IL18-CCL5: -9.2 in endurance, -54.0 in resistance -> red). The legend
+#   more strongly negative one (e.g. IL18-CCL5: -0.035 in endurance, -0.246 in resistance -> red). The legend
 #   therefore says "higher", not "stronger"; the per-edge weights are in 03_weighted_edges.csv /
 #   06_metabolite_edges.csv (columns w_EE, w_RE, w_diff).
 #   Two figures:

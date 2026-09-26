@@ -45,12 +45,14 @@
 #      Names are not lower-cased or stripped of punctuation, because in lipid names punctuation carries
 #      meaning (e.g. "PC 16:0_18:1" vs "PC 16:0/18:1"); loosening the match would merge different molecules.
 #   3. No duplicate handling is needed: the consortium already kept one platform per metabolite (above).
-#   4. Scaling: each tissue's metabolomics block is divided by one number, its root-mean-square logFC,
-#      pooled over the 450 metabolites, all three times and BOTH arms. One shared number per tissue is a
-#      common unit: it puts tissues on one footing while keeping real differences between arms and between
-#      times intact (a separate number per arm could hide a genuine arm difference). As for genes, much of
-#      each block's spread is measurement noise, so equal scaled values in two tissues are not equal
-#      biological effect sizes.
+#   4. NORMALISATION (critical QC step, team decision 2026-09-26): all metabolite log fold changes are
+#      divided by the MAXIMUM absolute log fold change across all three tissues, all three times and both
+#      arms (metabolomics is one ome, so one divisor). Values then lie between -1 and +1, the single
+#      largest change is exactly +-1, and metabolites are on the same -1..+1 footing as the gene
+#      embeddings. This matters because metabolite edge weights are dot products (step 6); a common,
+#      shared divisor keeps every difference between arms, times and tissues intact. The divisor is set by
+#      one measurement (recorded in 01b_metab_scale_factors.csv), and tissues keep their raw scale
+#      differences relative to each other.
 #   5. Nothing is missing by design: all three tissues have all three times in both arms.
 #   6. Time labels: "0.5h" is the package's post_15_30_45_min bin and "4h" its post_3.5_4_hr bin; the exact
 #      collection time within a bin differs between tissues.
@@ -71,7 +73,7 @@
 #   01b_metab_nodes_EE_raw_logFC.csv, ..._RE_...        the same before scaling
 #   01b_metab_nodes_EE_se.csv, 01b_metab_nodes_RE_se.csv standard errors, same scale
 #   01b_metab_nodes_arm_corr.csv                         correlation between the errors of EE and RE estimates
-#   01b_metab_scale_factors.csv                          the one divisor per tissue
+#   01b_metab_scale_factors.csv                          the divisor (max |logFC|) and which value sets it
 #   01b_metab_nodes_provenance.csv                       which platform measured each metabolite in each tissue
 # =====================================================================================================
 
@@ -142,16 +144,20 @@ se_w[, rho := pmin(1, pmax(-1, (`EE-CON`^2 + `RE-CON`^2 - se_diff^2) / (2 * `EE-
 # Attach the correlation to the main table.
 da <- se_w[, .(tissue, metabolite, tp, rho)][da, on = .(tissue, metabolite, tp)]
 
-# ---- per-tissue scaling: one shared unit per tissue --------------------------------------------------
-# The root-mean-square logFC of each tissue, over all 450 metabolites, all 3 times and BOTH arms.
-scale_f <- da[, .(rms_logFC = sqrt(mean(logFC^2)), n_values = .N), by = tissue]
-# Attach each tissue's divisor to its rows.
-da <- scale_f[, .(tissue, rms_logFC)][da, on = "tissue"]
-# Divide every change, and its standard error, by the tissue's divisor (signs and zero unchanged).
-da[, `:=`(scaled = logFC / rms_logFC, scaled_se = se / rms_logFC)]
-# Save the three divisors so anyone can undo or check the scaling, and show them.
+# ---- normalisation (critical QC): divide by the maximum absolute log fold change ---------------------
+# One divisor for metabolomics: the largest absolute logFC over all 450 metabolites, all tissues, all
+# times and BOTH arms; also record which metabolite / tissue / time / arm sets it.
+scale_f <- da[, .(ome = "metab", max_abs_logFC = max(abs(logFC)),
+                  set_by = paste(metabolite, tissue, tp, arm)[which.max(abs(logFC))], n_values = .N)]
+# Attach the divisor to every row.
+da[, max_abs_logFC := scale_f$max_abs_logFC]
+# Divide every change, and its standard error, by the divisor (values now lie in -1..+1; signs unchanged).
+da[, `:=`(scaled = logFC / max_abs_logFC, scaled_se = se / max_abs_logFC)]
+# Safety check: the largest absolute scaled value is exactly 1.
+stopifnot(abs(max(abs(da$scaled)) - 1) < 1e-12)
+# Save the divisor (and what sets it) so anyone can undo or check the normalisation.
 fwrite(scale_f, file.path(OUT, "01b_metab_scale_factors.csv"))
-# Show the three divisors on screen.
+# Show it on screen.
 print(scale_f)
 
 # ---- 9-number vector, one file per arm --------------------------------------------------------------

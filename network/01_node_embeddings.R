@@ -51,15 +51,22 @@
 #      expressed transcript. For MS proteomics AveExpr is an average log-ratio to the pooled reference,
 #      not abundance, so there it is simply a fixed tie-break (20 genes affected). Either way the rule
 #      never looks at the exercise response, so it cannot cherry-pick responsive features.
-#   4. Scaling: the six tissue x layer blocks differ in their typical logFC (root-mean-square: RNA
-#      0.11-0.22, MS protein 0.10-0.18, blood OLINK 0.38), so each block is divided by its own
-#      root-mean-square logFC. The same number is used for both arms and all timepoints, so differences
-#      between arms and between timepoints inside a block are kept; only the unit changes.
-#      How to read the scaled values: most of each block's spread is measurement noise (its RMS logFC is
-#      only 1.0-1.75 x its typical standard error), so the divisor largely equalises NOISE between blocks.
-#      Scaled values are comparable within a block, but equal scaled values in two different blocks do
-#      not mean equal biological effect sizes. Adipose protein's divisor comes from 4 h only (the other
-#      blocks pool three times), which slightly shrinks its values relative to the others.
+#   4. NORMALISATION (critical QC step, team decision 2026-09-26): each ome's log fold changes are divided
+#      by that ome's MAXIMUM absolute log fold change, taken across all tissues, timepoints and both arms
+#      (RNA: one divisor for adipose + blood + muscle RNA; protein: one divisor for adipose MS + blood OLINK
+#      + muscle MS). Every value then lies between -1 and +1, the single largest change in each ome is
+#      exactly +-1, and RNA and protein are on the same -1..+1 footing.
+#      Why this matters: the network's edge weights are DOT PRODUCTS of these vectors (step 3), i.e. sums
+#      of products across the 16 dimensions. Without a common scale, the ome with the largest raw log fold
+#      changes would dominate every sum simply because of its units, not its biology.
+#      What it keeps: one divisor per ome is shared by all tissues, timepoints and both arms, so every
+#      difference WITHIN an ome (between arms, times and tissues) is preserved exactly; signs and zero are
+#      unchanged.
+#      What to be aware of: (a) the divisor is set by a single measurement (the most extreme change), so a
+#      new or corrected extreme value rescales that whole ome; the value and the feature that sets it are
+#      written to 01_scale_factors.csv. (b) Because tissues share an ome's divisor, tissues keep their raw
+#      scale differences within an ome (e.g. blood OLINK changes are typically larger than muscle MS
+#      protein changes), so those dimensions weigh more in the dot products.
 #   5. Missing by design: adipose tissue was biopsied at all three times, but adipose PROTEOMICS was only
 #      profiled at 4 h, so its 0.5 h and 24 h columns are empty (NA) for every gene. They are left empty,
 #      never filled in.
@@ -84,7 +91,7 @@
 #   01_nodes_EE_raw_logFC.csv, ..._RE_raw_...   the same before scaling
 #   01_nodes_EE_se.csv, 01_nodes_RE_se.csv       standard error of every number, same scale
 #   01_nodes_arm_corr.csv                        correlation between the errors of a gene's EE and RE estimates
-#   01_scale_factors.csv                         the one divisor used for each tissue x layer
+#   01_scale_factors.csv                         the divisor for each ome (max |logFC|) and which value sets it
 #   01_nodes_feature_provenance.csv              which transcript/protein was used for each gene
 # =====================================================================================================
 
@@ -197,19 +204,20 @@ se_w[, rho := pmin(1, pmax(-1, (`EE-CON`^2 + `RE-CON`^2 - se_diff^2) / (2 * `EE-
 # Attach the correlation to the main table.
 da <- se_w[, .(tissue, ome, entrez_gene, tp, rho)][da, on = .(tissue, ome, entrez_gene, tp)]
 
-# ---- per-block scaling: put RNA and protein on the same footing --------------------------------------
-# For each tissue x layer, compute one divisor: the root-mean-square logFC, i.e. the square root of the
-# average squared change, over all 471 genes, all its timepoints and BOTH arms together. Pooling both
-# arms matters: if one arm genuinely changes more, a shared divisor keeps that difference visible.
-# (As noted in the header, this divisor is dominated by measurement noise.)
-scale_f <- da[, .(rms_logFC = sqrt(mean(logFC^2)), n_values = .N,
-                  timepoints = paste(names(TPS)[names(TPS) %in% tp], collapse = ",")),
-              by = .(tissue, ome)]
-# Attach each block's divisor to its rows.
-da <- scale_f[, .(tissue, ome, rms_logFC)][da, on = .(tissue, ome)]
-# Divide every change, and its standard error, by the block's divisor (signs and zero are unchanged).
-da[, `:=`(scaled = logFC / rms_logFC, scaled_se = se / rms_logFC)]
-# Save the six divisors so anyone can undo or check the scaling.
+# ---- normalisation (critical QC): divide each ome by its maximum absolute log fold change -------------
+# For each ome (RNA, protein), one divisor: the largest absolute logFC over all 471 genes, all tissues,
+# all timepoints and BOTH arms together; also record which gene / tissue / time / arm sets it.
+scale_f <- da[, .(max_abs_logFC = max(abs(logFC)),
+                  set_by = paste(gene_symbol, tissue, tp, arm)[which.max(abs(logFC))],
+                  n_values = .N), by = ome]
+# Attach each ome's divisor to its rows.
+da <- scale_f[, .(ome, max_abs_logFC)][da, on = "ome"]
+# Divide every change, and its standard error, by the ome's divisor (values now lie in -1..+1; signs and
+# zero are unchanged).
+da[, `:=`(scaled = logFC / max_abs_logFC, scaled_se = se / max_abs_logFC)]
+# Safety check: the largest absolute scaled value in each ome is exactly 1.
+stopifnot(all(abs(da[, max(abs(scaled)), by = ome]$V1 - 1) < 1e-12))
+# Save the two divisors (and what sets them) so anyone can undo or check the normalisation.
 fwrite(scale_f, file.path(OUT, "01_scale_factors.csv"))
 # Show them on screen.
 print(scale_f)
