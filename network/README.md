@@ -70,7 +70,7 @@ flowchart LR
 5. **Metabolite identifiers (steps 1c, 1d).** ChEBI and other database IDs and class counts.
 6. **Metabolite networks (steps 5, 6).** Rhea links each metabolite to the proteins (among our 471
    genes) that use it as an enzyme substrate or product. Two metabolites are connected if they share
-   such a protein AND the same RefMet main class; edge weights are dot products of their 9-number
+   such a protein AND the same RefMet super class; edge weights are dot products of their 9-number
    vectors, per arm. Same edges in both arms, as for genes.
 7. **Hub report (step 7).** How many hubs each of the four networks has, and what hangs on them.
    Nothing is removed.
@@ -213,7 +213,7 @@ missing.
 | 3 | 0–1 weights σ(w / s), s = median \|w\| over both arms (2.667) | temperature scaling; s set by analogy with the median heuristic |
 | 4 | Monte Carlo error propagation from standard errors, with the EE/RE error correlation | error bars for every difference; ignoring the correlation would hide real differences |
 | 5 | Metabolite–protein = Rhea enzyme–substrate, human proteins among our 471 genes; our ChEBI IDs also matched in their pH 7.3 form | curated, keyed by ChEBI and UniProt; Rhea writes molecules as they exist at physiological pH |
-| 6 | Metabolite edge = shares ≥ 1 of our proteins AND same RefMet main class (team rule); weight = dot product of 9-number vectors | exercise-independent gate, as for genes; inferred functional links, not physical |
+| 6 | Metabolite edge = shares ≥ 1 of our 471 genes' proteins AND same RefMet super class (14; team rule, chosen after step 8); weight = dot product of 9-number vectors | exercise-independent gate, as for genes; restricting to our measured genes is the more rigorous choice; inferred functional links, not physical |
 | 7 | Hubs reported with the El-Kebir cutoff (Q75 + 40 × IQR) and the Tukey fence (Q75 + 1.5 × IQR); none removed | team decision: inspect before removing |
 
 ### Step details
@@ -301,34 +301,39 @@ entries are not expanded to our species. **Result:** 175 of our 213 ChEBI-identi
 Rhea; **60 metabolites link to 80 of our 471 genes (186 links)**. Coverage is limited because the gene
 set (bounded by the blood OLINK panel) has few metabolic enzymes, and most lipid species have no ChEBI ID.
 
-**Step 6 — metabolite networks.** 161 metabolite pairs share a protein; **78 also share a main class and
-become edges**, among **39 metabolites** in 8 components (largest 9): fatty acids 32 edges, purines 19,
-ceramides 10, amino acids 9, pyrimidines 6, TCA acids 1, short-chain acids 1. Same edges in both arms;
-weights per arm (sigmoid scale s = 1.77). The two arms' metabolite edge weights correlate at r = 0.15
-and 25 of 78 edges change sign (no noise reference yet; the step 4 comparison has not been run on
-metabolites).
+**Step 6 — metabolite networks.** Rule: a shared protein among our 471 genes AND the same RefMet
+**super class** (14 families; chosen by the team after step 8; `METAB_CLASS_LEVEL=main_class` switches
+back to the 50 main classes). 161 metabolite pairs share a protein; **122 also share a super class and
+become edges**, among **44 metabolites** in 5 components (largest 15): nucleic acids 54 edges, fatty
+acyls 35, organic acids 23, sphingolipids 10. Same edges in both arms; weights per arm (sigmoid scale
+s = 1.82). The two arms' metabolite edge weights correlate at r = 0.15 and 41 of 122 edges change sign
+(no noise reference yet; the step 4 comparison has not been run on metabolites). The edge table keeps
+both metabolites' main classes (`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
 
 **Step 7 — hubs (nothing removed).**
 
 | Network (EE and RE share edges) | Hub type | Connected nodes | El-Kebir hubs | Tukey hubs (cutoff) | Top hub (what hangs on it) |
 |---|---|---|---|---|---|
 | Gene networks | gene | 286 | 0 | 13 (degree > 8.5) | ITGB1: 21 genes (integrins, CD34, ICAM1, PECAM1, …) |
-| Metabolite networks | metabolite | 39 | 0 | 0 (degree > 10.75) | Arachidonic acid: 8 fatty acids |
-| Metabolite networks | mediating protein | 80 | 0 | 3 (> 6 metabolites) | NT5E: 9 nucleotides/nucleosides, supports 16 edges |
+| Metabolite networks | metabolite | 44 | 0 | 0 (degree > 14.4) | AMP: 13 nucleic acids |
+| Metabolite networks | mediating protein | 80 | 0 | 3 (> 6 metabolites) | NT5E: 9 nucleotides/nucleosides, supports 36 of the 122 edges |
 
-The other flagged mediating proteins are MGLL (8 fatty acids, supports 28 of the 78 metabolite edges)
-and SLC27A4 (7: fatty acids, ATP, AMP; 11 edges). The largest shared-protein support is ATP–ADP (20
-shared kinases and other ATP-using enzymes), the classic "currency metabolite" effect. Hub *strength*
-differs by arm: e.g. CD34 (gene) 121.7 in EE vs 43.8 in RE; NT5E (protein) 67.0 vs 163.5.
+The other flagged mediating proteins are MGLL (8 fatty acids, supports 28 edges) and SLC27A4 (7: fatty
+acids, ATP, AMP; 11 edges). With the super class, purines and pyrimidines share a class, so NT5E links
+all nine of its nucleotides to each other (36 edges, up from 16 under the main class). The largest
+shared-protein support is ATP–ADP (20 shared kinases and other ATP-using enzymes), the classic
+"currency metabolite" effect. Hub *strength* differs by arm: e.g. CD34 (gene) 121.7 in EE vs 43.8 in
+RE; NT5E (protein) 103.6 vs 328.4.
 
 **Step 8 — metabolite rule experiments (report only; steps 5–6 outputs unchanged).** One change at a
-time from the step 6 rule (shared protein only, no hub removal):
+time from the original main-class rule (shared protein only, no hub removal). The team then adopted
+experiment 2 as the step 6 rule, keeping our 471 genes as the more rigorous protein set:
 
 | Rule | Proteins allowed | Metabolites with a protein | Edges | Metabolites in network | Change |
 |---|---|---|---|---|---|
 | Baseline: our 471 genes, main class (50) | 472 | 60 | 78 | 39 | — |
 | Exp 1: all human reviewed Rhea enzymes, main class | 4,140 | 155 | 555 | **126** | **+87** |
-| Exp 2: our 471 genes, super class (14) | 472 | 60 | 122 | **44** | **+5** |
+| **Exp 2: our 471 genes, super class (14) — adopted** | 472 | 60 | 122 | **44** | **+5** |
 | Side line: Rhea enzymes from any organism, main class | 236,245 | 171 | 618 | 138 | +99 |
 
 "Human reviewed" = UniProtKB/Swiss-Prot, organism 9606 (20,431 accessions, downloaded 2026-09-26).
@@ -378,7 +383,7 @@ class counts add up to 450; metabolite edges obey the class and shared-protein r
 | Edges at FDR < 0.1 / nominal p < 0.05 (chance: ~22) | 0 / 12 |
 | Genes at FDR < 0.1 | 1 (HSPB1) |
 | Metabolites / genes linked through Rhea | 60 / 80 |
-| Metabolite edges | 78 |
+| Metabolite edges / metabolites in the network (super class) | 122 / 44 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
 
 **Result, stated carefully.** The two arms' edge weights correlate at r = 0.64. Re-drawing the

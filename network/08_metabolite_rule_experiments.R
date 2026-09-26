@@ -5,13 +5,14 @@
 #
 # WHAT THIS SCRIPT DOES (plain language)
 #   The metabolite network (step 6) connects two metabolites if they share a protein that handles both
-#   (Rhea, step 5) AND belong to the same chemical class. Only 39 of our 450 metabolites end up with an
-#   edge. This script tests, one change at a time, how many metabolites would be in the network if the
-#   rule were relaxed. It does NOT change the main outputs of steps 5-6; it only reports counts.
+#   (Rhea, step 5) AND belong to the same chemical class. This script tests, one change at a time, how
+#   many metabolites would be in the network under different rules. It does NOT change the outputs of
+#   steps 5-6; it only reports counts. (After these experiments the team chose experiment 2, the super
+#   class with our 471 genes, as the step 6 rule.)
 #   Rules compared (everything else identical to step 6: shared protein only, no hub removal):
-#     baseline      proteins = our 471 genes;                        class = RefMet MAIN class (50)
+#     baseline      proteins = our 471 genes;                        class = RefMet MAIN class (50)  (original rule)
 #     experiment 1  proteins = ALL human reviewed enzymes in Rhea;   class = MAIN class
-#     experiment 2  proteins = our 471 genes;                        class = RefMet SUPER class (14)
+#     experiment 2  proteins = our 471 genes;                        class = RefMet SUPER class (14) (chosen rule)
 #     (side line)   proteins = all Rhea enzymes from ANY organism;   class = MAIN class
 #   "Human reviewed enzymes" = UniProtKB/Swiss-Prot entries for Homo sapiens (organism 9606), downloaded
 #   from the UniProt REST API. Rhea lists enzymes from every organism, so without this filter a bacterial
@@ -117,10 +118,13 @@ res <- rbind(
   run_rule(unique(enz$uniprot), "main_class", "side line: Rhea enzymes from any organism, main class"))
 # Change in the number of metabolites in the network relative to the baseline.
 res[, change_vs_baseline := metabolites_in_network - metabolites_in_network[1]]
-# Safety check: the baseline reproduces step 6 exactly.
+# Safety check: the rule matching step 6's class level reproduces step 6 exactly.
 s6 <- fread(file.path(OUT, "06_metabolite_summary.csv")); v6 <- setNames(s6$value, s6$metric)
+# (row 1 = main class, row 3 = super class, both with our 471 genes)
+row6 <- if (v6[["class_level"]] == "main_class") 1 else 3
 # (edges and metabolites in the network must match step 6's summary)
-stopifnot(res$edges[1] == v6[["edges_same_main_class"]], res$metabolites_in_network[1] == v6[["metabolites_with_edges"]])
+stopifnot(res$edges[row6] == as.numeric(v6[["edges_same_class"]]),
+          res$metabolites_in_network[row6] == as.numeric(v6[["metabolites_with_edges"]]))
 # Save and show.
 fwrite(res, file.path(OUT, "08_metabolite_rule_experiments.csv"))
 # Show it.

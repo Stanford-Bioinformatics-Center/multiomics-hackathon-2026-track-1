@@ -10,7 +10,10 @@
 #     two metabolites are connected if BOTH
 #       (a) they are handled by at least one SAME protein, where the protein must be one of our 471 genes
 #           and "handled" means Rhea records the metabolite in a reaction that protein catalyses (step 5);
-#       (b) they belong to the same RefMet MAIN class (e.g. both purines, both fatty acids; from step 1c).
+#       (b) they belong to the same RefMet SUPER class (14 broad families, e.g. both "Nucleic acids",
+#           both "Fatty Acyls"; from step 1c). The team chose the super class over the 50 main classes
+#           after step 8 showed the main-class rule left only 39 metabolites connected (super class: 44).
+#           Set METAB_CLASS_LEVEL=main_class to use the narrower classes instead.
 #     Only shared proteins count (no second step through interacting proteins).
 #   EDGE WEIGHT (per arm, as in step 3): the dot product of the two metabolites' 9-number vectors from
 #   step 1b (adipose, blood, muscle x 0.5 / 4 / 24 h), plus the 0-1 version sigmoid(w / s) with
@@ -24,7 +27,7 @@
 # TECH STACK
 #   R 4.4; data.table; igraph (connected components).
 #
-# INPUTS:  $HACK_OUT/05_metabolite_protein_links.csv, $HACK_OUT/01c_metabolite_ids.csv (main class),
+# INPUTS:  $HACK_OUT/05_metabolite_protein_links.csv, $HACK_OUT/01c_metabolite_ids.csv (classes),
 #          $HACK_OUT/01b_metab_nodes_EE.csv and _RE.csv (the 9-number vectors)
 # OUTPUTS: $HACK_OUT/06_metabolite_edges.csv    one row per edge: shared proteins, w_EE, w_RE, w_diff, sig_*
 #          $HACK_OUT/06_metabolite_nodes.csv    one row per metabolite: class, proteins, degree, component
@@ -39,8 +42,14 @@ OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-20
 
 # Metabolite -> protein links from step 5.
 link <- fread(file.path(OUT, "05_metabolite_protein_links.csv"), colClasses = list(character = "entrez_gene"))
-# Every metabolite's main class (step 1c); a blank class means "Unclassified", which never forms edges.
+# Which class level must match: the super class (default, the team's choice) or the main class.
+CLASS_LEVEL <- Sys.getenv("METAB_CLASS_LEVEL", unset = "super_class")
+# Safety check: only these two levels exist.
+stopifnot(CLASS_LEVEL %in% c("super_class", "main_class"))
+# Every metabolite's classes (step 1c); a blank class means "Unclassified", which never forms edges.
 ids <- fread(file.path(OUT, "01c_metabolite_ids.csv"))[, .(metabolite, super_class, main_class)]
+# The class used by the rule, at the chosen level.
+ids[, rule_class := get(CLASS_LEVEL)]
 
 # ---- edge rule ------------------------------------------------------------------------------------
 # All pairs of metabolites that share a protein: join the link table to itself on the protein.
@@ -51,14 +60,14 @@ pairs <- pairs[m1 < m2]
 # Per pair: how many proteins they share, and which.
 pairs <- pairs[, .(n_shared_proteins = uniqueN(entrez_gene),
                    shared_proteins = paste(sort(unique(gene_symbol)), collapse = ";")), by = .(m1, m2)]
-# Attach each metabolite's main class.
-pairs <- merge(pairs, ids[, .(m1 = metabolite, class1 = main_class)], by = "m1")
+# Attach each metabolite's rule class (and its main class, for information).
+pairs <- merge(pairs, ids[, .(m1 = metabolite, class1 = rule_class, main_class_a = main_class)], by = "m1")
 # ...and of the second metabolite.
-pairs <- merge(pairs, ids[, .(m2 = metabolite, class2 = main_class)], by = "m2")
-# Keep pairs in the same main class (a missing class never matches).
+pairs <- merge(pairs, ids[, .(m2 = metabolite, class2 = rule_class, main_class_b = main_class)], by = "m2")
+# Keep pairs in the same rule class (a missing class never matches).
 e <- pairs[!is.na(class1) & class1 != "" & class1 == class2]
 # Report how many shared-protein pairs the class rule keeps.
-message(sprintf("pairs sharing a protein: %d; also same main class (edges): %d", nrow(pairs), nrow(e)))
+message(sprintf("pairs sharing a protein: %d; also same %s (edges): %d", nrow(pairs), CLASS_LEVEL, nrow(e)))
 
 # ---- edge weights per arm (dot products of the 9-number vectors) --------------------------------
 # Helper: read one arm's metabolite vectors as a matrix (row names = metabolite names).
@@ -82,14 +91,16 @@ SIG_SCALE <- if (nrow(e)) median(abs(c(e$w_EE, e$w_RE))) else NA_real_
 # Apply the sigmoid to both arms' weights.
 e[, `:=`(sig_EE = plogis(w_EE / SIG_SCALE), sig_RE = plogis(w_RE / SIG_SCALE))]
 # Tidy column order and names, strongest shared evidence first, then save.
-setnames(e, c("m1", "m2", "class1"), c("metabolite_a", "metabolite_b", "main_class"))
-# The second class column is now redundant (equal to main_class): drop it.
+setnames(e, c("m1", "m2", "class1"), c("metabolite_a", "metabolite_b", "class"))
+# Record which class level the rule used.
+e[, class_level := CLASS_LEVEL]
+# The second rule-class column is now redundant (equal to class): drop it.
 e[, class2 := NULL]
 # Put the columns in a readable order.
-setcolorder(e, c("metabolite_a", "metabolite_b", "main_class", "n_shared_proteins", "shared_proteins",
-                 "w_EE", "w_RE", "w_diff", "sig_EE", "sig_RE"))
+setcolorder(e, c("metabolite_a", "metabolite_b", "class", "class_level", "main_class_a", "main_class_b",
+                 "n_shared_proteins", "shared_proteins", "w_EE", "w_RE", "w_diff", "sig_EE", "sig_RE"))
 # Sort: by class, most shared proteins first, then alphabetically.
-setorder(e, main_class, -n_shared_proteins, metabolite_a, metabolite_b)
+setorder(e, class, -n_shared_proteins, metabolite_a, metabolite_b)
 # Save the edge list.
 fwrite(e, file.path(OUT, "06_metabolite_edges.csv"))
 
@@ -116,10 +127,10 @@ fwrite(nodes, file.path(OUT, "06_metabolite_nodes.csv"))
 
 # Headline counts.
 summ <- data.table(
-  metric = c("metabolites", "metabolites_with_a_protein", "pairs_sharing_a_protein", "edges_same_main_class",
+  metric = c("class_level", "metabolites", "metabolites_with_a_protein", "pairs_sharing_a_protein", "edges_same_class",
              "metabolites_with_edges", "components_size_ge2", "largest_component", "median_degree_nonisolated",
              "sigmoid_scale", "cor_w_EE_w_RE", "edges_sign_change"),
-  value = c(nrow(nodes), sum(nodes$n_proteins > 0), nrow(pairs), nrow(e),
+  value = c(CLASS_LEVEL, nrow(nodes), sum(nodes$n_proteins > 0), nrow(pairs), nrow(e),
             sum(nodes$degree > 0), sum(comp$csize >= 2), max(comp$csize), median(nodes$degree[nodes$degree > 0]),
             SIG_SCALE, if (nrow(e) > 2) cor(e$w_EE, e$w_RE) else NA, sum(sign(e$w_EE) != sign(e$w_RE))))
 # Save and show.

@@ -162,10 +162,10 @@ me <- rd("06_metabolite_edges.csv")
 # Check the metabolite edge list is clean.
 check(all(c(me$metabolite_a, me$metabolite_b) %in% ME$metabolite) && all(me$metabolite_a != me$metabolite_b) &&
       !anyDuplicated(me[, .(pmin(metabolite_a, metabolite_b), pmax(metabolite_a, metabolite_b))]), "step 6: clean edge list")
-# The class rule holds: both ends of every edge have the edge's main class.
-ids2 <- rd("01c_metabolite_ids.csv"); cl <- setNames(ids2$main_class, ids2$metabolite)
+# The class rule holds: both ends of every edge have the edge's class, at the level step 6 used.
+ids2 <- rd("01c_metabolite_ids.csv"); cl <- setNames(ids2[[me$class_level[1]]], ids2$metabolite)
 # Check both ends of every edge are in the edge's class.
-check(all(cl[me$metabolite_a] == me$main_class & cl[me$metabolite_b] == me$main_class), "step 6: same main class")
+check(all(cl[me$metabolite_a] == me$class & cl[me$metabolite_b] == me$class), "step 6: same class")
 # The protein rule holds: every listed shared protein handles both metabolites in step 5.
 sp <- me[, .(g = unlist(strsplit(shared_proteins, ";"))), by = .(metabolite_a, metabolite_b)]
 # Every metabolite-protein pair from step 5, as text keys.
@@ -184,7 +184,9 @@ note("step5_metabolites_linked", as.numeric(v5[["metabolites_linked_to_our_genes
 # Record genes linked to our metabolites.
 note("step5_genes_linked", as.numeric(v5[["genes_linked_to_our_metabolites"]]), 80)
 # Record the number of metabolite edges.
-note("step6_metabolite_edges", nrow(me), 78)
+note("step6_metabolite_edges", nrow(me), 122)
+# Record the number of metabolites in the metabolite network.
+note("step6_metabolites_in_network", uniqueN(c(me$metabolite_a, me$metabolite_b)), 44)
 # Record gene hubs above the Tukey fence.
 hs <- rd("07_hub_summary.csv"); note("step7_gene_hubs_tukey", hs[1, n_hubs_tukey], 13)
 # Record hubs flagged by the El-Kebir rule in any network.
