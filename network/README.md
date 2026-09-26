@@ -1,7 +1,13 @@
 # Exercise network: endurance vs resistance
 
-Goal: two networks over the same genes, one for endurance vs control (EE) and one for resistance
-vs control (RE), to compare against each other.
+Goal: an honest representation of two networks over the same genes, one for endurance vs control
+(EE) and one for resistance vs control (RE), and a test of whether they are more similar or more
+different. Nothing in the pipeline is designed to make the two networks look alike: they are built
+independently from each arm's data, measured on one shared scale, and compared against measurement
+noise.
+
+Every script is commented line by line in plain language, with a header explaining what it does,
+the upstream QC, the methods and the tools.
 
 - **Step 1 — nodes** (`01_node_embeddings.R`): one node per gene. Each node has **two** 18-value
   exercise-response vectors, one per arm, built independently from that arm's contrast.
@@ -27,6 +33,47 @@ feature-to-gene map). Step 2 reads the STRING file from `$STRING_PARQUET` (defau
 `~/Downloads/Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet`).
 Outputs go to `$HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`); code and
 results are kept in separate trees, so nothing is written inside the repo.
+
+## Tech stack
+
+| Component | Version | Used for |
+|---|---|---|
+| R | 4.4.3 | everything |
+| `MotrpacHumanPreSuspensionAnalysis` | 0.2.4 | the data: differential-analysis results and the feature-to-gene map |
+| `data.table` | 1.18 | tables |
+| `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
+| `igraph` | 2.2 | connected components |
+| `Matrix` | 1.7 | sparse gene × edge matrix (step 4) |
+| STRING (curated file) | combined_score ≥ 700 | which genes are connected |
+
+## Upstream QC and filtering (done by the consortium, before our code)
+
+We read published results; no statistics are re-run on raw data.
+
+- **Samples:** first supervised exercise bout only (visit `ADU_BAS`); samples flagged in the
+  consortium's outlier review (`OUTLIERS`: failed genotype/sex checks, etc.) removed.
+- **RNA-seq (adipose, blood, muscle):** low-expression genes removed by a log-CPM cutoff; TMM
+  normalisation (edgeR); voom precision weights; linear mixed model with dream (variancePartition):
+  `~ 0 + group_timepoint + Batch + BMI + calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid)`.
+- **MS proteomics (adipose, muscle):** QC-normalised; a protein is kept only if every group ×
+  timepoint has ≥ 3 participants measured both before and after exercise (`filter_paired_n`);
+  model `~ 0 + group_timepoint + BMI + calculatedAge + Sex + (1 | pid)` (dream).
+- **OLINK proteomics (blood):** targeted ~1,400-protein panel, QC-normalised; same model as MS.
+- **STRING file:** already restricted to combined_score ≥ 700, UniProt IDs, one row per pair.
+
+## Filtering and choices made in this pipeline
+
+| Step | Choice | Why |
+|---|---|---|
+| 1 | Delta-delta contrasts (EE-CON, RE-CON) at 0.5 / 4 / 24 h | removes changes that happen to controls too |
+| 1 | Genes measured in all six tissue × layer combinations (471) | every node has a complete vector |
+| 1 | One feature per gene: the most abundant (`AveExpr`) | independent of the exercise response |
+| 1 | One scale factor per tissue × layer, shared by both arms | puts RNA and protein on one footing without erasing arm differences |
+| 1 | Adipose protein 0.5 / 24 h left empty | those samples do not exist |
+| 2 | El-Kebir 2015 network rules (hub removal removes nothing here) | published, standard construction |
+| 3 | Dot product over the whole 16-dimension vector | encoder–decoder node-similarity framework |
+| 3 | 0-1 weights: σ(w / s), s = median \|w\| over both arms | temperature scaling with the median heuristic (see step 3) |
+| 4 | Parametric bootstrap from standard errors, EE/RE correlation included | error bars for every difference |
 
 ## Node universe: 471 genes
 
@@ -153,9 +200,28 @@ w_EE(u,v) = z_u(EE) · z_v(EE)        w_RE(u,v) = z_u(RE) · z_v(RE)        w_di
 - **Untransformed**, so both arms are on the same scale (the embeddings share scale factors) and
   `w_diff` is directly interpretable.
 - **Sigmoid version for positive-only methods:** `sig_EE`, `sig_RE` = σ(w / s) = 1 / (1 + e^(−w/s)),
-  in 0–1 (negative w → below 0.5; 0.5 = no co-response). s = median |w| pooled over both arms
-  (2.667), one constant so the arms stay comparable. Plain σ(w) saturated (116 EE / 146 RE edges
-  above 0.99 or below 0.01); with s it is 19 EE / 31 RE.
+  in 0–1 (negative w → below 0.5; 0.5 = no co-response), s = 2.667.
+
+**Why divide by the median, and what is the precedent.**
+
+- *Why a sigmoid at all:* some network methods (random walks, community detection) need positive
+  weights. σ(dot product) is the decoder used by DeepWalk / node2vec-style embeddings.
+- *Why divide first:* those methods *learn* vectors whose dot products sit in the few-units range
+  where the sigmoid is informative. Ours are measured, and their dot products run from −54 to +67, so
+  plain σ(w) pinned 116 EE / 146 RE of 431 edges at ~0 or ~1 (with s: 19 / 31). Dividing a sigmoid's
+  input by a constant is **temperature scaling** (Hinton, Vinyals & Dean 2015; Guo et al. 2017). It
+  changes the steepness only; the order and sign of every edge are unchanged.
+- *Why the median:* setting that constant from the median of the data is the **median heuristic**,
+  the standard default for the width of similarity kernels (Schölkopf & Smola 2002; Gretton et al.
+  2012, *JMLR*). It is robust to the few very large weights. It is a heuristic, not a derived
+  optimum: it puts the typical edge at σ(±1) = 0.27 / 0.73.
+- *Why one s for both arms (and why this does not make the networks similar):* s is a unit of
+  measurement. With one s, the same weight maps to the same 0–1 value in either arm, so a real
+  difference between arms passes through unchanged. A separate s per arm would rescale each network
+  to its own typical edge and could *hide* a genuine overall difference. The same reasoning applies to
+  step 1's scale factors, which are also shared by the two arms.
+- *Caveat:* the sigmoid is non-linear and compresses large differences, so similarity-vs-difference
+  conclusions are drawn from the raw w (step 4), not from the 0–1 version.
 
 | | EE | RE |
 |---|---|---|
@@ -188,9 +254,12 @@ An arm-label swap permutation was tried first and **rejected**: swapping a gene'
 only flips the sign of an edge's `w_diff` when both ends swap, so half the draws reproduce |w_diff|
 exactly and no edge can reach p < ~0.5.
 
-**Result.** The two networks are broadly similar: cor(w_EE, w_RE) = 0.64 (bootstrap 95% interval
-0.34–0.69; noise pulls it down). Most responses are small relative to their error (median
-|value| / SE = 0.78), so the test has little power:
+**Result.** The two arms' edge weights correlate at r = 0.64 (bootstrap 95% interval 0.34–0.69;
+noise pulls it down), and 130 of 431 edges change sign between arms. Whether 0.64 counts as "similar"
+or "different" needs a reference point that has not been computed yet: the correlation expected if
+the arms were truly identical and differed only by measurement noise. Most responses are small
+relative to their error (median |value| / SE = 0.78), so the per-edge test has little power, and
+"not significant" here is **not** evidence that the arms are the same:
 
 | | |
 |---|---|
