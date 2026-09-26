@@ -4,20 +4,20 @@
 # =====================================================================================================
 #
 # WHAT THIS SCRIPT DOES (plain language)
-#   Draws two figures, in the style of week 5's figure 3.1 (El-Kebir et al. 2015, Figure 4), where two
-#   networks are stacked and thin dotted lines join the same node in both:
+#   Draws two figures, in the layered style of week 5's figure 3.1 (El-Kebir et al. 2015, Figure 4), with
+#   the two networks stacked:
 #     10a_gene_networks_EE_vs_RE.png        the gene networks (STRING edges, step 3 weights)
 #     10b_metabolite_networks_EE_vs_RE.png  the metabolite networks (Rhea + class rule, step 6 weights)
 #   Top layer = endurance (EE), bottom layer = resistance (RE). Both layers have the SAME edges (the edges
 #   come from databases, not from the exercise data); what differs is how strong each edge and node is.
 #
 # HOW EACH ELEMENT IS DRAWN
-#   - Node position: one shared layout is computed from the common edges (Fruchterman-Reingold, fixed
-#     seed); each arm's layer then starts from that shared layout and is relaxed for a few iterations,
-#     with a small maximum step, using that arm's 0-1 edge weights (sig, step 3/6). So a node that moves
-#     between layers moved because its edge strengths differ between arms, not because of a different
-#     random start, and the movement is kept modest so the layers stay comparable.
-#   - Dotted violet lines join each node to itself in the other layer (the arms' "ortholog" lines).
+#   - Node position: ONE layout, computed from the shared edges (Fruchterman-Reingold, fixed seed), is
+#     used for BOTH layers, so every node sits in the same place in the endurance and resistance layer.
+#     Unlike figure 3.1 there are no lines joining the layers: figure 3.1 needs them because human and rat
+#     networks contain different genes (orthology), whereas here both networks contain exactly the same
+#     nodes and edges by construction, so such lines would carry no information. With identical positions,
+#     the eye compares what actually differs between arms: edge widths and signs, node sizes.
 #   - Node colour: the node's mean response across all its dimensions (scaled logFC from steps 1 / 1b;
 #     violet = down, white = little change, orange = up; limits -2 to 2, values beyond are shown at the
 #     limit), in the same palette as figure 3.1.
@@ -53,18 +53,10 @@ dir.create(FIG, recursive = TRUE, showWarnings = FALSE)
 SEED <- 20260926
 # How many of the strongest genes to label per layer.
 NLAB <- 10
-# Iterations and starting "temperature" (maximum step size) used to relax each arm's layout away from
-# the shared one. A low temperature lets nodes shift only modestly, so position differences between the
-# layers reflect differences in edge weights rather than a fresh, arbitrary layout.
-RELAX <- 30
-# (the maximum step size used for that relaxation)
-RELAX_TEMP <- 0.5
 
 # ---- figure style (copied from week 5 figure 3.1 / week_4/R/fig.R theme_pub) ---------------------
 # Text, axis, muted and strip colours.
 INK <- "#1A1A1A"; HAIR <- "#3A3A3A"; MUT <- "#6B7278"; STRIP_BG <- "#EDF0F2"; STRIP_INK <- "#20262B"
-# Colour of the dotted lines joining a node to itself across layers (figure 3.1's ortholog lines).
-LINK <- "#9C8AB8"
 # Node colour scale: violet (down) - white - orange (up), limits -2..2, as in figure 3.1.
 sc_fill <- scale_fill_gradient2(low = "#6A3D9A", mid = "white", high = "#E66100", midpoint = 0,
                                 limits = c(-2, 2), oob = scales::squish,
@@ -93,17 +85,13 @@ norm01 <- function(v) if (diff(range(v)) < 1e-9) rep(0.5, length(v)) else (v - m
 build <- function(nodes, edges) {
   # the shared network over the connected nodes (same edges in both arms)
   g <- graph_from_data_frame(edges[, .(a, b)], directed = FALSE, vertices = nodes[node %in% c(edges$a, edges$b), .(node)])
-  # the shared starting layout (fixed seed)
+  # the single shared layout (fixed seed), used for both layers
   set.seed(SEED); L0 <- layout_with_fr(g)
-  # per arm: relax the shared layout using that arm's 0-1 edge weights, then place the layer
-  lay <- rbindlist(lapply(c("EE", "RE"), function(arm) {
-    # igraph wants edge weights in the graph's edge order, which is the order of `edges`
-    set.seed(SEED)
-    L <- layout_with_fr(g, coords = L0, niter = RELAX, start.temp = RELAX_TEMP, weights = edges[[paste0("sig_", arm)]])
-    # scale to 0..1 and put EE in the top band (0.55-1), RE in the bottom band (0-0.45), as in figure 3.1
-    y <- norm01(L[, 2]); y <- if (arm == "EE") 0.55 + 0.45 * y else 0.45 * y
-    data.table(node = V(g)$name, arm = arm, x = norm01(L[, 1]), y = y)
-  }))
+  # scaled to 0..1
+  x0 <- norm01(L0[, 1]); y0 <- norm01(L0[, 2])
+  # the same positions in both layers: EE in the top band (0.55-1), RE in the bottom band (0-0.45)
+  lay <- rbind(data.table(node = V(g)$name, arm = "EE", x = x0, y = 0.55 + 0.45 * y0),
+               data.table(node = V(g)$name, arm = "RE", x = x0, y = 0.45 * y0))
   # node strength per arm = sum of the sizes of its edge weights
   both <- rbind(edges[, .(node = a, w_EE, w_RE)], edges[, .(node = b, w_EE, w_RE)])
   st <- both[, .(EE = sum(abs(w_EE)), RE = sum(abs(w_RE))), by = node]
@@ -125,9 +113,8 @@ build <- function(nodes, edges) {
   # sign of each edge weight, for the line type
   E[, direction := factor(fifelse(w >= 0, "same direction (w > 0)", "opposite direction (w < 0)"),
                           levels = c("same direction (w > 0)", "opposite direction (w < 0)"))]
-  # dotted lines joining each node's EE position to its RE position
-  P <- dcast(lay, node ~ arm, value.var = c("x", "y"))
-  list(N = N, E = E, P = P, n_nodes = vcount(g), n_edges = ecount(g))
+  # the drawing data and the counts shown in the side labels
+  list(N = N, E = E, n_nodes = vcount(g), n_edges = ecount(g))
 }
 
 # Draw one figure from build()'s output.
@@ -144,9 +131,6 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
   p <- ggplot() +
     # dashed rule between the two layers, as in figure 3.1
     geom_hline(yintercept = 0.5, colour = HAIR, linetype = "22", linewidth = 0.25) +
-    # dotted violet lines joining each node to itself across the layers
-    geom_segment(data = G$P, aes(x = x_EE, y = y_EE, xend = x_RE, yend = y_RE),
-                 colour = LINK, linewidth = 0.16, linetype = "11", alpha = 0.6) +
     # the edges: width = size of the weight in that arm; solid / dashed = sign
     geom_segment(data = G$E, aes(x, y, xend = xend, yend = yend, linewidth = abs(w), linetype = direction),
                  colour = "grey45", alpha = 0.55) +

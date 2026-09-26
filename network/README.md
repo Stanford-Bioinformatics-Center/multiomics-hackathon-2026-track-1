@@ -165,7 +165,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_summary.csv` | per network × hub type: degree distribution, El-Kebir and Tukey cutoffs, number of hubs, top hub, top strength per arm |
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
-| 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks, figure-3.1 style |
+| 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
 
 **Gene vector layout (18 dimensions, per arm)**
@@ -346,10 +346,12 @@ experiment 2 as the step 6 rule, keeping our 471 genes as the more rigorous prot
 Coverage is limited by which proteins may link metabolites, not by the class rule: the class level
 only regroups the same 60 protein-linked metabolites.
 
-**Step 10 — figures.** In the style of week 5's figure 3.1 (El-Kebir et al. 2015, Figure 4): endurance
-network on top, resistance below, dotted violet lines joining each node to itself across the layers.
-Both layers share one starting layout (fixed seed), relaxed briefly with a small maximum step using each
-arm's 0–1 edge weights, so position differences reflect weight differences. Node colour = mean scaled
+**Step 10 — figures.** Layered like week 5's figure 3.1 (El-Kebir et al. 2015, Figure 4): endurance
+network on top, resistance below. Both layers use ONE identical layout (fixed seed), and there are no
+lines joining the layers: figure 3.1 needs them because human and rat networks contain different genes,
+whereas our two networks contain exactly the same nodes and edges by construction, so the lines would
+carry no information. With identical positions, the differences between arms are read from the
+encodings. Node colour = mean scaled
 response across the node's dimensions (violet down, orange up, limits ±2); node size = strength in that
 arm; edge width = |w|, solid = positive, dashed = negative. Genes: triangle = strength differs between
 arms at uncorrected p < 0.05 (step 4; hypothesis-level). Metabolites: shape = RefMet super class. Only
