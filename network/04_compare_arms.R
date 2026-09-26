@@ -73,6 +73,7 @@ read_mat <- function(file) {
 }
 # The vectors (ZE endurance, ZR resistance), their standard errors (SE, SR) and the EE-RE correlation (RHO).
 ZE <- read_mat("01_nodes_EE.csv"); ZR <- read_mat("01_nodes_RE.csv")
+# Their standard errors (SE endurance, SR resistance) and the EE-RE correlation (RHO).
 SE <- read_mat("01_nodes_EE_se.csv"); SR <- read_mat("01_nodes_RE_se.csv"); RHO <- read_mat("01_nodes_arm_corr.csv")
 # Safety check: all five tables line up (same genes, same dimensions) and have no gaps.
 stopifnot(identical(dimnames(ZE), dimnames(SE)), identical(dimnames(ZE), SR |> dimnames()),
@@ -91,6 +92,7 @@ stopifnot(all.equal(obs$EE, edges$w_EE), all.equal(obs$RE, edges$w_RE))   # matc
 # The same fixed 0-1 transform as step 3 (the scale s is computed once, from the observed weights,
 # and kept fixed in every bootstrap round, because it is a unit, not something being estimated).
 SIG_SCALE <- median(abs(c(obs$EE, obs$RE)))          # fixed transform, same constant as 03
+# The 0-1 transform itself: sigmoid of (weight / s).
 sig <- function(w) plogis(w / SIG_SCALE)
 # Safety check: matches step 3's 0-1 values.
 stopifnot(all.equal(sig(obs$EE), edges$sig_EE))
@@ -98,10 +100,12 @@ stopifnot(all.equal(sig(obs$EE), edges$sig_EE))
 # A gene-by-edge table of 1s ("incidence matrix"): row = gene, column = edge, 1 if the gene is on the edge.
 # Multiplying it by the edge weights adds up each gene's edge weights in one step (its "strength").
 inc <- Matrix::sparseMatrix(i = c(ia, ib), j = rep(seq_along(ia), 2), x = 1, dims = c(length(genes), length(ia)))
+# Helper: each gene's strength = the sum of the weights of its edges.
 strength <- function(w) as.numeric(inc %*% w)
 
 # Observed per-gene differences in strength (EE - RE), on raw weights and on 0-1 weights.
 obs_ndiff <- strength(obs$EE) - strength(obs$RE)
+# The same difference computed on the 0-1 weights.
 obs_ndiff_sig <- strength(sig(obs$EE)) - strength(sig(obs$RE))
 # Observed correlation between the two arms' edge weights (1 = identical pattern, 0 = unrelated).
 obs_cor <- cor(obs$EE, obs$RE)
@@ -112,6 +116,7 @@ n_g <- nrow(ZE); n_d <- ncol(ZE)
 # Storage for every round: edge differences (be), gene differences on raw (bn) and 0-1 (bns) weights,
 # and the between-arm correlation (bcor).
 be <- matrix(0, B, length(ia)); bn <- matrix(0, B, n_g); bns <- matrix(0, B, n_g); bcor <- numeric(B)
+# Repeat B times (one bootstrap round per pass).
 for (b in seq_len(B)) {
   # two independent sets of standard-normal random numbers, one per gene x dimension
   u1 <- matrix(rnorm(n_g * n_d), n_g); u2 <- matrix(rnorm(n_g * n_d), n_g)
@@ -141,6 +146,7 @@ edges[, stronger_in := fifelse(w_diff > 0, "EE", "RE")]
 edges[, sign_change := sign(w_EE) != sign(w_RE)]
 # Most significant first, then save.
 edges <- edges[order(p_boot, -abs(w_diff))]
+# Save the per-edge table.
 fwrite(edges, file.path(OUT, "04_edge_diff.csv"))
 
 # ---- genes -----------------------------------------------------------------------------------------
@@ -159,8 +165,11 @@ nodes <- nodes[degree > 0]
 nodes[, `:=`(fdr = p.adjust(p_boot, "BH"), fdr_sig = p.adjust(p_boot_sig, "BH"))]
 # Add symbols, put ID and symbol first, most significant first, then save.
 nodes[, gene_symbol := sym$symbol[match(entrez_gene, sym$entrez)]]
+# Put gene ID and symbol in the first two columns.
 setcolorder(nodes, c("entrez_gene", "gene_symbol"))
+# Most significant first (ties: largest difference first).
 nodes <- nodes[order(p_boot, -abs(delta_strength))]
+# Save the per-gene table.
 fwrite(nodes, file.path(OUT, "04_node_diff.csv"))
 
 # ---- differential subnetworks: connected groups of differing edges --------------------------------
@@ -188,6 +197,7 @@ mods <- rbind(modules(sig_edges, "fdr_lt_0.1"), modules(edges[p_boot < 0.05], "e
 if (is.null(mods)) mods <- data.table(tier = character(), module = integer(), n_genes = integer(), n_edges = integer(),
                                       n_EE_stronger = integer(), n_RE_stronger = integer(), sum_w_diff = numeric(),
                                       genes = character(), edges = character())
+# Save the subnetwork table.
 fwrite(mods, file.path(OUT, "04_diff_subnetworks.csv"))
 
 # ---- headline numbers ------------------------------------------------------------------------------
@@ -200,4 +210,5 @@ summ <- data.table(
             nrow(nodes), sum(nodes$fdr < FDR), sum(nodes$fdr_sig < FDR), sum(mods$tier == "fdr_lt_0.1"), sum(mods$tier != "fdr_lt_0.1")))
 # Save and show.
 fwrite(summ, file.path(OUT, "04_summary.csv"))
+# Show the headline numbers on screen.
 print(summ)

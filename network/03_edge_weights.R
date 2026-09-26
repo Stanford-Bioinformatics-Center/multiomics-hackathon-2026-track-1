@@ -101,7 +101,9 @@ edges[, w_diff := w_EE - w_RE]
 
 # Keep the columns we report, sort by STRING score, and save.
 out <- edges[, .(entrez_a, symbol_a, entrez_b, symbol_b, combined_score, w_EE, w_RE, w_diff, sig_EE, sig_RE)]
+# Sort rows: highest STRING score first, then alphabetically.
 setorder(out, -combined_score, symbol_a, symbol_b)
+# Save the weighted edge list.
 fwrite(out, file.path(OUT, "03_weighted_edges.csv"))
 
 # Print a short summary per arm: typical weight, range, how many are negative, and how many 0-1 values
@@ -115,4 +117,5 @@ for (arm in names(Z)) {
 # How alike the two arms' weights are overall, and how many edges flip sign between arms.
 message(sprintf("cor(w_EE, w_RE) = %.2f; %d edges change sign between arms",
                 cor(out$w_EE, out$w_RE), sum(sign(out$w_EE) != sign(out$w_RE))))
+# Report where it was written.
 message("-> ", file.path(OUT, "03_weighted_edges.csv"))

@@ -116,6 +116,7 @@ universe <- Reduce(intersect, split(per_tissue$metabolite, per_tissue$tissue))
 stopifnot(length(universe) == 450)
 # Throw away rows for metabolites outside the universe.
 da <- da[metabolite %in% universe]
+# Same for the set-aside endurance-vs-resistance rows.
 arm_diff <- arm_diff[metabolite %in% universe]
 
 # ---- correlation between the EE-CON and RE-CON estimates (they share the control group) -----------
@@ -141,6 +142,7 @@ da <- scale_f[, .(tissue, rms_logFC)][da, on = "tissue"]
 da[, `:=`(scaled = logFC / rms_logFC, scaled_se = se / rms_logFC)]
 # Save the three divisors so anyone can undo or check the scaling, and show them.
 fwrite(scale_f, file.path(OUT, "01b_metab_scale_factors.csv"))
+# Show the three divisors on screen.
 print(scale_f)
 
 # ---- 9-number vector, one file per arm --------------------------------------------------------------
@@ -182,6 +184,9 @@ fwrite(to_wide("EE-CON", "rho"), file.path(OUT, "01b_metab_nodes_arm_corr.csv"))
 
 # Provenance: which platform measured each metabolite in each tissue.
 prov <- dcast(unique(da[, .(metabolite, tissue, platform)]), metabolite ~ tissue, value.var = "platform")
+# Rename the columns to platform_adipose, platform_blood, platform_muscle.
 setnames(prov, TISSUES, paste0("platform_", TISSUES))
+# Save the provenance table.
 fwrite(prov, file.path(OUT, "01b_metab_nodes_provenance.csv"))
+# Report where it was written.
 message("provenance -> ", file.path(OUT, "01b_metab_nodes_provenance.csv"))

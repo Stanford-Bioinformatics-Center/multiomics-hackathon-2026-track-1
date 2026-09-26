@@ -123,6 +123,7 @@ e <- e[entrez_a != entrez_b]
 # Write each gene pair in a fixed order (smaller gene ID first), carrying each gene's own protein ID
 # with it, so the same pair can never appear twice in opposite orders.
 e[, flip := entrez_a > entrez_b]
+# Swap the flagged rows: g1/g2 are the ordered genes, u1/u2 their own protein IDs.
 e[, `:=`(g1 = fifelse(flip, entrez_b, entrez_a), g2 = fifelse(flip, entrez_a, entrez_b),
          u1 = fifelse(flip, p2, p1),             u2 = fifelse(flip, p1, p2))]
 # If several protein pairs give the same gene pair, keep the one with the highest STRING score.
@@ -154,11 +155,14 @@ for (arm in c("EE", "RE")) {
 
 # Add gene symbols for readability.
 sym <- setNames(EE$gene_symbol, EE$entrez_gene)
+# Look up the symbol of each edge's first and second gene.
 e[, `:=`(symbol_a = sym[entrez_a], symbol_b = sym[entrez_b])]
 # Order the columns and rows (highest STRING score first), then save the edge list.
 setcolorder(e, c("entrez_a", "symbol_a", "entrez_b", "symbol_b", "uniprot_a", "uniprot_b",
                  "combined_score", "cos_EE", "cos_RE"))
+# Sort rows: highest STRING score first, then alphabetically.
 setorder(e, -combined_score, symbol_a, symbol_b)
+# Save the edge list.
 fwrite(e, file.path(OUT, "02_edges.csv"))
 
 # ---- per-gene table and headline counts -------------------------------------------------------------
@@ -189,4 +193,5 @@ summ <- data.table(
              sum(comp$csize >= 2), max(comp$csize), hub_cut, length(hubs), median(nodes$degree)))
 # Save and show them.
 fwrite(summ, file.path(OUT, "02_network_summary.csv"))
+# Show the headline counts on screen.
 print(summ)

@@ -242,4 +242,5 @@ prov <- dcast(chosen, entrez_gene ~ paste(tissue, ome, sep = "_"),
 prov <- symbols[prov, on = "entrez_gene"]
 # save and report
 fwrite(prov, file.path(OUT, "01_nodes_feature_provenance.csv"))
+# Report where the provenance file was written.
 message("provenance -> ", file.path(OUT, "01_nodes_feature_provenance.csv"))
