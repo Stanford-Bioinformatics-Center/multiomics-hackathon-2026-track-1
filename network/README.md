@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (36 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); sample annotation of that network with MoTrPAC phospho and GlyGen glycosylation (step 16); interactive, navigable versions of all three networks plus Cytoscape files (step 17); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 18, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Status | Gene and metabolite networks built and validated (36 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); sample annotation of that network with MoTrPAC phospho, GlyGen glycosylation and their site-level crosstalk (step 16); interactive, navigable versions of all three networks plus Cytoscape files (step 17); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 18, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -60,7 +60,7 @@ flowchart LR
   G --> J
   J --> Q[Step 15<br/>joint network with metabolites<br/>grouped into named class bubbles]
   Q --> U
-  Q --> A[Step 16<br/>15b annotated with MoTrPAC phospho (16a)<br/>and GlyGen glycosylation (16b)]
+  Q --> A[Step 16<br/>15b annotated: phospho 16a, glycosylation 16b,<br/>both + site-level crosstalk 16c]
   A --> U
   Q --> I[Step 17<br/>interactive pages + Cytoscape files<br/>search, highlight, filter, EE / RE / difference]
   P --> I
@@ -99,7 +99,8 @@ flowchart LR
    the same RefMet super class pulled together into an outlined, named group ("bubble"). As in step 14,
    15a shows the two arms separately and 15b their difference.
 12b. **Annotated networks (step 16).** Figure 15b with protein circles recoloured by MoTrPAC phosphosite
-   response (16a) or GlyGen glycosylation (16b): a sample of what those data layers would add.
+   response (16a) or GlyGen glycosylation (16b), and both at once with site-level phospho / O-GlcNAc crosstalk
+   marked (16c): a sample of what those data layers would add.
 13. **Interactive networks (step 17).** The joint, gene and metabolite networks as browser pages you can
    navigate like Cytoscape (search, neighbour highlight, filters, EE / RE / difference views, collapsible
    classes, tooltips), plus Cytoscape import files for teammates who use Cytoscape.
@@ -168,7 +169,7 @@ Rscript network/12_normalization_comparison.R # four normalisations side by side
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
 Rscript network/15_joint_network_classes.R    # joint network, metabolites grouped by class, figures 15a / 15b -> $HACK_FIG
-Rscript network/16_annotated_networks.R       # 15b annotated with phospho (16a) / glycosylation (16b) -> $HACK_FIG (needs network/inventory first)
+Rscript network/16_annotated_networks.R       # 15b annotated: phospho 16a / glycosylation 16b / both + crosstalk 16c -> $HACK_FIG (needs network/inventory first)
 Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/17_interactive; Cytoscape files -> $HACK_OUT/17_cytoscape
 Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
@@ -207,7 +208,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 15 | `15_class_layout.csv` | node positions of the class-grouped layout: `node`, `node_type`, `class`, `x`, `y` |
 | 15 | `$HACK_FIG/15a_joint_classes_EE_vs_RE.png`, `15b_joint_classes_edge_difference.png` (not committed) | the joint network with metabolites grouped by class: 15a the arms separately (14a style), 15b their difference (14b style) |
 | 10 | `10_layout_genes.csv`, `10_layout_metabolites.csv` | node positions (0..1) of the figure 10 / 11 layouts, reused by step 17 |
-| 16 | `16_protein_annotation.csv`; `$HACK_FIG/16a_joint_edge_difference_phospho.png`, `16b_joint_edge_difference_glycosylation.png` (not committed) | per network protein: MoTrPAC phosphosites measured / responding (EE, RE) and GlyGen glycosylation category and counts; the two annotated figures |
+| 16 | `16_protein_annotation.csv`, `16_crosstalk_sites.csv`; `$HACK_FIG/16a_joint_edge_difference_phospho.png`, `16b_joint_edge_difference_glycosylation.png`, `16c_joint_edge_difference_phospho_glyco_crosstalk.png` (not committed) | per network protein: phosphosites measured / responding and glycosylation category and counts; per crosstalk residue: protein, residue, MoTrPAC features, responds (EE / RE / both / no), glycosylation subtype, evidence, source; the three figures |
 | 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
 | 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
 | 18 | `18_t2d_class_summary.csv`, `18_t2d_species.csv`, `18_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
@@ -598,6 +599,19 @@ O-GlcNAc) 73, both 96; labels give site and glycan-structure counts for the 12 m
 Counts come from `network/inventory/` (see its README). **Read with care:** colours are protein-level
 summaries (the site, tissue and time are in `16_protein_annotation.csv`); glycosylation is prior knowledge,
 not an exercise response; nothing here is tested.
+
+**16c — both layers and site-level crosstalk.** Fill = the 16a phospho category, ring = the 16b glycosylation
+category, and a diamond on proteins where a phosphosite MoTrPAC measured is the **same residue** as an
+O-glycosylation site GlyGen lists (same canonical protein, position and residue; plain accessions matched on
+GlyGen's canonical, isoform accessions only when GlyGen's canonical is that isoform; multi-site features
+contribute each residue). Phosphorylation and O-GlcNAcylation compete for the same serine / threonine
+hydroxyl, so these are candidate switch sites. **59 residues on 26 proteins** (14 of them drawn in the joint
+network), almost all O-GlcNAc sites reported in the O-GlcNAc Atlas / Database; **14 respond** (7 after
+resistance only, 7 after both; none after endurance only) — BAG3 S65 / S173 / S177 / S291, EIF4B S497 / S498 /
+S504, HSPB1 S176 / T184 / S199, FOXO3 S284, PDLIM7 S111, and EIF4G1 T207 and GYS1 T721 (GlyGen "other"
+O-linked sites). Gold diamond = at least one shared residue responds. **Read with care:** the shared residue
+is measured as phosphorylated; its O-GlcNAc state is database knowledge from other studies, so these are
+candidates for competition, not observed switching.
 
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static

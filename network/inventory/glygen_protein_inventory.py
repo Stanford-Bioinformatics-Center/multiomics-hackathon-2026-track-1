@@ -29,6 +29,8 @@
 # INPUTS:  $HACK_OUT/02_nodes_string.csv (entrez_gene, gene_symbol, uniprot)
 # OUTPUTS: $HACK_OUT/inventory/glygen_protein_counts.csv   one row per protein, one column per count
 #          $HACK_OUT/inventory/glygen_phosphosites.csv      entrez_gene, glygen_ac, position, residue, kinase
+#          $HACK_OUT/inventory/glygen_glycosites.csv        entrez_gene, glygen_ac, position, residue, type, subtype,
+#                                                           category, glytoucan_ac, source (one row per site x glycan)
 #          $HACK_OUT/inventory/glygen_cache/                small per-protein count files (resume support)
 # =====================================================================================================
 
@@ -119,33 +121,42 @@ def summarise(d):
                    "source": ";".join(sorted({e.get("database", "") for e in p.get("evidence", []) if e.get("database") != "PubMed"}))} for p in ph]
     # glycation and other modifications, if present
     c["glycation_sites_unique"] = len({p.get("start_pos") for p in d.get("glycation", [])})
-    return c, sites_list
+    # glycosylation sites with a position (for site-level matching to phosphosites)
+    gsites = [{"position": g.get("start_pos"), "residue": g.get("residue") or g.get("start_aa") or "", "type": g.get("type") or "",
+               "subtype": g.get("subtype") or "", "category": g.get("site_category") or "", "glytoucan_ac": g.get("glytoucan_ac") or "",
+               "source": ";".join(sorted({e.get("database", "") for e in g.get("evidence", []) if e.get("database") != "PubMed"}))} for g in gly]
+    return c, sites_list, gsites
 
 def fetch(m):
     """Fetch (or read from cache) one protein's counts."""
     ac = m["glygen_ac"]
-    if not ac: return m, None, []
+    if not ac: return m, None, [], []
     f = os.path.join(CACHE, ac + ".json")
     if os.path.exists(f):
-        j = json.load(open(f)); return m, j["counts"], j["phospho"]
+        j = json.load(open(f))
+        if "glyco" in j: return m, j["counts"], j["phospho"], j["glyco"]
     try:
-        c, ps = summarise(json.loads(get(API.format(ac))))
+        c, ps, gs = summarise(json.loads(get(API.format(ac))))
     except Exception as e:
-        print(f"  failed {ac}: {e}", file=sys.stderr); return m, None, []
-    json.dump({"counts": c, "phospho": ps}, open(f, "w"))
-    return m, c, ps
+        print(f"  failed {ac}: {e}", file=sys.stderr); return m, None, [], []
+    json.dump({"counts": c, "phospho": ps, "glyco": gs}, open(f, "w"))
+    return m, c, ps, gs
 
 with ThreadPoolExecutor(max_workers=6) as ex:
     results = list(ex.map(fetch, mapping))
 
 # ---- 3. write the tables ---------------------------------------------------------------------------------
-cols = sorted({k for _, c, _ in results if c for k in c})
+cols = sorted({k for _, c, _, _ in results if c for k in c})
 with open(os.path.join(INV, "glygen_protein_counts.csv"), "w", newline="") as fh:
     w = csv.writer(fh); w.writerow(["entrez_gene", "gene_symbol", "uniprot", "glygen_ac", "mapped_via", "fetched"] + cols)
-    for m, c, _ in results:
+    for m, c, _, _ in results:
         w.writerow([m["entrez_gene"], m["gene_symbol"], m["uniprot"], m["glygen_ac"], m["mapped_via"], int(c is not None)] + [(c or {}).get(k, 0) for k in cols])
 with open(os.path.join(INV, "glygen_phosphosites.csv"), "w", newline="") as fh:
     w = csv.writer(fh); w.writerow(["entrez_gene", "gene_symbol", "glygen_ac", "position", "residue", "kinase", "source"])
-    for m, _, ps in results:
+    for m, _, ps, _ in results:
         for p in ps: w.writerow([m["entrez_gene"], m["gene_symbol"], m["glygen_ac"], p["position"], p["residue"], p["kinase"], p["source"]])
-print(f"fetched {sum(1 for _, c, _ in results if c)} proteins -> {INV}", file=sys.stderr)
+with open(os.path.join(INV, "glygen_glycosites.csv"), "w", newline="") as fh:
+    w = csv.writer(fh); w.writerow(["entrez_gene", "gene_symbol", "glygen_ac", "position", "residue", "type", "subtype", "category", "glytoucan_ac", "source"])
+    for m, _, _, gs in results:
+        for g in gs: w.writerow([m["entrez_gene"], m["gene_symbol"], m["glygen_ac"], g["position"], g["residue"], g["type"], g["subtype"], g["category"], g["glytoucan_ac"], g["source"]])
+print(f"fetched {sum(1 for _, c, _, _ in results if c)} proteins -> {INV}", file=sys.stderr)

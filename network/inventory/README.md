@@ -7,7 +7,7 @@
 | Question | Which phosphoproteomic (MoTrPAC, GlyGen) and glycosylation / other GlyGen (Homo sapiens) data exist for the 471 proteins and 450 metabolites in our graph, so the team can choose what to integrate into Neo4j? |
 | Status | Run 2026-09-26 against GlyGen release 2.11.1 and MotrpacHumanPreSuspensionAnalysis v0.2.4. Counts only; nothing is integrated yet |
 | Code | `glygen_protein_inventory.py` (GlyGen API, one call per protein), `glygen_motrpac_inventory.R` (MoTrPAC phospho, metabolite matching, coverage table), `export_phospho_features.R` (CSV of every MoTrPAC phospho feature ID) |
-| Outputs (never in the repo) | `$HACK_OUT/inventory/`: `coverage_summary.csv`, `protein_inventory.csv` (one row per protein, every count), `metabolite_inventory.csv`, `glygen_protein_counts.csv`, `glygen_phosphosites.csv`, `motrpac_phospho_feature_ids.csv` (all 21,873 MoTrPAC phospho features with IDs and flags; `export_phospho_features.R`) |
+| Outputs (never in the repo) | `$HACK_OUT/inventory/`: `coverage_summary.csv`, `protein_inventory.csv` (one row per protein, every count), `metabolite_inventory.csv`, `glygen_protein_counts.csv`, `glygen_phosphosites.csv`, `glygen_glycosites.csv` (glycosylation site positions, used for the step 16c crosstalk), `motrpac_phospho_feature_ids.csv` (all 21,873 MoTrPAC phospho features with IDs and flags; `export_phospho_features.R`) |
 
 ## 2. How it was done
 
