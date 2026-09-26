@@ -33,7 +33,7 @@ flowchart LR
 
 | Tool | Version used | Needed for |
 |---|---|---|
-| R + `data.table` | R 4.4, data.table 1.16 | `export_neo4j.R` |
+| R + `data.table` | R 4.4, data.table 1.18 | `export_neo4j.R` |
 | Neo4j | 5.x (tested: `neo4j:5-community` Docker image) | the graph; `CALL {…} IN TRANSACTIONS` needs 4.4+ |
 | Docker | 29.x (optional) | `run_local_neo4j.sh` (local throwaway database) |
 
