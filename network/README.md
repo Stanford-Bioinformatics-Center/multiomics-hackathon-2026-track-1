@@ -127,6 +127,7 @@ Rscript network/04_compare_arms.R             # EE vs RE comparison (~10 s; N_BO
 Rscript network/05_rhea_metabolite_protein.R  # metabolite-protein links (downloads Rhea once to $HACK_EXT)
 Rscript network/06_metabolite_network.R       # metabolite networks, EE and RE
 Rscript network/07_hub_report.R               # hubs in all four networks (nothing removed)
+Rscript network/08_metabolite_rule_experiments.R  # how the metabolite edge rule affects coverage (report only)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -159,6 +160,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 6 | `06_metabolite_nodes.csv`, `06_metabolite_summary.csv` | per metabolite: class, proteins, degree, component; headline counts |
 | 7 | `07_hub_summary.csv` | per network × hub type: degree distribution, El-Kebir and Tukey cutoffs, number of hubs, top hub, top strength per arm |
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
+| 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
 
 **Gene vector layout (18 dimensions, per arm)**
 
@@ -319,6 +321,20 @@ and SLC27A4 (7: fatty acids, ATP, AMP; 11 edges). The largest shared-protein sup
 shared kinases and other ATP-using enzymes), the classic "currency metabolite" effect. Hub *strength*
 differs by arm: e.g. CD34 (gene) 121.7 in EE vs 43.8 in RE; NT5E (protein) 67.0 vs 163.5.
 
+**Step 8 — metabolite rule experiments (report only; steps 5–6 outputs unchanged).** One change at a
+time from the step 6 rule (shared protein only, no hub removal):
+
+| Rule | Proteins allowed | Metabolites with a protein | Edges | Metabolites in network | Change |
+|---|---|---|---|---|---|
+| Baseline: our 471 genes, main class (50) | 472 | 60 | 78 | 39 | — |
+| Exp 1: all human reviewed Rhea enzymes, main class | 4,140 | 155 | 555 | **126** | **+87** |
+| Exp 2: our 471 genes, super class (14) | 472 | 60 | 122 | **44** | **+5** |
+| Side line: Rhea enzymes from any organism, main class | 236,245 | 171 | 618 | 138 | +99 |
+
+"Human reviewed" = UniProtKB/Swiss-Prot, organism 9606 (20,431 accessions, downloaded 2026-09-26).
+Coverage is limited by which proteins may link metabolites, not by the class rule: the class level
+only regroups the same 60 protein-linked metabolites.
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -328,7 +344,8 @@ differs by arm: e.g. CD34 (gene) 121.7 in EE vs 43.8 in RE; NT5E (protein) 67.0 
   every output, and it is checked by `99_validate_outputs.R`.
 - **Web services queried on 2026-09-26 (step 1c):** RefMet REST API (Metabolomics Workbench), UniChem
   (EMBL-EBI), PubChem PUG-REST (NCBI), Ontology Lookup Service (EMBL-EBI). Only metabolite names and
-  structure keys were sent. Rhea files (release 142) downloaded from ftp.expasy.org on 2026-09-26.
+  structure keys were sent. Rhea files (release 142) downloaded from ftp.expasy.org on 2026-09-26;
+  human Swiss-Prot accession list from the UniProt REST API on 2026-09-26 (step 8).
 - **Data terms:** MoTrPAC data are subject to the consortium's data-use terms (motrpac-data.org);
   STRING, ChEBI and Rhea data are CC BY 4.0; see the Metabolomics Workbench, UniChem and PubChem sites for
   their terms.
@@ -407,6 +424,7 @@ network/
   05_rhea_metabolite_protein.R  step 5  metabolite-protein links (Rhea)
   06_metabolite_network.R  step 6   metabolite networks
   07_hub_report.R          step 7   hub report (all four networks)
+  08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
   99_validate_outputs.R    checks
 ```
 
