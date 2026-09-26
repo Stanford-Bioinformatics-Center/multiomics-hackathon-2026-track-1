@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =====================================================================================================
-# network/neo4j/inventory/glygen_motrpac_inventory.R — WHICH DATA EXIST FOR OUR 471 PROTEINS AND 450 METABOLITES?
+# network/inventory/glygen_motrpac_inventory.R — WHICH DATA EXIST FOR OUR 471 PROTEINS AND 450 METABOLITES?
 # =====================================================================================================
 #
 # PURPOSE (the question this answers)
@@ -22,7 +22,7 @@
 #   Then a coverage table: for each data type, how many proteins / metabolites have at least one record.
 #
 # HOW TO RUN
-#   After glygen_protein_inventory.py:   Rscript network/neo4j/inventory/glygen_motrpac_inventory.R
+#   After glygen_protein_inventory.py:   Rscript network/inventory/glygen_motrpac_inventory.R
 #
 # DATA AND PROVENANCE
 #   MotrpacHumanPreSuspensionAnalysis v0.2.4 (MUSCLE/ADIPOSE_PROT_PH_DA, HUMAN_FEATURE_TO_GENE) and

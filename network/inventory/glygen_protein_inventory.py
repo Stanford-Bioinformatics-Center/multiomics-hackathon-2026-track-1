@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =====================================================================================================
-# network/neo4j/inventory/glygen_protein_inventory.py — WHAT DOES GLYGEN HOLD FOR EACH OF OUR 471 PROTEINS?
+# network/inventory/glygen_protein_inventory.py — WHAT DOES GLYGEN HOLD FOR EACH OF OUR 471 PROTEINS?
 # =====================================================================================================
 #
 # PURPOSE (the question this answers)
@@ -19,7 +19,7 @@
 #   3. Writes one row per protein and a long list of GlyGen phosphosites (for matching MoTrPAC sites).
 #
 # HOW TO RUN
-#   After the pipeline (steps 1-2):   python3 network/neo4j/inventory/glygen_protein_inventory.py
+#   After the pipeline (steps 1-2):   python3 network/inventory/glygen_protein_inventory.py
 #   (about 5 minutes; standard library only; re-running skips proteins already fetched)
 #
 # DATA AND PROVENANCE

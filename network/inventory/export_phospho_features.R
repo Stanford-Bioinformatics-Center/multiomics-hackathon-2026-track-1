@@ -1,10 +1,10 @@
 #!/usr/bin/env Rscript
 # =====================================================================================================
-# network/neo4j/inventory/export_phospho_features.R — ONE CSV OF ALL MOTRPAC PHOSPHOPROTEOMIC FEATURE IDS
+# network/inventory/export_phospho_features.R — ONE CSV OF ALL MOTRPAC PHOSPHOPROTEOMIC FEATURE IDS
 # =====================================================================================================
 # PURPOSE: a shareable list of every MoTrPAC human phosphosite feature (muscle and adipose) with its
 #   identifiers and site annotation, flagged for our 471 network proteins, for planning the phospho layer.
-# HOW TO RUN: Rscript network/neo4j/inventory/export_phospho_features.R   (after glygen_protein_inventory.py,
+# HOW TO RUN: Rscript network/inventory/export_phospho_features.R   (after glygen_protein_inventory.py,
 #   for the "known in GlyGen" flag; without it that column is left empty)
 # DATA: MotrpacHumanPreSuspensionAnalysis v0.2.4 (MUSCLE/ADIPOSE_PROT_PH_DA, HUMAN_FEATURE_TO_GENE);
 #   MotrpacHumanPreSuspensionData (MUSCLE/ADIPOSE_PROT_PH_QC feature metadata).

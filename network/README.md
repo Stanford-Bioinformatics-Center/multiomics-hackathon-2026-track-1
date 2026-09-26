@@ -755,6 +755,8 @@ network/
   14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
   15_joint_network_classes.R     step 15  joint network with metabolites grouped by class (figures 15a / 15b)
   17_interactive_networks.R      step 17  interactive pages of all three networks + Cytoscape files
+  inventory/                     which MoTrPAC phospho + GlyGen (human) data exist for the 471 proteins / 450
+                                 metabolites (planning the next graph layers); README.md has the results
   neo4j/                         Neo4j graph of the networks for the visualiser: export_neo4j.R, import.cypher,
                                  queries.cypher, run_local_neo4j.sh, README.md (graph model, key-file map)
   16_t2d_lipid_classes.R         step 16  T2D-relevant lipid classes per arm (tables behind section 7b)
