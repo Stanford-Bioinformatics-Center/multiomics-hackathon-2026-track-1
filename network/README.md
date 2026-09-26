@@ -16,6 +16,8 @@ the upstream QC, the methods and the tools.
   again two vectors per metabolite, one per arm, built independently.
 - **Step 1c — metabolite IDs** (`01c_metabolite_ids.py`): ChEBI, RefMet, PubChem and InChIKey
   identifiers for the 450 metabolites, for sharing and for linking to outside resources.
+- **Step 1d — metabolite classes** (`01d_metabolite_classes.py`): counts of the 450 metabolites
+  per RefMet super class and main class.
 - **Step 2 — edges** (`02_string_edges.R`): STRING links between the nodes, built with the
   network rules of El-Kebir et al. 2015. STRING gates whether an edge exists.
 - **Step 3 — edge weights** (`03_edge_weights.R`): each STRING edge is weighted by the dot product
@@ -29,6 +31,7 @@ the upstream QC, the methods and the tools.
 Rscript network/01_node_embeddings.R
 Rscript network/01b_metabolite_embeddings.R
 python3 network/01c_metabolite_ids.py     # needs internet; EXPORT_COPY=path writes a second copy
+python3 network/01d_metabolite_classes.py # offline; reads 01c's table
 Rscript network/02_string_edges.R
 Rscript network/03_edge_weights.R
 Rscript network/04_compare_arms.R      # ~10 s; N_BOOT (default 10000) sets the draws
@@ -50,7 +53,7 @@ results are kept in separate trees, so nothing is written inside the repo.
 | `data.table` | 1.18 | tables |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | `igraph` | 2.2 | connected components |
-| Python 3 (standard library only) | — | step 1c web lookups (RefMet, UniChem, PubChem, EBI OLS) |
+| Python 3 (standard library only) | — | step 1c web lookups (RefMet, UniChem, PubChem, EBI OLS); step 1d counts |
 | `Matrix` | 1.7 | sparse gene × edge matrix (step 4) |
 | STRING (curated file) | combined_score ≥ 700 | which genes are connected |
 
@@ -215,6 +218,36 @@ differ slightly; `chebi_method` records how each ID was found.
 | File | Contents |
 |------|----------|
 | `01c_metabolite_ids.csv` | Per metabolite: `refmet_name`, `refmet_id`, `super_class`, `main_class`, `pubchem_cid`, `inchi_key`, `chebi_id`, `chebi_all`, `chebi_method` |
+
+## Step 1d: metabolite classes
+
+Counts the 450 metabolites by RefMet class (super class → main class), using the classes fetched in
+step 1c. Lipids are the LIPID MAPS super classes (fatty acyls, glycerolipids, glycerophospholipids,
+sphingolipids, sterol and prenol lipids). **320 of 450 (71%) are lipids.**
+
+| Super class | n | % | Largest main classes |
+|---|---|---|---|
+| Glycerophospholipids | 109 | 24.2 | PC 71, PE 38 |
+| Fatty Acyls | 83 | 18.4 | fatty acids 55 (incl. acylcarnitines), fatty esters 19 |
+| Glycerolipids | 70 | 15.6 | triglycerides 59, diglycerides 8 |
+| Organic acids | 66 | 14.7 | amino acids and peptides 46, TCA acids 6 |
+| Sphingolipids | 49 | 10.9 | sphingomyelins 31, ceramides 13 |
+| Nucleic acids | 28 | 6.2 | purines 17, pyrimidines 9 |
+| Alkaloids | 14 | 3.1 | |
+| Benzenoids | 7 | 1.6 | |
+| Sterol Lipids | 7 | 1.6 | bile acids 3 |
+| Organic nitrogen compounds | 6 | 1.3 | |
+| Carbohydrates | 3 | 0.7 | |
+| Organoheterocyclic compounds | 3 | 0.7 | |
+| Prenol Lipids | 2 | 0.4 | |
+| Unclassified | 3 | 0.7 | `Leucine/Isoleucine`, `Citric acid/Isocitric acid`, `C1-DeoxyCer 18:0;O/24:1` |
+
+The three unclassified entries have no RefMet record (two are merged isomer measurements); they are
+kept as "Unclassified" rather than assigned by hand. 50 main classes in total.
+
+| File | Contents |
+|------|----------|
+| `01d_metabolite_class_counts.csv` | One row per super class and per main class: `level`, `is_lipid`, `super_class`, `main_class`, `n_metabolites`, `pct_of_450`, `n_with_chebi`, `examples` |
 
 ## Step 2: edges
 
