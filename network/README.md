@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (29 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 14, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Status | Gene and metabolite networks built and validated (33 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 15, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -55,6 +55,10 @@ flowchart LR
   D --> K[Step 7<br/>hub report, all 4 networks]
   H --> K
   H --> P
+  D --> J[Step 14<br/>joint protein + metabolite network<br/>Rhea cross-edges, doubled metabolite vector]
+  H --> J
+  G --> J
+  J --> U
   P --> U[User: which relationships differ<br/>between the arms]
   F --> U
 ```
@@ -76,10 +80,15 @@ flowchart LR
    Nothing is removed.
 8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
    side, to choose the approach.
-9. **Descriptive and exploratory tables (steps 13, 14).** Statistics of the log fold changes per ome
+9. **Descriptive and exploratory tables (steps 13, 15).** Statistics of the log fold changes per ome
    and arm (LaTeX PDF), and T2D-relevant lipid classes per arm with the clinical NEFA check (section 7b).
 10. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
    metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
+11. **Joint network (step 14).** Genes/proteins and metabolites in one network: the gene edges (step 3),
+   the metabolite edges (step 6) and the Rhea metabolite–protein links (step 5) as cross-edges. Each
+   cross-edge weight is one dot product of the metabolite's embedding doubled to 18 values (so it
+   multiplies RNA and protein equally) with the gene's 18-value embedding. Figures 14a (EE above RE) and
+   14b (w_EE − w_RE); proteins are circles, metabolites triangles.
 
 ## 4. Setup
 
@@ -140,7 +149,8 @@ Rscript network/10_plot_arm_networks.R        # figures: EE vs RE networks, gene
 Rscript network/11_plot_edge_difference.R     # figures: one network per data type, edges = w_EE - w_RE -> $HACK_FIG
 Rscript network/12_normalization_comparison.R # four normalisations side by side (report only) -> $HACK_FIG
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
-Rscript network/14_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
+Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
+Rscript network/15_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -171,7 +181,10 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
-| 14 | `14_t2d_class_summary.csv`, `14_t2d_species.csv`, `14_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
+| 14 | `14_joint_edges.csv` | per joint edge: `node_a`, `node_b`, `edge_type` (protein - protein, metabolite - metabolite, metabolite - protein), `w_EE`, `w_RE`, `w_diff` |
+| 14 | `14_joint_nodes.csv`, `14_joint_summary.csv` | per node: type, class, mean response and strength per arm, degree per edge type; per edge type: count, cor(w_EE, w_RE), sign changes, median \|w\| |
+| 14 | `$HACK_FIG/14a_joint_network_EE_vs_RE.png`, `14b_joint_network_edge_difference.png` (not committed) | joint network: EE (top) and RE (bottom) in one layout; one network of w_EE − w_RE |
+| 15 | `15_t2d_class_summary.csv`, `15_t2d_species.csv`, `15_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
@@ -479,6 +492,34 @@ The omes' ranges differ (metabolite maximum 4.2 vs protein 1.8), which is what t
 step corrects; the largest changes in every ome occur in the resistance arm, which is why per-arm
 max-normalisation (step 12, option 2) shrinks resistance relative to endurance.
 
+**Step 14 — joint protein + metabolite network.** One network per arm with three edge types, all gated
+without the exercise data: protein–protein (STRING ≥ 700, step 2; 431), metabolite–metabolite (shared
+or STRING-linked Rhea enzymes + same super class, step 6; 147) and metabolite–protein (Rhea, step 5:
+the metabolite is a substrate or product of a reaction catalysed by the protein; 186). Within-layer
+weights are carried over from steps 3 and 6. For a metabolite–protein edge the metabolite's 9-value
+embedding is **doubled to 18 values** — each tissue × time value is placed in both the RNA slot and the
+protein slot of that tissue × time, in the gene embedding's column order — and the weight is **one dot
+product** of this 18-value vector with the gene's 18-value vector (the team's design: the metabolite
+multiplies transcriptomics and proteomics with equal weight). The two empty gene dimensions (adipose
+protein at 0.5 h and 24 h) are skipped, leaving 16 terms.
+
+| Edge type | Edges | cor(w_EE, w_RE) | Sign changes | Median \|w\| |
+|---|---|---|---|---|
+| protein – protein | 431 | 0.445 | 152 | 0.042 |
+| metabolite – metabolite | 147 | 0.177 | 52 | 0.0070 |
+| metabolite – protein | 186 | 0.375 | 58 | 0.013 |
+| all | 764 | 0.458 | 262 | 0.022 |
+
+Figure 14a stacks the EE (top) and RE (bottom) layers in one identical force-directed layout (seed
+20260926; no cross-layer lines), as in 10a / 10b: node fill = mean normalised response, size = strength,
+edge colour = edge type, dashed = negative weight. Figure 14b draws one network in the same layout whose
+edge colour and width show w_EE − w_RE (red = higher in endurance, blue = higher in resistance, grey =
+the same; line type = edge type), as in 11a / 11b. Proteins are circles and metabolites triangles in
+both; the 10 strongest proteins and 10 strongest metabolites are labelled (14b: largest strength
+differences). **Read with care:** the three edge types have different numbers of terms (16, 9, 16) and
+therefore different typical sizes (median \|w\| above), so metabolite–metabolite edges look thin next
+to the others; differences between the arms are not tested.
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -512,9 +553,9 @@ max-normalisation (step 12, option 2) shrinks resistance relative to endurance.
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **27 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **33 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
-product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules) and compares the headline numbers below, printing "same" or "CHANGED".
+product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product) and compares the headline numbers below, printing "same" or "CHANGED".
 
 | Result | Expected (2026-09-26) |
 |---|---|
@@ -527,6 +568,7 @@ product of the node vectors; normalised values within −1..+1 with each ome's e
 | Metabolites / genes linked through Rhea | 60 / 80 |
 | Metabolite edges / metabolites in the network (super class, shared or STRING-linked proteins) | 147 / 44 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
+| Joint network edges / cor(w_EE, w_RE) of metabolite–protein edges | 764 / 0.375 |
 
 **Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.45 (metabolite edges:
 r = 0.18), and 152 of 431 gene edges (52 of 147 metabolite edges) change sign between arms. Without a
@@ -539,7 +581,7 @@ also needs a noise-only reference (roadmap).
 
 These notes record what the data show and how they relate to the literature, so the team can decide
 what to pursue. None of the differences between the arms is statistically tested (the bootstrap was
-removed); treat every item as a hypothesis. Tables: step 14 outputs; drivers from steps 1b and 6.
+removed); treat every item as a hypothesis. Tables: step 15 outputs; drivers from steps 1b and 6.
 
 **Sphingolipids vs fatty acyls differ between the arms, each driven by one tissue and time.**
 - *Ceramides* (C14–C22) are more coordinated after **endurance**, driven by **adipose at 4 h**: all five
@@ -618,7 +660,8 @@ network/
   11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)
   12_normalization_comparison.R  step 12  four normalisation options compared (report only)
   13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
-  14_t2d_lipid_classes.R         step 14  T2D-relevant lipid classes per arm (tables behind section 7b)
+  14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
+  15_t2d_lipid_classes.R         step 15  T2D-relevant lipid classes per arm (tables behind section 7b)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)

@@ -188,6 +188,32 @@ hs <- rd("07_hub_summary.csv"); note("step7_gene_hubs_tukey", hs[1, n_hubs_tukey
 # Record hubs flagged by the El-Kebir rule in any network.
 note("step7_hubs_elkebir_all_networks", sum(hs$n_hubs_elkebir), 0)
 
+# ---- step 14: joint protein + metabolite network ------------------------------------------------------
+# The joint edge table.
+je <- rd("14_joint_edges.csv")
+# Check the three edge types have the expected sizes (all step 3 gene edges, all step 6 metabolite edges, all step 5 links).
+check(all(table(je$edge_type)[c("protein - protein", "metabolite - metabolite", "metabolite - protein")] ==
+          c(nrow(w), nrow(me), nrow(unique(lk[, .(metabolite, gene_symbol)])))), "step 14: edge counts per type")
+# The metabolite - protein edges only.
+jx <- je[edge_type == "metabolite - protein"]
+# Check every metabolite - protein edge is a Rhea link from step 5 (the gate).
+check(all(paste(jx$node_a, jx$node_b) %in% key), "step 14: metabolite-protein edges are Rhea links")
+# Gene matrices by symbol, all 18 columns (the two empty adipose protein columns stay NA).
+G18 <- function(N) { m <- as.matrix(N[, dims, with = FALSE]); rownames(m) <- N$gene_symbol; m }
+# The doubled metabolite embedding, built independently by column name: for gene column "<tissue>_<ome>_<time>"
+# take the metabolite column "<tissue>_metab_<time>".
+D18 <- function(Mm) Mm[, sub("_(rna|prot)_", "_metab_", dims)]
+# Check both arms' weights = one dot product of the 18-value metabolite and gene embeddings (NA dims skipped).
+check(isTRUE(all.equal(jx$w_EE, unname(rowSums(D18(MEm)[jx$node_a, ] * G18(EE)[jx$node_b, ], na.rm = TRUE)))) &&
+      isTRUE(all.equal(jx$w_RE, unname(rowSums(D18(MRm)[jx$node_a, ] * G18(RE)[jx$node_b, ], na.rm = TRUE)))),
+      "step 14: metabolite-protein weights = doubled-embedding dot products")
+# Check the within-layer weights are carried over unchanged from steps 3 and 6.
+check(isTRUE(all.equal(sort(je[edge_type == "protein - protein", w_EE]), sort(w$w_EE))) &&
+      isTRUE(all.equal(sort(je[edge_type == "metabolite - metabolite", w_RE]), sort(me$w_RE))), "step 14: within-layer weights unchanged")
+# Record the joint network's size and the arms' agreement on the metabolite - protein edges.
+note("step14_joint_edges", nrow(je), 764)
+note("step14_cross_edges_cor", round(cor(jx$w_EE, jx$w_RE), 3), 0.375)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))

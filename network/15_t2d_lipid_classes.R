@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # =====================================================================================================
-# 14_t2d_lipid_classes.R — STEP 14: HOW DO T2D-RELEVANT LIPID CLASSES RESPOND TO EACH EXERCISE ARM?
+# 15_t2d_lipid_classes.R — STEP 15: HOW DO T2D-RELEVANT LIPID CLASSES RESPOND TO EACH EXERCISE ARM?
 # =====================================================================================================
 #
 # PURPOSE (the question this answers)
@@ -22,7 +22,7 @@
 #   UNCORRECTED marker of values that stand out from their own measurement noise, not a test.
 #
 # HOW TO RUN
-#   After steps 1b and 1c:   Rscript network/14_t2d_lipid_classes.R      (a few seconds)
+#   After steps 1b and 1c:   Rscript network/15_t2d_lipid_classes.R      (a few seconds)
 #
 # DATA AND PROVENANCE
 #   MoTrPAC human pre-suspension study, R package MotrpacHumanPreSuspensionAnalysis v0.2.4.
@@ -41,10 +41,10 @@
 #   package object CLIN_CHEMISTRY_DA                  feature_id, contrast_category, Timepoint, logFC, adj_p_value
 #
 # OUTPUTS (files, locations, columns)
-#   $HACK_OUT/14_t2d_class_summary.csv     super_class, main_class, tissue, time, arm, n, mean_logFC,
+#   $HACK_OUT/15_t2d_class_summary.csv     super_class, main_class, tissue, time, arm, n, mean_logFC,
 #                                          n_clearly_down, n_clearly_up
-#   $HACK_OUT/14_t2d_species.csv           metabolite, tissue, time, arm, logFC, z
-#   $HACK_OUT/14_clinical_nefa_lactate.csv feature (NEFA, Glycerol, Lactate), arm, time, logFC, adj_p
+#   $HACK_OUT/15_t2d_species.csv           metabolite, tissue, time, arm, logFC, z
+#   $HACK_OUT/15_clinical_nefa_lactate.csv feature (NEFA, Glycerol, Lactate), arm, time, logFC, adj_p
 #   Nothing is written inside the repository.
 #
 # EXPECTED OUTPUT (2026-09-26) AND VALIDATION
@@ -102,14 +102,14 @@ cls <- d[main_class %in% CLASSES,
 # Order rows by class, tissue, time and arm.
 cls <- cls[order(super_class, main_class, tissue, match(time, c("0.5h", "4h", "24h")), arm)]
 # Save.
-fwrite(cls, file.path(OUT, "14_t2d_class_summary.csv"))
+fwrite(cls, file.path(OUT, "15_t2d_class_summary.csv"))
 
 # ---- table 2: T2D-relevant species -------------------------------------------------------------------
 sp <- d[metabolite %in% SPECIES, .(metabolite, tissue, time, arm, logFC = round(logFC, 3), z = round(z, 2))]
 # Order rows by species, tissue, time and arm.
 sp <- sp[order(metabolite, tissue, match(time, c("0.5h", "4h", "24h")), arm)]
 # Save.
-fwrite(sp, file.path(OUT, "14_t2d_species.csv"))
+fwrite(sp, file.path(OUT, "15_t2d_species.csv"))
 
 # ---- table 3: clinical chemistry (independent assay) --------------------------------------------------
 cc <- as.data.table(CLIN_CHEMISTRY_DA)[feature_id %in% c("NEFA", "Glycerol", "Lactate") & contrast_category %in% c("EE-CON", "RE-CON"),
@@ -120,7 +120,7 @@ TORDER <- c("pre_exercise", "during_20_min", "during_40_min", "post_10_min", "po
 # (apply that order)
 cc <- cc[order(feature, match(time, TORDER), arm)]
 # Save.
-fwrite(cc, file.path(OUT, "14_clinical_nefa_lactate.csv"))
+fwrite(cc, file.path(OUT, "15_clinical_nefa_lactate.csv"))
 
 # ---- headline numbers on screen ----------------------------------------------------------------------
 # Plasma free fatty acids at 0.5 h, per arm.
