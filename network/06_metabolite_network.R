@@ -8,18 +8,20 @@
 #   edge weights, exactly like the gene networks (steps 2-3).
 #   EDGE RULE (the team's rule, applied as an on/off gate that never uses the exercise data):
 #     two metabolites are connected if BOTH
-#       (a) they are handled by at least one SAME protein, where the protein must be one of our 471 genes
-#           and "handled" means Rhea records the metabolite in a reaction that protein catalyses (step 5);
+#       (a) they are handled by the SAME protein, OR by two DIFFERENT proteins that interact in STRING
+#           (combined score >= 700, i.e. an edge of the step 2 gene network). Proteins must be among our
+#           471 genes, and "handled" means Rhea records the metabolite in a reaction that protein
+#           catalyses (step 5). The STRING part was adopted by the team after step 8 (experiment 3): it
+#           adds 25 edges and no metabolites. Set METAB_LINK=shared to use the same-protein rule only;
 #       (b) they belong to the same RefMet SUPER class (14 broad families, e.g. both "Nucleic acids",
 #           both "Fatty Acyls"; from step 1c). The team chose the super class over the 50 main classes
 #           after step 8 showed the main-class rule left only 39 metabolites connected (super class: 44).
 #           Set METAB_CLASS_LEVEL=main_class to use the narrower classes instead.
-#     Only shared proteins count (no second step through interacting proteins).
 #   EDGE WEIGHT (per arm, as in step 3): the dot product of the two metabolites' 9-number vectors from
 #   step 1b (adipose, blood, muscle x 0.5 / 4 / 24 h), plus the 0-1 version sigmoid(w / s) with
 #   s = median |w| over both arms.
-#   These are INFERRED FUNCTIONAL links (shared enzyme + same chemical class), not physical interactions:
-#   metabolites do not bind each other.
+#   These are INFERRED FUNCTIONAL links (shared or interacting enzymes + same chemical class), not physical
+#   interactions: metabolites do not bind each other.
 #
 # NO HUB REMOVAL (the team's decision for now). A protein that handles many metabolites of one class
 #   connects all of them to each other; step 7 reports these hubs.
@@ -27,9 +29,11 @@
 # TECH STACK
 #   R 4.4; data.table; igraph (connected components).
 #
-# INPUTS:  $HACK_OUT/05_metabolite_protein_links.csv, $HACK_OUT/01c_metabolite_ids.csv (classes),
+# INPUTS:  $HACK_OUT/05_metabolite_protein_links.csv, $HACK_OUT/02_edges.csv (STRING gene pairs),
+#          $HACK_OUT/01c_metabolite_ids.csv (classes),
 #          $HACK_OUT/01b_metab_nodes_EE.csv and _RE.csv (the 9-number vectors)
-# OUTPUTS: $HACK_OUT/06_metabolite_edges.csv    one row per edge: shared proteins, w_EE, w_RE, w_diff, sig_*
+# OUTPUTS: $HACK_OUT/06_metabolite_edges.csv    one row per edge: link type, shared proteins, STRING-linked
+#                                               protein pairs, w_EE, w_RE, w_diff, sig_*
 #          $HACK_OUT/06_metabolite_nodes.csv    one row per metabolite: class, proteins, degree, component
 #          $HACK_OUT/06_metabolite_summary.csv  headline counts
 # =====================================================================================================
@@ -52,14 +56,31 @@ ids <- fread(file.path(OUT, "01c_metabolite_ids.csv"))[, .(metabolite, super_cla
 ids[, rule_class := get(CLASS_LEVEL)]
 
 # ---- edge rule ------------------------------------------------------------------------------------
-# All pairs of metabolites that share a protein: join the link table to itself on the protein.
-pairs <- merge(link[, .(m1 = metabolite, entrez_gene, gene_symbol)],
-               link[, .(m2 = metabolite, entrez_gene)], by = "entrez_gene", allow.cartesian = TRUE)
-# Keep each unordered pair once (alphabetical order) and drop a metabolite paired with itself.
-pairs <- pairs[m1 < m2]
-# Per pair: how many proteins they share, and which.
-pairs <- pairs[, .(n_shared_proteins = uniqueN(entrez_gene),
-                   shared_proteins = paste(sort(unique(gene_symbol)), collapse = ";")), by = .(m1, m2)]
+# Which protein links count: same protein only ("shared") or same OR STRING-interacting ("shared_or_string").
+METAB_LINK <- Sys.getenv("METAB_LINK", unset = "shared_or_string")
+# Safety check: only these two options exist.
+stopifnot(METAB_LINK %in% c("shared", "shared_or_string"))
+# Every (metabolite, protein) paired with every other (metabolite, protein); small (60 metabolites).
+allp <- merge(link[, .(k = 1L, m1 = metabolite, g1 = entrez_gene, s1 = gene_symbol)],
+              link[, .(k = 1L, m2 = metabolite, g2 = entrez_gene, s2 = gene_symbol)], by = "k", allow.cartesian = TRUE)
+# Keep each unordered metabolite pair once (alphabetical order), never a metabolite with itself.
+allp <- allp[m1 < m2]
+# STRING-interacting gene pairs among our 471 genes (the step 2 edges), as keys in both orders.
+se <- fread(file.path(OUT, "02_edges.csv"), colClasses = list(character = c("entrez_a", "entrez_b")))
+# (keys like "1234 5678" in both orders, so the order of a pair never matters)
+skey <- c(paste(se$entrez_a, se$entrez_b), paste(se$entrez_b, se$entrez_a))
+# Label each (protein, protein) combination: the same protein, or two proteins that interact in STRING.
+allp[, link_kind := fifelse(g1 == g2, "shared", fifelse(paste(g1, g2) %in% skey, "string", NA_character_))]
+# Keep the combinations the chosen rule allows.
+allp <- allp[link_kind == "shared" | (METAB_LINK == "shared_or_string" & link_kind == "string")]
+# Per metabolite pair: the shared proteins, and the STRING-interacting protein pairs, that link them.
+pairs <- allp[, .(n_shared_proteins = uniqueN(g1[link_kind == "shared"]),
+                  shared_proteins = paste(sort(unique(s1[link_kind == "shared"])), collapse = ";"),
+                  string_protein_pairs = paste(sort(unique(paste0(s1, "~", s2)[link_kind == "string"])), collapse = ";")),
+              by = .(m1, m2)]
+# How each pair is linked: by a shared protein, only through STRING-interacting proteins, or both.
+pairs[, link_type := fifelse(n_shared_proteins > 0 & string_protein_pairs != "", "shared protein + STRING",
+                     fifelse(n_shared_proteins > 0, "shared protein", "STRING-interacting proteins"))]
 # Attach each metabolite's rule class (and its main class, for information).
 pairs <- merge(pairs, ids[, .(m1 = metabolite, class1 = rule_class, main_class_a = main_class)], by = "m1")
 # ...and of the second metabolite.
@@ -67,7 +88,7 @@ pairs <- merge(pairs, ids[, .(m2 = metabolite, class2 = rule_class, main_class_b
 # Keep pairs in the same rule class (a missing class never matches).
 e <- pairs[!is.na(class1) & class1 != "" & class1 == class2]
 # Report how many shared-protein pairs the class rule keeps.
-message(sprintf("pairs sharing a protein: %d; also same %s (edges): %d", nrow(pairs), CLASS_LEVEL, nrow(e)))
+message(sprintf("rule %s: linked pairs %d; also same %s (edges): %d", METAB_LINK, nrow(pairs), CLASS_LEVEL, nrow(e)))
 
 # ---- edge weights per arm (dot products of the 9-number vectors) --------------------------------
 # Helper: read one arm's metabolite vectors as a matrix (row names = metabolite names).
@@ -98,7 +119,8 @@ e[, class_level := CLASS_LEVEL]
 e[, class2 := NULL]
 # Put the columns in a readable order.
 setcolorder(e, c("metabolite_a", "metabolite_b", "class", "class_level", "main_class_a", "main_class_b",
-                 "n_shared_proteins", "shared_proteins", "w_EE", "w_RE", "w_diff", "sig_EE", "sig_RE"))
+                 "link_type", "n_shared_proteins", "shared_proteins", "string_protein_pairs",
+                 "w_EE", "w_RE", "w_diff", "sig_EE", "sig_RE"))
 # Sort: by class, most shared proteins first, then alphabetically.
 setorder(e, class, -n_shared_proteins, metabolite_a, metabolite_b)
 # Save the edge list.
@@ -127,10 +149,10 @@ fwrite(nodes, file.path(OUT, "06_metabolite_nodes.csv"))
 
 # Headline counts.
 summ <- data.table(
-  metric = c("class_level", "metabolites", "metabolites_with_a_protein", "pairs_sharing_a_protein", "edges_same_class",
+  metric = c("link_rule", "class_level", "metabolites", "metabolites_with_a_protein", "pairs_linked", "edges_same_class",
              "metabolites_with_edges", "components_size_ge2", "largest_component", "median_degree_nonisolated",
              "sigmoid_scale", "cor_w_EE_w_RE", "edges_sign_change"),
-  value = c(CLASS_LEVEL, nrow(nodes), sum(nodes$n_proteins > 0), nrow(pairs), nrow(e),
+  value = c(METAB_LINK, CLASS_LEVEL, nrow(nodes), sum(nodes$n_proteins > 0), nrow(pairs), nrow(e),
             sum(nodes$degree > 0), sum(comp$csize >= 2), max(comp$csize), median(nodes$degree[nodes$degree > 0]),
             SIG_SCALE, if (nrow(e) > 2) cor(e$w_EE, e$w_RE) else NA, sum(sign(e$w_EE) != sign(e$w_RE))))
 # Save and show.

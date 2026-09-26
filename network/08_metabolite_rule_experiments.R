@@ -7,16 +7,16 @@
 #   The metabolite network (step 6) connects two metabolites if they share a protein that handles both
 #   (Rhea, step 5) AND belong to the same chemical class. This script tests, one change at a time, how
 #   many metabolites would be in the network under different rules. It does NOT change the outputs of
-#   steps 5-6; it only reports counts. (After these experiments the team chose experiment 2, the super
-#   class with our 471 genes, as the step 6 rule.)
+#   steps 5-6; it only reports counts. (After these experiments the team chose experiment 3 as the step 6
+#   rule: super class, our 471 genes, and shared OR STRING-interacting proteins.)
 #   Rules compared (everything else identical to step 6: shared protein only, no hub removal):
 #     baseline      proteins = our 471 genes;                        class = RefMet MAIN class (50)  (original rule)
 #     experiment 1  proteins = ALL human reviewed enzymes in Rhea;   class = MAIN class
-#     experiment 2  proteins = our 471 genes;                        class = RefMet SUPER class (14) (chosen rule)
+#     experiment 2  proteins = our 471 genes;                        class = RefMet SUPER class (14)
 #     (side line)   proteins = all Rhea enzymes from ANY organism;   class = MAIN class
 #     experiment 3  proteins = our 471 genes;                        class = SUPER class; two metabolites
 #                   are also linked if their proteins are DIFFERENT but interact in STRING (>= 700),
-#                   i.e. "same protein OR STRING-interacting proteins" instead of "same protein" only.
+#                   i.e. "same protein OR STRING-interacting proteins" instead of "same protein" only (chosen rule).
 #   For every rule the table also reports how the two arms compare on that network: the correlation
 #   between the arms' edge weights (dot products of the step 1b vectors) and how many edges change sign.
 #   Terminology: none of these is a physical interaction BETWEEN metabolites. The metabolite-protein link
@@ -157,11 +157,11 @@ runs <- list(
   # experiment 1: every human reviewed Rhea enzyme may link metabolites
   run_rule(intersect(unique(enz$uniprot), human), "main_class", "exp 1: all human Rhea enzymes, main class"),
   # experiment 2: broader chemical class (the adopted step 6 rule)
-  run_rule(ours, "super_class", "exp 2: our 471 genes, super class (step 6 rule)"),
+  run_rule(ours, "super_class", "exp 2: our 471 genes, super class"),
   # side line: enzymes from any organism (for reference only)
   run_rule(unique(enz$uniprot), "main_class", "side line: Rhea enzymes from any organism, main class"),
   # experiment 3: the step 6 rule, but STRING-interacting proteins also link metabolites
-  run_rule(ours, "super_class", "exp 3: step 6 rule + STRING-interacting proteins (>= 700)", link = "string"))
+  run_rule(ours, "super_class", "exp 3: exp 2 + STRING-interacting proteins (>= 700) (step 6 rule)", link = "string"))
 # The counts table, one row per rule.
 res <- rbindlist(lapply(runs, `[[`, "row"))
 # The edges experiment 3 adds to experiment 2 (same proteins and class; only the STRING step differs).
@@ -178,8 +178,8 @@ fwrite(extra[, .(metabolite_a = m1, metabolite_b = m2, class, linked_by = via_ge
 res[, change_vs_baseline := metabolites_in_network - metabolites_in_network[1]]
 # Safety check: the rule matching step 6's class level reproduces step 6 exactly.
 s6 <- fread(file.path(OUT, "06_metabolite_summary.csv")); v6 <- setNames(s6$value, s6$metric)
-# (row 1 = main class, row 3 = super class, both with our 471 genes)
-row6 <- if (v6[["class_level"]] == "main_class") 1 else 3
+# (row 1 = main class, row 3 = super class, row 5 = super class + STRING-interacting proteins; our 471 genes)
+row6 <- if (v6[["class_level"]] == "main_class") 1 else if (v6[["link_rule"]] == "shared") 3 else 5
 # (edges and metabolites in the network must match step 6's summary)
 stopifnot(res$edges[row6] == as.numeric(v6[["edges_same_class"]]),
           res$metabolites_in_network[row6] == as.numeric(v6[["metabolites_with_edges"]]))

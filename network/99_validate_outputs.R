@@ -155,13 +155,21 @@ ids2 <- rd("01c_metabolite_ids.csv"); cl <- setNames(ids2[[me$class_level[1]]], 
 # Check both ends of every edge are in the edge's class.
 check(all(cl[me$metabolite_a] == me$class & cl[me$metabolite_b] == me$class), "step 6: same class")
 # The protein rule holds: every listed shared protein handles both metabolites in step 5.
-sp <- me[, .(g = unlist(strsplit(shared_proteins, ";"))), by = .(metabolite_a, metabolite_b)]
+sp <- me[shared_proteins != "" & !is.na(shared_proteins), .(g = unlist(strsplit(shared_proteins, ";"))), by = .(metabolite_a, metabolite_b)]
 # Every metabolite-protein pair from step 5, as text keys.
 key <- paste(lk$metabolite, lk$gene_symbol)
 # Check each listed shared protein handles both metabolites.
 check(all(paste(sp$metabolite_a, sp$g) %in% key & paste(sp$metabolite_b, sp$g) %in% key), "step 6: shared protein handles both")
 # Metabolite edge weights are the dot products of the 9-number vectors.
 MEm <- as.matrix(ME[, -1]); rownames(MEm) <- ME$metabolite; MRm <- as.matrix(MR[, -1]); rownames(MRm) <- MR$metabolite
+# Check both arms' weights.
+check(all(me$link_type != "" & (me$shared_proteins != "" | me$string_protein_pairs != "")), "step 6: every edge has a protein link")
+# Check STRING-linked protein pairs are edges of the step 2 gene network.
+spp <- me[string_protein_pairs != "" & !is.na(string_protein_pairs), .(pp = unlist(strsplit(string_protein_pairs, ";")))]
+# (the step 2 gene edges as "A~B" keys in both orders)
+gk <- c(paste(e$symbol_a, e$symbol_b, sep = "~"), paste(e$symbol_b, e$symbol_a, sep = "~"))
+# (every listed pair must be one of those)
+check(all(spp$pp %in% gk), "step 6: STRING-linked protein pairs are step 2 edges")
 # Check both arms' weights.
 check(isTRUE(all.equal(me$w_EE, unname(rowSums(MEm[me$metabolite_a, ] * MEm[me$metabolite_b, ])))) &&
       isTRUE(all.equal(me$w_RE, unname(rowSums(MRm[me$metabolite_a, ] * MRm[me$metabolite_b, ])))), "step 6: weights = dot products")
@@ -172,7 +180,7 @@ note("step5_metabolites_linked", as.numeric(v5[["metabolites_linked_to_our_genes
 # Record genes linked to our metabolites.
 note("step5_genes_linked", as.numeric(v5[["genes_linked_to_our_metabolites"]]), 80)
 # Record the number of metabolite edges.
-note("step6_metabolite_edges", nrow(me), 122)
+note("step6_metabolite_edges", nrow(me), 147)
 # Record the number of metabolites in the metabolite network.
 note("step6_metabolites_in_network", uniqueN(c(me$metabolite_a, me$metabolite_b)), 44)
 # Record gene hubs above the Tukey fence.

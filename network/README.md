@@ -69,11 +69,14 @@ flowchart LR
 5. **Metabolite identifiers (steps 1c, 1d).** ChEBI and other database IDs and class counts.
 6. **Metabolite networks (steps 5, 6).** Rhea links each metabolite to the proteins (among our 471
    genes) that use it as an enzyme substrate or product. Two metabolites are connected if they share
-   such a protein AND the same RefMet super class; edge weights are dot products of their 9-number
+   such a protein (or two such proteins interact in STRING) AND the same RefMet super class; edge weights
+   are dot products of their 9-number
    vectors, per arm. Same edges in both arms, as for genes.
 7. **Hub report (step 7).** How many hubs each of the four networks has, and what hangs on them.
    Nothing is removed.
-8. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
+8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
+   side, to choose the approach.
+9. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
    metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
 
 ## 4. Setup
@@ -132,6 +135,7 @@ Rscript network/08_metabolite_rule_experiments.R  # how the metabolite edge rule
 Rscript network/resource/export_feature_lists.R  # shareable feature lists -> $HACK_RES (not committed)
 Rscript network/10_plot_arm_networks.R        # figures: EE vs RE networks, genes and metabolites -> $HACK_FIG
 Rscript network/11_plot_edge_difference.R     # figures: one network per data type, edges = w_EE - w_RE -> $HACK_FIG
+Rscript network/12_normalization_comparison.R # four normalisations side by side (report only) -> $HACK_FIG
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -162,6 +166,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
+| 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs linked, edges, metabolites in the network, cor(w_EE, w_RE), sign changes, change vs baseline |
 | 8 | `08_string_neighbour_extra_edges.csv` | the 25 edges the STRING-neighbour rule adds, with the linking protein pair(s) and both arms' weights |
@@ -343,22 +348,26 @@ entries are not expanded to our species. **Result:** 175 of our 213 ChEBI-identi
 Rhea; **60 metabolites link to 80 of our 471 genes (186 links)**. Coverage is limited because the gene
 set (bounded by the blood OLINK panel) has few metabolic enzymes, and most lipid species have no ChEBI ID.
 
-**Step 6 — metabolite networks.** Rule: a shared protein among our 471 genes AND the same RefMet
-**super class** (14 families; chosen by the team after step 8; `METAB_CLASS_LEVEL=main_class` switches
-back to the 50 main classes). 161 metabolite pairs share a protein; **122 also share a super class and
-become edges**, among **44 metabolites** in 5 components (largest 15): nucleic acids 54 edges, fatty
-acyls 35, organic acids 23, sphingolipids 10. Same edges in both arms; weights per arm (sigmoid scale
-s = 0.0074). The two arms' metabolite edge weights correlate at r = 0.16 and 42 of 122 edges change sign
-(no noise reference or test yet). The edge table keeps
-both metabolites' main classes (`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
+**Step 6 — metabolite networks.** Rule (team choices after step 8): two metabolites are linked if the
+**same** protein among our 471 genes handles both in Rhea, **or** two different such proteins that
+**interact in STRING** (≥ 700, i.e. an edge of the step 2 gene network) handle them; AND they share a
+RefMet **super class** (14 families). `METAB_LINK=shared` restricts to the same-protein rule and
+`METAB_CLASS_LEVEL=main_class` switches to the 50 main classes. 224 metabolite pairs are linked; **147
+also share a super class and become edges** (122 via a shared protein, 25 only via STRING-interacting
+proteins), among **44 metabolites** in 4 components (largest 15): nucleic acids 72 edges, fatty acyls 35,
+organic acids 30, sphingolipids 10. The `link_type` column says how each edge is justified, with the
+shared proteins and the STRING protein pairs listed. Same edges in both arms; weights per arm (sigmoid
+scale s = 0.0070). The two arms' metabolite edge weights correlate at r = 0.18 and 52 of 147 edges change
+sign (no noise reference or test yet). The edge table keeps both metabolites' main classes
+(`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
 
 **Step 7 — hubs (nothing removed).**
 
 | Network (EE and RE share edges) | Hub type | Connected nodes | El-Kebir hubs | Tukey hubs (cutoff) | Top hub (what hangs on it) |
 |---|---|---|---|---|---|
 | Gene networks | gene | 286 | 0 | 13 (degree > 8.5) | ITGB1: 21 genes (integrins, CD34, ICAM1, PECAM1, …) |
-| Metabolite networks | metabolite | 44 | 0 | 0 (degree > 14.4) | AMP: 13 nucleic acids |
-| Metabolite networks | mediating protein | 80 | 0 | 3 (> 6 metabolites) | NT5E: 9 nucleotides/nucleosides, supports 36 of the 122 edges |
+| Metabolite networks | metabolite | 44 | 0 | 0 (degree > 17.1) | AMP: 14 nucleic acids |
+| Metabolite networks | mediating protein | 80 | 0 | 3 (> 6 metabolites) | NT5E: 9 nucleotides/nucleosides, a shared protein on 36 of the 147 edges |
 
 The other flagged mediating proteins are MGLL (8 fatty acids, supports 28 edges) and SLC27A4 (7: fatty
 acids, ATP, AMP; 11 edges). With the super class, purines and pyrimidines share a class, so NT5E links
@@ -375,8 +384,8 @@ arms compare on that network (correlation between the arms' edge weights; edges 
 |---|---|---|---|---|---|---|
 | Baseline: our 471 genes, main class (50) | 472 | 60 | 78 | 39 | 0.17 | 27 |
 | Exp 1: all human reviewed Rhea enzymes, main class | 4,140 | 155 | 555 | 126 | 0.49 | 162 |
-| **Exp 2: our 471 genes, super class (14) — step 6 rule** | 472 | 60 | 122 | **44** | 0.17 | 42 |
-| Exp 3: step 6 rule + STRING-interacting proteins (≥ 700) | 472 | 60 | 147 | **44** | 0.18 | 52 |
+| Exp 2: our 471 genes, super class (14) | 472 | 60 | 122 | **44** | 0.17 | 42 |
+| **Exp 3: exp 2 + STRING-interacting proteins (≥ 700) — step 6 rule** | 472 | 60 | 147 | **44** | 0.18 | 52 |
 | Side line: Rhea enzymes from any organism, main class | 236,245 | 171 | 618 | 138 | 0.49 | 185 |
 
 **Same protein vs STRING-interacting proteins (exp 2 vs exp 3).** The step 6 rule connects two
@@ -385,8 +394,8 @@ proteins count when they interact in STRING (≥ 700) adds **25 edges and no met
 because every metabolite that can be connected already is. The extra edges (listed in
 `08_string_neighbour_extra_edges.csv`) are 18 among nucleic acids, almost all through NT5E ~ NMNAT1 (and
 NT5E ~ SORD), and 7 among organic acids through GGT5 / LAP3 / KYAT1. They carry small weights (|w| ≤ 0.12,
-most < 0.03), so the arm comparison barely moves (correlation 0.17 → 0.18). The step 6 rule stays
-"same protein". Neither rule is a physical interaction between metabolites: the metabolite–protein link
+most < 0.03), so the arm comparison barely moves (correlation 0.17 → 0.18). The team adopted exp 3 as the
+step 6 rule. Neither rule is a physical interaction between metabolites: the metabolite–protein link
 is enzyme–substrate (Rhea), and the protein–protein link is STRING association from all evidence types.
 
 "Human reviewed" = UniProtKB/Swiss-Prot, organism 9606 (20,431 accessions, downloaded 2026-09-26).
@@ -414,6 +423,38 @@ in 11b each metabolite group is labelled with its super-class name.
 red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −0.035 in EE, −0.246
 in RE). The legend therefore says "higher", not "stronger"; the weights are in `03_weighted_edges.csv` /
 `06_metabolite_edges.csv`.
+
+**Step 12 — normalisation comparison (report only; the pipeline still uses option 1).** Every edge
+weight is rebuilt from the unnormalised log fold changes under four normalisations. The divisor is always
+per ome (RNA, protein, metabolites); "mean" is the mean *absolute* log fold change.
+
+| Option | Divisor | Genes: cor(w_EE, w_RE) / sign changes / top-20 overlap with option 1 | Metabolites: same |
+|---|---|---|---|
+| 1. max, pooled across arms (current) | max \|logFC\| over both arms | 0.45 / 152 / 20 | 0.18 / 52 / 20 |
+| 2. max, per arm | max \|logFC\| of each arm separately | 0.44 / 157 / 11 | 0.18 / 52 / 11 |
+| 3. mean, pooled across arms | mean \|logFC\| over both arms | 0.59 / 121 / 7 | 0.18 / 52 / 20 |
+| 4. mean, per arm | mean \|logFC\| of each arm separately | 0.57 / 122 / 8 | 0.18 / 52 / 18 |
+
+How to read it:
+
+- **Max vs mean changes the balance between omes (genes only).** RNA's max is larger than protein's
+  (2.75 vs 1.76) but its mean is smaller (0.110 vs 0.169), so mean-based options give RNA relatively more
+  weight than max-based ones. That is why options 3–4 look different from 1–2 for genes (top-20 overlap
+  7–8 of 20; heat-shock and IL18–CCL5 edges return) and why the arms look more alike (r ≈ 0.58 vs 0.45).
+  Metabolomics is one ome, so options 1 and 3 give *identical* patterns there (they differ by one constant).
+- **Per arm vs pooled changes the balance between arms.** Per-arm divisors rescale each arm to its own
+  size. Resistance has the larger extremes (RNA 2.75 vs 2.37; protein 1.76 vs 1.33; metabolites 4.20 vs
+  2.12, set by hypoxanthine), so "max, per arm" shrinks resistance relative to endurance and shifts
+  differences towards endurance (share of edges higher in endurance: genes 0.44 → 0.50, metabolites
+  0.45 → 0.61). Mean-based per-arm divisors are nearly equal between the arms, so option 4 ≈ option 3.
+  Pooled options keep a genuine overall difference in response size between the arms; per-arm options
+  remove it by design.
+- **The correlation and sign changes cannot distinguish options for metabolites** (identical in all
+  four), because a correlation is unaffected by rescaling an arm and a single ome is rescaled as a whole;
+  only the *pattern* of differences changes.
+
+Panels in figures 12a/12b show each option's edge differences relative to that panel's own 95th
+percentile of |w_EE − w_RE|, so compare patterns, not magnitudes.
 
 ### External code, AI use, citations, licence
 
@@ -455,11 +496,11 @@ product of the node vectors; normalised values within −1..+1 with each ome's e
 | Sigmoid scale s | 0.042 |
 | cor(w_EE, w_RE) / edges changing sign | 0.45 / 152 |
 | Metabolites / genes linked through Rhea | 60 / 80 |
-| Metabolite edges / metabolites in the network (super class) | 122 / 44 |
+| Metabolite edges / metabolites in the network (super class, shared or STRING-linked proteins) | 147 / 44 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
 
 **Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.45 (metabolite edges:
-r = 0.16), and 152 of 431 gene edges (42 of 122 metabolite edges) change sign between arms. Without a
+r = 0.18), and 152 of 431 gene edges (52 of 147 metabolite edges) change sign between arms. Without a
 test against measurement noise, none of these differences is established: most responses are small
 relative to their error (median |value| / SE = 0.83 for genes, 0.80 for metabolites), so many sign
 changes are near-zero weights flipping within noise. Whether r = 0.45 means "similar" or "different"
@@ -500,6 +541,7 @@ network/
   08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
   10_plot_arm_networks.R   step 10  figures of the EE vs RE networks (written outside the repo)
   11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)
+  12_normalization_comparison.R  step 12  four normalisation options compared (report only)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
