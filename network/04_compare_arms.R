@@ -3,7 +3,7 @@
 #
 # Edge level:  w_diff = w_EE - w_RE (signed dot products from 03).
 # Node level:  strength = sum of incident edge weights, per arm, both signed (sum w) and positive
-#              (sum sigmoid(w), the weight used for positive-only methods); delta = EE - RE.
+#              (sum sigmoid(w / s), the weight used for positive-only methods; s as in 03); delta = EE - RE.
 # Differential subnetworks: connected components of the edges with FDR < 0.1.
 #
 # Uncertainty (parametric bootstrap): every embedding value is an estimate with a standard error.
@@ -45,13 +45,16 @@ stopifnot(!anyNA(ia), !anyNA(ib))
 weights <- function(E, R) list(EE = unname(rowSums(E[ia, ] * E[ib, ])), RE = unname(rowSums(R[ia, ] * R[ib, ])))
 obs <- weights(ZE, ZR)
 stopifnot(all.equal(obs$EE, edges$w_EE), all.equal(obs$RE, edges$w_RE))   # matches 03
+SIG_SCALE <- median(abs(c(obs$EE, obs$RE)))          # fixed transform, same constant as 03
+sig <- function(w) plogis(w / SIG_SCALE)
+stopifnot(all.equal(sig(obs$EE), edges$sig_EE))
 
 # incidence: node x edge, so strength = inc %*% w
 inc <- Matrix::sparseMatrix(i = c(ia, ib), j = rep(seq_along(ia), 2), x = 1, dims = c(length(genes), length(ia)))
 strength <- function(w) as.numeric(inc %*% w)
 
 obs_ndiff <- strength(obs$EE) - strength(obs$RE)
-obs_ndiff_sig <- strength(plogis(obs$EE)) - strength(plogis(obs$RE))
+obs_ndiff_sig <- strength(sig(obs$EE)) - strength(sig(obs$RE))
 obs_cor <- cor(obs$EE, obs$RE)
 
 # bootstrap draws: (eE, eR) with sd (SE, SR) and correlation RHO, per gene x dimension
@@ -64,7 +67,7 @@ for (b in seq_len(B)) {
   w <- weights(E, R)
   be[b, ]  <- w$EE - w$RE
   bn[b, ]  <- strength(w$EE) - strength(w$RE)
-  bns[b, ] <- strength(plogis(w$EE)) - strength(plogis(w$RE))
+  bns[b, ] <- strength(sig(w$EE)) - strength(sig(w$RE))
   bcor[b]  <- cor(w$EE, w$RE)
 }
 boot_p <- function(M) pmax(2 / (B + 1), pmin(1, 2 * pmin(colMeans(M <= 0), colMeans(M >= 0))))
@@ -81,7 +84,7 @@ fwrite(edges, file.path(OUT, "04_edge_diff.csv"))
 sym <- unique(rbind(edges[, .(entrez = entrez_a, symbol = symbol_a)], edges[, .(entrez = entrez_b, symbol = symbol_b)]))
 nodes <- data.table(entrez_gene = genes, degree = as.integer(Matrix::rowSums(inc)),
                     strength_EE = strength(obs$EE), strength_RE = strength(obs$RE), delta_strength = obs_ndiff,
-                    sig_strength_EE = strength(plogis(obs$EE)), sig_strength_RE = strength(plogis(obs$RE)),
+                    sig_strength_EE = strength(sig(obs$EE)), sig_strength_RE = strength(sig(obs$RE)),
                     delta_sig_strength = obs_ndiff_sig,
                     delta_lo = ci(bn, 0.025), delta_hi = ci(bn, 0.975),
                     p_boot = boot_p(bn), p_boot_sig = boot_p(bns))

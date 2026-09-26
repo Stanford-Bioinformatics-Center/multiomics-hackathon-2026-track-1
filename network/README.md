@@ -152,9 +152,10 @@ w_EE(u,v) = z_u(EE) · z_v(EE)        w_RE(u,v) = z_u(RE) · z_v(RE)        w_di
   directions; near 0 = at least one barely responds. Large values need both genes to respond strongly.
 - **Untransformed**, so both arms are on the same scale (the embeddings share scale factors) and
   `w_diff` is directly interpretable.
-- **Sigmoid version for positive-only methods:** `sig_EE`, `sig_RE` = 1 / (1 + e^(−w)), in 0–1
-  (negative w → below 0.5). Because raw weights are large, it saturates: 116 EE and 146 RE edges
-  are above 0.99 or below 0.01.
+- **Sigmoid version for positive-only methods:** `sig_EE`, `sig_RE` = σ(w / s) = 1 / (1 + e^(−w/s)),
+  in 0–1 (negative w → below 0.5; 0.5 = no co-response). s = median |w| pooled over both arms
+  (2.667), one constant so the arms stay comparable. Plain σ(w) saturated (116 EE / 146 RE edges
+  above 0.99 or below 0.01); with s it is 19 EE / 31 RE.
 
 | | EE | RE |
 |---|---|---|
@@ -173,7 +174,7 @@ HSPA1A–DNAJB1: +22.9 in EE, −3.1 in RE).
 
 Same topology, two sets of weights, so the comparison is per edge (`w_diff = w_EE − w_RE`) and per
 gene (**strength** = sum of a gene's edge weights; `delta_strength` = EE − RE, signed, plus the same
-on sigmoid weights).
+on the rescaled sigmoid weights σ(w / s)).
 
 **Uncertainty: parametric bootstrap.** Every embedding value is an estimate with a standard error.
 In each of 10,000 draws, each gene's EE and RE value in every dimension is resampled from a

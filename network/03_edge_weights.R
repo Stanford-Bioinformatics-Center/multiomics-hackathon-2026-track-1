@@ -8,8 +8,9 @@
 # exists. The adipose protein 0.5 h and 24 h dimensions do not exist for any gene (NA in every node),
 # so they are left out; that leaves 16 dimensions, identical for every edge and both arms.
 # Weights are signed (positive = endpoints respond in the same direction) and untransformed.
-# For methods that need positive weights, sig_<arm> = sigmoid(w) = 1 / (1 + exp(-w)) maps them to 0-1
-# (negative -> below 0.5), the decoder used by DeepWalk / node2vec.
+# For methods that need positive weights, sig_<arm> = sigmoid(w / s) maps them to 0-1 (negative ->
+# below 0.5), the decoder used by DeepWalk / node2vec. s = median |w| pooled over both arms (one
+# constant, so EE and RE stay comparable); without it ~30% of edges saturate at 0 or 1.
 # Topology is unchanged: the edge set is exactly 02_edges.csv.
 #
 # Inputs:  $HACK_OUT/01_nodes_{EE,RE}.csv, $HACK_OUT/02_edges.csv
@@ -34,10 +35,11 @@ message(sprintf("dot product over %d dims: %s", ncol(Z$EE), paste(colnames(Z$EE)
 
 for (arm in names(Z)) {
   M <- Z[[arm]]
-  w <- rowSums(M[edges$entrez_a, ] * M[edges$entrez_b, ])
-  set(edges, j = paste0("w_", arm), value = w)
-  set(edges, j = paste0("sig_", arm), value = plogis(w))
+  set(edges, j = paste0("w_", arm), value = rowSums(M[edges$entrez_a, ] * M[edges$entrez_b, ]))
 }
+SIG_SCALE <- median(abs(c(edges$w_EE, edges$w_RE)))
+edges[, `:=`(sig_EE = plogis(w_EE / SIG_SCALE), sig_RE = plogis(w_RE / SIG_SCALE))]
+message(sprintf("sigmoid scale s = median |w| over both arms = %.3f", SIG_SCALE))
 edges[, w_diff := w_EE - w_RE]
 
 out <- edges[, .(entrez_a, symbol_a, entrez_b, symbol_b, combined_score, w_EE, w_RE, w_diff, sig_EE, sig_RE)]
