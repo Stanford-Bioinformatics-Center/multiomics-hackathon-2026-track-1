@@ -19,20 +19,28 @@
 # THE STRING FILE WE USE (and the filtering already applied to it before it reached us)
 #   Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet, a curated file
 #   supplied by the team. It contains only human protein pairs with combined_score >= 700 (so the 700
-#   cutoff was applied upstream, not here), identified by UniProt protein IDs. It has 124,099 pairs and
-#   13,855 proteins, each pair listed once, with no protein paired with itself. A second curated file is
-#   expected later; point STRING_PARQUET at it and rerun.
+#   cutoff was applied upstream, not here). It has 124,099 pairs and 13,855 proteins, each pair listed
+#   once, with no protein paired with itself. 13,846 of the 13,855 IDs are UniProt accessions; 9 are gene
+#   symbols or Ensembl protein IDs, which simply never match our genes. Scores are not all whole numbers
+#   (e.g. 842.4), so the file has been processed beyond a raw STRING download; its exact STRING release
+#   and processing are not recorded in the file. A second curated file is expected later; point
+#   STRING_PARQUET at it and rerun.
 #
 # THE RULES WE FOLLOW: El-Kebir et al. 2015, "xHeinz", Bioinformatics 31:3147, section 3.3
 #   1. The background network is STRING protein-protein interactions.
 #   2. Edges have no direction, no protein is linked to itself, and each pair appears once.
 #   3. Remove "outlier hubs": proteins with an extreme number of partners (degree above the 75th
 #      percentile + 40 x the interquartile range of all degrees, computed on the FULL network before
-#      restricting to our genes). In the paper this removed ubiquitin and ELAVL1, which link to
-#      almost everything. In our curated file the cutoff is 741 partners and the busiest protein has 407,
-#      so nothing is removed.
+#      restricting to our genes). In the paper this removed ELAVL1 and ubiquitin (UBC). In our curated
+#      file the cutoff is 741 partners and the busiest protein has 407, so nothing is removed. The
+#      ubiquitin precursors are still the busiest proteins here (RPS27A 407, UBA52 318, UBC 248), but this
+#      file's degree distribution is spread differently, so none crosses the cutoff.
 #   4. Keep only edges where both proteins belong to our 471 genes (the "induced subnetwork").
 #   The paper's network has no edge weights; combined_score is kept only as extra information.
+#   IMPORTANT DIFFERENCE FROM THE PAPER: El-Kebir used STRING v9.1 "protein.actions" (experimentally
+#   verified direct interactions plus interactions predicted by orthology). Our file is an all-evidence
+#   combined_score >= 700 network, which also counts co-expression and text mining. The construction
+#   RULES are the paper's; the background network is not the same one.
 #
 # PROTEIN -> GENE
 #   STRING speaks UniProt protein IDs; our nodes are Entrez gene IDs. The package's lookup table
@@ -120,8 +128,9 @@ e <- merge(s, acc[, .(p1 = uniprot, entrez_a = entrez_gene)], by = "p1", allow.c
 e <- merge(e, acc[, .(p2 = uniprot, entrez_b = entrez_gene)], by = "p2", allow.cartesian = TRUE)
 # Drop pairs where both proteins belong to the same gene (a gene is not linked to itself).
 e <- e[entrez_a != entrez_b]
-# Write each gene pair in a fixed order (smaller gene ID first), carrying each gene's own protein ID
-# with it, so the same pair can never appear twice in opposite orders.
+# Write each gene pair in a fixed order (the gene ID that sorts first as text goes first, e.g. "1604"
+# before "976"), carrying each gene's own protein ID with it, so the same pair can never appear twice in
+# opposite orders.
 e[, flip := entrez_a > entrez_b]
 # Swap the flagged rows: g1/g2 are the ordered genes, u1/u2 their own protein IDs.
 e[, `:=`(g1 = fifelse(flip, entrez_b, entrez_a), g2 = fifelse(flip, entrez_a, entrez_b),

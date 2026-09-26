@@ -11,9 +11,11 @@
 #       w_EE(u,v) = z_u(EE) . z_v(EE)        w_RE(u,v) = z_u(RE) . z_v(RE)        w_diff = w_EE - w_RE
 #
 # HOW TO READ A WEIGHT
-#   - Large positive: both genes respond strongly, in the same direction (both up or both down).
-#   - Large negative: both respond strongly, in opposite directions.
-#   - Near zero: at least one of the two genes barely responds.
+#   - Large positive: on balance across the 16 dimensions, the two genes respond in the same direction
+#     (both up or both down), and strongly.
+#   - Large negative: on balance, they respond in opposite directions, and strongly.
+#   - Near zero: either at least one gene barely responds, OR the two respond in the same direction in
+#     some dimensions and opposite in others, so the products cancel out.
 #   The dot product runs over the WHOLE vector at once (all tissues x RNA and protein x every time), not
 #   tissue by tissue. The adipose protein 0.5 h and 24 h columns exist for no gene, so they are left out;
 #   every edge uses the same 16 dimensions.
@@ -30,17 +32,20 @@
 #   Some network methods (random walks, community detection, shortest paths) need weights that are all
 #   positive. For those we provide sig = sigmoid(w / s) = 1 / (1 + exp(-w / s)), which maps any number
 #   to 0-1: negative weights fall below 0.5, zero lands exactly on 0.5, positive weights go above 0.5.
-#   Sigmoid-of-a-dot-product is the decoder used by DeepWalk / node2vec-style embeddings.
+#   The sigmoid of a dot product is the standard "edge probability" decoder of embedding methods such as
+#   LINE (Tang et al. 2015) and graph autoencoders (Kipf & Welling 2016), and it appears in the
+#   negative-sampling training of DeepWalk / node2vec.
 #   Why divide by s first: those methods LEARN vectors whose dot products naturally sit in the few-units
 #   range where the sigmoid is informative. Our vectors are not learned, and their dot products run from
-#   about -54 to +67, so a plain sigmoid(w) pushes about a third of the edges to exactly 0 or 1 and can no
-#   longer tell a strong edge from a very strong one. Dividing by s is called "temperature scaling"
-#   (Hinton, Vinyals & Dean 2015; Guo et al. 2017 for calibration): it changes how steep the sigmoid is,
-#   not the order of the edges or their signs.
-#   Why the median: choosing that scale from the median of the data is the "median heuristic", the
-#   standard default for setting the width of similarity kernels (Schölkopf & Smola 2002; Gretton et al.
-#   2012, JMLR, kernel two-sample test). It is robust to the few very large weights. This is a
-#   HEURISTIC, not a derived optimum: it makes the typical edge land at sigmoid(+-1) = 0.27 / 0.73.
+#   about -54 to +67, so a plain sigmoid(w) puts about 30% of the weights above 0.99 or below 0.01 and can
+#   no longer tell a strong edge from a very strong one (after dividing by s: about 6%). Dividing by s is
+#   called "temperature scaling" (Hinton, Vinyals & Dean 2015; Guo et al. 2017 for calibration): it
+#   changes how steep the sigmoid is, not the order of the edges or their signs.
+#   Why the median: by analogy with the "median heuristic", the standard default for setting the width of
+#   a similarity kernel from the median distance between data points (Gretton et al. 2012, JMLR, kernel
+#   two-sample test), we set s from the median size of the weights. It is robust to the few very large
+#   weights. This is a HEURISTIC, not a derived optimum: it makes the typical edge land at
+#   sigmoid(+-1) = 0.27 / 0.73.
 #   Why ONE s for both arms: s is a unit of measurement, like choosing centimetres over inches. Using the
 #   same s for both arms means a given weight maps to the same 0-1 value in either arm, so any real
 #   difference between the arms is carried through. Giving each arm its own s would do the opposite: it
@@ -96,7 +101,8 @@ SIG_SCALE <- median(abs(c(edges$w_EE, edges$w_RE)))
 edges[, `:=`(sig_EE = plogis(w_EE / SIG_SCALE), sig_RE = plogis(w_RE / SIG_SCALE))]
 # Report s.
 message(sprintf("sigmoid scale s = median |w| over both arms = %.3f", SIG_SCALE))
-# The per-edge difference between arms (positive = stronger in endurance).
+# The per-edge difference between arms (positive = the endurance weight is higher; for negative weights
+# "higher" means closer to zero, so this is not the same as "stronger").
 edges[, w_diff := w_EE - w_RE]
 
 # Keep the columns we report, sort by STRING score, and save.

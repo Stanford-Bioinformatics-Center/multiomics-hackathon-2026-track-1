@@ -11,17 +11,20 @@
 #   - small groups of connected edges that all differ ("differential subnetworks").
 #   For each difference it asks: is it bigger than the measurement noise? That needs error bars.
 #
-# WHERE THE ERROR BARS COME FROM: a parametric bootstrap
+# WHERE THE ERROR BARS COME FROM: Monte Carlo error propagation (a parametric bootstrap)
 #   Every number in a gene's vector is an estimate with a standard error (from the consortium's models,
 #   saved in step 1). The bootstrap asks "if the measurements had come out slightly differently, as their
 #   error bars allow, how much would each difference move?":
 #     1. In each of B = 10,000 rounds, re-draw every gene's endurance and resistance value in every
 #        dimension from a normal distribution centred on the estimate, with its standard error.
-#     2. The endurance and resistance values of a gene are drawn TOGETHER with their correlation
-#        (median ~0.5-0.65), because both arms are compared against the same control group; ignoring
-#        this would make the arms look more different than they are.
+#     2. The endurance and resistance values of a gene are drawn TOGETHER with the correlation of their
+#        errors (median ~0.6), because both arms are compared against the same control group. Ignoring it
+#        would OVERSTATE the noise in each endurance-minus-resistance difference, so real differences
+#        would be harder to detect and the arms would look MORE ALIKE than they are (checked: with the
+#        correlation set to 0, the number of nominally significant edges roughly halves).
 #     3. Recompute every edge weight, every difference and every gene strength in that round.
-#   A difference is called real if, across the 10,000 rounds, it rarely crosses zero:
+#   A difference is called larger than the measurement noise if, across the 10,000 rounds, it rarely
+#   crosses zero:
 #     p = 2 x min(share of rounds <= 0, share of rounds >= 0)       (two-sided; smallest possible 2/10,001)
 #   p-values are corrected for testing many edges (and, separately, many genes) with the
 #   Benjamini-Hochberg false discovery rate (FDR). The 95% interval is the middle 95% of the rounds.
@@ -30,14 +33,24 @@
 # ASSUMPTIONS AND LIMITS
 #   - Errors are treated as independent between genes (the consortium fitted each gene separately). In
 #     reality genes measured in the same people are somewhat correlated; this is not modelled.
-#   - The bootstrap centres on the observed estimates, so it gives error bars around what was measured.
-#   - Most responses are small relative to their error (median |value| / standard error = 0.78), so the
-#     test has limited power: "no significant difference" is NOT evidence that the arms are the same.
+#   - Errors are also treated as independent between the dimensions of one gene. The three times of one
+#     tissue x layer come from the same model, people and control group, so they are correlated too; not
+#     modelling this could make the p-values somewhat too small.
+#   - The re-drawing centres on the observed estimates, so it gives error bars around what was measured.
+#     It also adds noise on top of already-noisy estimates, so the correlation between the two arms'
+#     weights across re-draws is pulled DOWN; its spread is reported as "cor under re-measurement noise",
+#     not as a confidence interval for the true correlation.
+#   - Most responses are small relative to their error (median |value| / standard error = 0.83 over both
+#     arms), so the test has limited power: "no significant difference" is NOT evidence that the arms are
+#     the same.
+#   - The 0-1 (sigmoid) strengths are reported for completeness, but because the sigmoid is curved their
+#     re-draws are not centred on the observed value; the raw-weight test is the one to rely on.
 #
 # A TEST WE TRIED AND REJECTED (kept here so nobody repeats it)
 #   Shuffling which arm each gene's vector belongs to ("arm-label swap") cannot work per edge: an edge has
-#   only two genes, and swapping both just flips the sign of w_diff, so half the shuffles reproduce the
-#   observed difference exactly and no edge can ever reach p < ~0.5.
+#   only two genes, so there are only four swap patterns. One reproduces w_diff exactly and one flips its
+#   sign, so half of all shuffles reproduce the observed size of the difference and no edge can ever reach
+#   p < ~0.5.
 #
 # TECH STACK
 #   R 4.4; data.table (tables), Matrix (sparse gene-by-edge matrix for fast sums), igraph (components).
@@ -47,7 +60,9 @@
 # OUTPUTS: $HACK_OUT/04_edge_diff.csv         per edge: difference, 95% interval, p, FDR
 #          $HACK_OUT/04_node_diff.csv         per gene with >= 1 edge: strength per arm, difference, p, FDR
 #          $HACK_OUT/04_diff_subnetworks.csv  connected groups of differing edges (FDR < 0.1, and
-#                                             an exploratory tier at uncorrected p < 0.05)
+#                                             an exploratory tier at uncorrected p < 0.05; with 431
+#                                             edges about 22 would pass p < 0.05 by chance alone, so this
+#                                             tier is hypothesis-generating only)
 #          $HACK_OUT/04_summary.csv           headline numbers
 # =====================================================================================================
 
@@ -94,8 +109,8 @@ stopifnot(all.equal(obs$EE, edges$w_EE), all.equal(obs$RE, edges$w_RE))   # matc
 SIG_SCALE <- median(abs(c(obs$EE, obs$RE)))          # fixed transform, same constant as 03
 # The 0-1 transform itself: sigmoid of (weight / s).
 sig <- function(w) plogis(w / SIG_SCALE)
-# Safety check: matches step 3's 0-1 values.
-stopifnot(all.equal(sig(obs$EE), edges$sig_EE))
+# Safety check: matches step 3's 0-1 values in both arms.
+stopifnot(all.equal(sig(obs$EE), edges$sig_EE), all.equal(sig(obs$RE), edges$sig_RE))
 
 # A gene-by-edge table of 1s ("incidence matrix"): row = gene, column = edge, 1 if the gene is on the edge.
 # Multiplying it by the edge weights adds up each gene's edge weights in one step (its "strength").
@@ -140,8 +155,10 @@ ci <- function(M, q) apply(M, 2, quantile, q, names = FALSE)
 # ---- edges -----------------------------------------------------------------------------------------
 # 95% interval, p-value and false-discovery-rate-adjusted p (FDR) for each edge difference.
 edges[, `:=`(w_diff_lo = ci(be, 0.025), w_diff_hi = ci(be, 0.975), p_boot = boot_p(be))][, fdr := p.adjust(p_boot, "BH")]
-# Which arm the edge is stronger in.
-edges[, stronger_in := fifelse(w_diff > 0, "EE", "RE")]
+# Which arm has the HIGHER weight (signed: for negative weights, higher = closer to zero)...
+edges[, higher_in := fifelse(w_diff > 0, "EE", "RE")]
+# ...and which arm has the LARGER weight in size, ignoring sign (the stronger co-response).
+edges[, larger_abs_in := fifelse(abs(w_EE) > abs(w_RE), "EE", "RE")]
 # Whether the edge is positive in one arm and negative in the other.
 edges[, sign_change := sign(w_EE) != sign(w_RE)]
 # Most significant first, then save.
@@ -180,12 +197,12 @@ modules <- function(sub, tier) {
   # build a small network from these edges and label each edge with its connected group
   g <- igraph::graph_from_data_frame(sub[, .(symbol_a, symbol_b)], directed = FALSE)
   sub <- copy(sub)[, module := igraph::components(g)$membership[symbol_a]]
-  # per group: size, how many edges are stronger in each arm, total difference, and the genes/edges
+  # per group: size, how many edges have the higher weight in each arm, total difference, genes/edges
   m <- sub[, .(tier = tier, n_genes = uniqueN(c(symbol_a, symbol_b)), n_edges = .N,
-               n_EE_stronger = sum(stronger_in == "EE"), n_RE_stronger = sum(stronger_in == "RE"),
+               n_EE_higher = sum(higher_in == "EE"), n_RE_higher = sum(higher_in == "RE"),
                sum_w_diff = sum(w_diff),
                genes = paste(sort(unique(c(symbol_a, symbol_b))), collapse = ";"),
-               edges = paste(sprintf("%s-%s(%s)", symbol_a, symbol_b, stronger_in), collapse = ";")), by = module]
+               edges = paste(sprintf("%s-%s(%s higher)", symbol_a, symbol_b, higher_in), collapse = ";")), by = module]
   # largest groups first, renumbered 1, 2, 3, ...
   m[order(-n_edges, -abs(sum_w_diff))][, module := seq_len(.N)]
 }
@@ -195,18 +212,20 @@ sig_edges <- edges[fdr < FDR]
 mods <- rbind(modules(sig_edges, "fdr_lt_0.1"), modules(edges[p_boot < 0.05], "exploratory_p_lt_0.05"))
 # If there are no groups at all, write an empty table with the right column names.
 if (is.null(mods)) mods <- data.table(tier = character(), module = integer(), n_genes = integer(), n_edges = integer(),
-                                      n_EE_stronger = integer(), n_RE_stronger = integer(), sum_w_diff = numeric(),
+                                      n_EE_higher = integer(), n_RE_higher = integer(), sum_w_diff = numeric(),
                                       genes = character(), edges = character())
 # Save the subnetwork table.
 fwrite(mods, file.path(OUT, "04_diff_subnetworks.csv"))
 
 # ---- headline numbers ------------------------------------------------------------------------------
 summ <- data.table(
-  metric = c("edges", "bootstrap_draws", "cor_w_EE_w_RE", "cor_boot_lo", "cor_boot_hi",
-             "edges_sign_change", "edges_fdr_lt_0.1", "edges_fdr_EE_stronger", "edges_fdr_RE_stronger", "edges_p_lt_0.05",
+  metric = c("edges", "bootstrap_draws", "cor_w_EE_w_RE", "cor_remeasured_2.5pct", "cor_remeasured_median", "cor_remeasured_97.5pct",
+             "edges_sign_change", "edges_fdr_lt_0.1", "edges_fdr_EE_higher", "edges_fdr_RE_higher", "edges_p_lt_0.05",
+             "edges_p_lt_0.05_expected_by_chance",
              "nodes_with_edges", "nodes_fdr_lt_0.1_signed", "nodes_fdr_lt_0.1_sigmoid", "diff_subnetworks_fdr", "diff_subnetworks_exploratory"),
-  value = c(nrow(edges), B, obs_cor, quantile(bcor, 0.025), quantile(bcor, 0.975),
-            sum(edges$sign_change), nrow(sig_edges), sum(sig_edges$stronger_in == "EE"), sum(sig_edges$stronger_in == "RE"), sum(edges$p_boot < 0.05),
+  value = c(nrow(edges), B, obs_cor, quantile(bcor, 0.025), median(bcor), quantile(bcor, 0.975),
+            sum(edges$sign_change), nrow(sig_edges), sum(sig_edges$higher_in == "EE"), sum(sig_edges$higher_in == "RE"), sum(edges$p_boot < 0.05),
+            0.05 * nrow(edges),
             nrow(nodes), sum(nodes$fdr < FDR), sum(nodes$fdr_sig < FDR), sum(mods$tier == "fdr_lt_0.1"), sum(mods$tier != "fdr_lt_0.1")))
 # Save and show.
 fwrite(summ, file.path(OUT, "04_summary.csv"))

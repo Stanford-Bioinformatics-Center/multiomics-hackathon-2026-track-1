@@ -10,33 +10,49 @@
 #   molecules), plus its RefMet ID, chemical class, PubChem CID and InChIKey, so teammates and other
 #   tools can connect our metabolites to outside resources.
 #
-# HOW THE LOOKUP WORKS (three public web services, queried by name or structure; no data values are sent)
-#   1. RefMet (Metabolomics Workbench REST API): for each RefMet name, fetch its RefMet ID, class,
-#      PubChem CID and InChIKey. The InChIKey is a fixed-length fingerprint of the exact chemical
-#      structure. Names containing "/" are sent with "_" instead because "/" breaks the web address; if
-#      the exact-name lookup fails, RefMet's own name matcher is tried.
+# UPSTREAM (what the names already are when they reach this script)
+#   The consortium standardised every metabolite name to RefMet during its QC (see step 1b), so our names
+#   should be RefMet names already. This script adds identifiers only; it does not change the data.
+#
+# HOW THE LOOKUP WORKS (public web services, queried by name or structure; no data values are sent)
+#   1. RefMet (Metabolomics Workbench REST API): find the metabolite's RefMet record, then fetch its
+#      details (RefMet ID, class, PubChem CID, InChIKey) BY RefMet ID. The InChIKey is a fixed-length
+#      fingerprint of the exact chemical structure.
+#      Why names with "/" need care: in lipid names "/" and "_" mean different things ("/" = the position
+#      of each fatty-acid chain is known, "_" = it is not). RefMet's server refuses web addresses that
+#      contain an encoded "/", so such names cannot be looked up directly. For those, the name is sent
+#      to RefMet's name MATCHER with "_" in place of "/", and the matcher returns the proper record
+#      (e.g. "TG 18:1/18:1/18:1", RM0134295, not the less specific "TG 18:1_18:1_18:1"). Details are then
+#      fetched by RefMet ID, so no "/" ever has to go into a web address.
+#      Every row records whether RefMet's name equals ours exactly (column name_match), so any record
+#      that is not exactly our molecule is visible.
 #   2. UniChem (EBI's cross-reference service between chemical databases): InChIKey -> ChEBI ID(s). This
 #      is a structure-level match, the most reliable route. PubChem is used as a fallback for any
 #      structure UniChem does not cover (ChEBI IDs are listed among PubChem synonyms).
-#   3. For metabolites with no single structure (most lipids are defined only as a "species", e.g.
-#      "PC 16:0_18:1" = a phosphatidylcholine with a 16:0 and an 18:1 chain in unknown positions), there
-#      is no InChIKey. For those only, the name is reformatted in one fixed way to ChEBI's style,
-#      "PC 16:0_18:1" -> "PC(16:0_18:1)", and accepted ONLY if a ChEBI entry has exactly that name
-#      (via EBI's Ontology Lookup Service). No fuzzy or approximate name matching is done: a blank is
-#      better than a wrong ID.
+#   3. Metabolites with no single structure (most lipids are defined only as a "species", e.g.
+#      "PC 16:0_18:1" = a phosphatidylcholine with a 16:0 and an 18:1 chain in unknown positions) have
+#      no InChIKey. For any metabolite without an InChIKey (in practice almost all are lipids), the name is
+#      reformatted in one fixed way to ChEBI's style, "PC 16:0_18:1" -> "PC(16:0_18:1)", and accepted ONLY
+#      if a ChEBI entry has exactly that name (via EBI's Ontology Lookup Service). No fuzzy or approximate
+#      name matching is done: a blank is better than a wrong ID.
+#   Failed web requests (timeouts, outages) are NOT silently treated as "not found": they are counted,
+#   marked lookup_status = "error" in the row, and reported at the end, so a rerun can fill them in.
 #
 # HOW TO READ THE OUTPUT
+#   refmet_name   RefMet's name for the record used; name_match = exact / differs / no_record
 #   chebi_id      the first ChEBI ID (lowest number) — use this if you need exactly one
 #   chebi_all     every ChEBI ID found; several can share one structure (ChEBI sometimes keeps separate
 #                 entries for the same molecule, e.g. an acid and its charged form)
 #   chebi_method  unichem_inchikey (structure match), pubchem_synonym (structure via PubChem),
-#                 chebi_exact_label (name match, lipids only), or none
-#   Most lipid species have no ChEBI entry at all; they are left blank on purpose.
+#                 chebi_exact_label (exact name match, metabolites without a structure), or none
+#   lookup_status ok, or error if any web request for this row failed
+#   Stereochemistry: RefMet assigns a specific stereoisomer where it can (e.g. lactic acid -> L-lactic
+#   acid), even when the assay does not separate stereoisomers; the ChEBI ID inherits that choice.
 #
 # TECH STACK
-#   Python 3 standard library only (urllib, json, csv, re, concurrent.futures); no packages to install.
+#   Python 3.9+ standard library only (urllib, json, csv, re, concurrent.futures); nothing to install.
 #   Needs internet access. Web services change over time, so a rerun can differ slightly; the output
-#   records the method used for every ID.
+#   records the method used for every ID. Last run: 2026-09-26.
 #
 # INPUT:   $HACK_OUT/01b_metab_nodes_EE.csv  (the 450 metabolite names, from step 1b)
 # OUTPUT:  $HACK_OUT/01c_metabolite_ids.csv   (one row per metabolite)
@@ -44,8 +60,8 @@
 # =====================================================================================================
 
 # Built-in modules: csv (read/write tables), json (decode web answers), os (file paths, settings),
-# re (text patterns), time (pauses), urllib (web requests).
-import csv, json, os, re, time, urllib.error, urllib.parse, urllib.request
+# re (text patterns), threading (a lock for the shared error counter), time (pauses), urllib (web requests).
+import csv, json, os, re, threading, time, urllib.error, urllib.parse, urllib.request
 # ThreadPoolExecutor runs several lookups at the same time (4 at once, to stay polite to the servers).
 from concurrent.futures import ThreadPoolExecutor
 
@@ -63,39 +79,72 @@ PUBCHEM = "https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/cid/%s/synonyms/JS
 OLS = "https://www.ebi.ac.uk/ols4/api/search?q=%s&ontology=chebi&exact=true&queryFields=label&rows=5"
 # UniChem numbers each database it knows; ChEBI is database number 7.
 UNICHEM_CHEBI = 7
+# Number of attempts per web request before giving up.
+ATTEMPTS = 6
+
+
+# Marker returned by fetch() when a request FAILED (as opposed to "answered: nothing found").
+class FetchError(Exception):
+    """Raised when a web request fails after all retries, so the failure is never mistaken for 'not found'."""
 
 
 # Helper: download a web address and decode its JSON answer, retrying when the server is busy.
 def fetch(url, data=None, headers=None):
-    """Download a web address and decode its JSON answer. Retry when the server is busy; None on failure."""
-    # Try up to 6 times.
-    for attempt in range(6):
+    """Return the decoded JSON answer ({} if the service says 'not found'); raise FetchError on failure."""
+    # Try up to ATTEMPTS times.
+    for attempt in range(ATTEMPTS):
+        # Wait before every retry (not before the first try): 2 s, 4 s, 6 s, ...
+        if attempt:
+            time.sleep(2 * attempt)  # pause before this retry
         # Attempt the download; problems are handled in the "except" branches below.
         try:
             # Build the request (a POST if `data` is given, otherwise a plain GET).
             req = urllib.request.Request(url, data=data, headers=headers or {})
             # Send it, wait up to 60 seconds, and read the answer.
             body = urllib.request.urlopen(req, timeout=60).read()
-            # Decode the JSON answer; an empty answer means "nothing found".
-            return json.loads(body) if body else {}
+            # An empty answer means "nothing found".
+            if not body:
+                return {}  # empty answer: nothing found
+            # Decode the JSON answer (a non-JSON answer raises ValueError, handled below).
+            return json.loads(body)
         # The server answered with an error code.
         except urllib.error.HTTPError as e:
-            # 404 means the service has no entry for this query: return "nothing found".
+            # 404 means the service has no entry for this query: a genuine "nothing found".
             if e.code == 404:
-                return {}  # nothing found
-            # 429/500/502/503 mean "busy" or a temporary fault: wait a little longer each time...
-            if e.code in (429, 500, 502, 503):
-                time.sleep(2 * (attempt + 1))  # pause before retrying
-                # ...and try again.
-                continue
-            # Any other error code: give up on this query.
-            return None
-        # A network hiccup (timeout, dropped connection).
+                return {}  # 404: nothing found
+            # Busy or temporary faults: loop round and retry after the pause.
+            if e.code in (429, 500, 502, 503, 504):
+                continue  # busy: retry
+            # Any other error code is a real failure.
+            raise FetchError(f"HTTP {e.code}: {url}")
+        # The answer was not valid JSON (e.g. an HTML error page): a real failure, no point retrying.
+        except ValueError:
+            raise FetchError(f"non-JSON answer: {url}")  # invalid answer: fail
+        # A network hiccup (timeout, dropped connection): loop round and retry after the pause.
         except Exception:
-            # Wait a little longer each time, then loop round and try again.
-            time.sleep(2 * (attempt + 1))
+            continue  # hiccup: retry
     # All attempts failed.
-    return None
+    raise FetchError(f"gave up after {ATTEMPTS} attempts: {url}")
+
+
+# Shared counter of failed requests (several lookups run at once, so a lock protects it).
+ERRORS = {"n": 0}
+# The lock that protects the counter.
+ERR_LOCK = threading.Lock()
+
+
+# Helper: like fetch(), but a failure is counted and noted in the row instead of stopping the whole run.
+def safe_fetch(status, url, data=None, headers=None):
+    """fetch() that records a failure in `status` (a one-item list) and returns {} so the row can continue."""
+    # Try the request.
+    try:
+        return fetch(url, data, headers)  # normal case: the answer
+    # On failure: count it, mark this row as having an error, and carry on with an empty answer.
+    except FetchError:
+        with ERR_LOCK:  # take the lock (other lookups run at the same time)
+            ERRORS["n"] += 1  # count the failure
+        status[0] = "error"  # mark this row
+        return {}  # carry on with an empty answer
 
 
 # Helper: RefMet sometimes answers with a list of records instead of one record.
@@ -108,33 +157,33 @@ def first_record(d):
     return d if isinstance(d, dict) else {}
 
 
-# Step 1: look up one metabolite name in RefMet.
-def refmet_lookup(name):
+# Step 1: find one metabolite's RefMet record.
+def refmet_lookup(name, status):
     """Step 1: RefMet record (ID, class, PubChem CID, InChIKey) for one metabolite name."""
-    # "/" cannot appear inside a web address, so send it as "_"; then make the name web-safe.
-    q = urllib.parse.quote(name.replace("/", "_"), safe="")
-    # First try RefMet's exact-name lookup.
-    rec = first_record(fetch(f"{REFMET}/name/{q}/all"))
-    # If it returned a RefMet ID, we are done.
-    if rec.get("refmet_id"):
-        return rec  # found: return the record
-    # Otherwise ask RefMet's name matcher which standard name this corresponds to.
-    m = first_record(fetch(f"{REFMET}/match/{q}"))
-    # The standard name it suggests ("-" means it found none).
-    std = m.get("refmet_name")
-    # If it suggested a name...
-    if std and std != "-":
-        # ...look that standard name up in detail.
-        rec = first_record(fetch(f"{REFMET}/name/{urllib.parse.quote(std, safe='')}/all"))
-        # If the detail lookup has nothing, keep the basic facts the matcher already gave us.
-        if not rec.get("refmet_id"):
-            # keep the matcher's basic facts
-            rec = {"refmet_id": m.get("refmet_id"), "name": std, "super_class": m.get("super_class"),
-                   "main_class": m.get("main_class")}
-        # Return what we found.
-        return rec
-    # RefMet does not know this name at all.
-    return {}
+    # Names without "/" can be looked up directly by exact name.
+    if "/" not in name:
+        # Exact-name lookup (the name made web-safe).
+        rec = first_record(safe_fetch(status, f"{REFMET}/name/{urllib.parse.quote(name, safe='')}/all"))
+        # If it returned a RefMet ID, we are done.
+        if rec.get("refmet_id"):
+            return rec  # found by exact name
+    # Otherwise (a "/" in the name, or no exact hit): ask RefMet's name matcher. "/" is sent as "_"
+    # because RefMet refuses an encoded "/"; the matcher returns the record with the proper notation.
+    m = first_record(safe_fetch(status, f"{REFMET}/match/{urllib.parse.quote(name.replace('/', '_'), safe='')}"))
+    # The RefMet ID the matcher chose ("-" or missing means it found none).
+    rid = m.get("refmet_id")
+    # No match: RefMet does not know this name.
+    if not rid or rid == "-":
+        return {}  # RefMet does not know this name
+    # Fetch the full record BY RefMet ID (no "/" in the web address).
+    rec = first_record(safe_fetch(status, f"{REFMET}/refmet_id/{urllib.parse.quote(rid, safe='')}/all"))
+    # If the detail lookup has nothing, keep the basic facts the matcher already gave us.
+    if not rec.get("refmet_id"):
+        # keep the matcher's basic facts
+        rec = {"refmet_id": rid, "name": m.get("refmet_name"), "super_class": m.get("super_class"),
+               "main_class": m.get("main_class")}
+    # Return the record.
+    return rec
 
 
 # Helper: put ChEBI IDs in numeric order.
@@ -145,29 +194,23 @@ def chebi_sort(ids):
 
 
 # Step 2: exact structure -> ChEBI, via UniChem.
-def chebi_from_inchikey(inchikey):
+def chebi_from_inchikey(inchikey, status):
     """Step 2: ChEBI IDs for an exact structure, via UniChem."""
     # Ask UniChem which database entries share this structure fingerprint.
-    d = fetch(UNICHEM, json.dumps({"type": "inchikey", "compound": inchikey}).encode(),
-              {"Content-Type": "application/json"})
-    # No answer: no ChEBI IDs.
-    if not d:
-        return []  # nothing found
+    d = safe_fetch(status, UNICHEM, json.dumps({"type": "inchikey", "compound": inchikey}).encode(),
+                   {"Content-Type": "application/json"})
     # Keep only the ChEBI entries (database number 7), written as "CHEBI:<number>".
     ids = ["CHEBI:" + str(s["compoundId"]).upper().replace("CHEBI:", "")
            for comp in d.get("compounds", []) for s in comp.get("sources", []) if s.get("id") == UNICHEM_CHEBI]
-    # Return them in numeric order.
+    # Return them in numeric order (empty if none).
     return chebi_sort(ids)
 
 
 # Fallback for step 2: ChEBI IDs listed among a PubChem compound's alternative names.
-def chebi_from_pubchem(cid):
+def chebi_from_pubchem(cid, status):
     """Fallback for step 2: ChEBI IDs listed among a PubChem compound's synonyms."""
     # Download the compound's list of synonyms (alternative names and IDs).
-    d = fetch(PUBCHEM % cid)
-    # No answer: no ChEBI IDs.
-    if not d:
-        return []  # nothing found
+    d = safe_fetch(status, PUBCHEM % cid)
     # Flatten the answer into one list of synonyms.
     syn = [s for info in d.get("InformationList", {}).get("Information", []) for s in info.get("Synonym", [])]
     # Keep only synonyms that are exactly a ChEBI ID ("CHEBI:" followed by digits), in numeric order.
@@ -175,8 +218,8 @@ def chebi_from_pubchem(cid):
 
 
 # Step 3 (only for metabolites without a structure): one fixed reformat, then an exact ChEBI name match.
-def chebi_from_exact_label(name):
-    """Step 3 (no-structure metabolites only): one fixed reformat, then an exact ChEBI name match."""
+def chebi_from_exact_label(name, status):
+    """Step 3 (metabolites without a structure): one fixed reformat, then an exact ChEBI name match."""
     # Split the name at its first space into class and chains, e.g. "PC" and "16:0_18:1".
     m = re.fullmatch(r"(\S+) (.+)", name)
     # Names without a space are not reformatted: no match attempted.
@@ -185,10 +228,7 @@ def chebi_from_exact_label(name):
     # Rebuild in ChEBI's style: "PC(16:0_18:1)".
     label = f"{m.group(1)}({m.group(2)})"
     # Search ChEBI for that name.
-    d = fetch(OLS % urllib.parse.quote(label))
-    # No answer: no ChEBI IDs.
-    if not d:
-        return []  # nothing found
+    d = safe_fetch(status, OLS % urllib.parse.quote(label))
     # Accept only entries whose name is EXACTLY the reformatted label, in numeric order.
     return chebi_sort(x["obo_id"] for x in d.get("response", {}).get("docs", []) if x.get("label") == label)
 
@@ -196,8 +236,13 @@ def chebi_from_exact_label(name):
 # All steps for one metabolite, producing one row of the output table.
 def lookup(name):
     """All steps for one metabolite; returns one output row."""
+    # This row's status; any failed request below switches it to "error".
+    status = ["ok"]
     # Step 1: RefMet record.
-    rec = refmet_lookup(name)
+    rec = refmet_lookup(name, status)
+    # RefMet's name for that record, and whether it is exactly our name.
+    rname = rec.get("name") or ""
+    name_match = "no_record" if not rec.get("refmet_id") else ("exact" if rname == name else "differs")  # compare RefMet's name with ours
     # Its PubChem compound number and structure fingerprint (blank if RefMet has none).
     cid, ik = rec.get("pubchem_cid") or "", rec.get("inchi_key") or ""
     # Start with "no ChEBI found".
@@ -205,22 +250,24 @@ def lookup(name):
     # If the structure is known...
     if ik:
         # ...match by structure through UniChem.
-        ids, method = chebi_from_inchikey(ik), "unichem_inchikey"
+        ids, method = chebi_from_inchikey(ik, status), "unichem_inchikey"
         # If UniChem has nothing and there is a PubChem number, try PubChem's synonyms.
         if not ids and cid:
-            ids, method = chebi_from_pubchem(cid), "pubchem_synonym"  # PubChem fallback
+            ids, method = chebi_from_pubchem(cid, status), "pubchem_synonym"  # PubChem fallback
     # If there is no single structure (mostly lipid species)...
     else:
         # ...try the exact-name match only.
-        ids, method = chebi_from_exact_label(name), "chebi_exact_label"
+        ids, method = chebi_from_exact_label(name, status), "chebi_exact_label"
     # If nothing was found by any route, say so.
     if not ids:
         method = "none"  # record that nothing was found
-    # Return one output row: the name, RefMet facts, structure IDs and ChEBI result.
-    return {"metabolite": name, "refmet_name": rec.get("name", ""), "refmet_id": rec.get("refmet_id", ""),
+    # Return one output row: the name, RefMet facts, structure IDs, ChEBI result and status.
+    return {"metabolite": name, "refmet_name": rname, "name_match": name_match,
+            "refmet_id": rec.get("refmet_id", ""),
             "super_class": rec.get("super_class", ""), "main_class": rec.get("main_class", ""),
             "pubchem_cid": cid, "inchi_key": ik,
-            "chebi_id": ids[0] if ids else "", "chebi_all": ";".join(ids), "chebi_method": method}
+            "chebi_id": ids[0] if ids else "", "chebi_all": ";".join(ids), "chebi_method": method,
+            "lookup_status": status[0]}
 
 
 # The main program.
@@ -253,9 +300,18 @@ def main():
          for m in ("unichem_inchikey", "pubchem_synonym", "chebi_exact_label", "none")}
     # Print that summary.
     print(f"ChEBI found for {len(rows) - n['none']} of {len(rows)}: {n}")
-    # Also print how many had a PubChem number and how many RefMet did not know at all.
-    print(f"with PubChem CID: {sum(bool(r['pubchem_cid']) for r in rows)}; "
-          f"no RefMet record: {sum(not r['refmet_id'] for r in rows)}")
+    # Print how many had a PubChem number, how RefMet's names compare with ours, and any failures.
+    print(f"with PubChem CID: {sum(bool(r['pubchem_cid']) for r in rows)}; name_match: "
+          f"{ {k: sum(r['name_match'] == k for r in rows) for k in ('exact', 'differs', 'no_record')} }")
+    # List the rows whose RefMet name differs from ours, so they can be checked by eye.
+    for r in rows:
+        # Only the rows that differ.
+        if r["name_match"] == "differs":
+            # Our name -> RefMet's name.
+            print(f"   name differs: {r['metabolite']!r} -> {r['refmet_name']!r}")
+    # Report failed requests; a nonzero count means some blanks may be failures, so rerun.
+    print(f"failed web requests: {ERRORS['n']} (rows with lookup_status=error: "
+          f"{sum(r['lookup_status'] == 'error' for r in rows)})")
 
 
 # Run the main program when this file is executed as a script (not when imported by another script).

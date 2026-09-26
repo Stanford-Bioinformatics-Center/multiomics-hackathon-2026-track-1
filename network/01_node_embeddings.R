@@ -8,8 +8,9 @@
 #   This script builds the nodes. For every gene it writes down how that gene changed after one bout of
 #   exercise, in three tissues, at the RNA and the protein level, at three times after exercise. Those
 #   18 numbers are the gene's "embedding vector" (its coordinates). Each gene gets TWO vectors: one for
-#   the endurance arm and one for the resistance arm, built completely separately, so the two networks
-#   can later be compared honestly.
+#   the endurance arm and one for the resistance arm, each computed from that arm's own comparison with
+#   the control group. (Both arms are compared with the SAME control group, so their measurement errors
+#   are correlated; that correlation is saved and accounted for in step 4.)
 #
 # THE DATA AND WHERE IT COMES FROM
 #   Source: the R package MotrpacHumanPreSuspensionAnalysis (v0.2.4), from the MoTrPAC consortium's
@@ -19,13 +20,18 @@
 #
 # QUALITY CONTROL AND FILTERING DONE UPSTREAM (by the consortium, before we see the data)
 #   - Samples: only the first supervised exercise bout (visit code ADU_BAS). Samples flagged by the
-#     consortium's outlier review (package object OUTLIERS: failed genotype/sex checks, etc.) are removed.
-#   - RNA-seq (all 3 tissues): low-expression genes removed by a log-CPM cutoff; counts normalised with
-#     TMM (edgeR); precision weights from voom; model fitted with dream (variancePartition, a linear
-#     mixed model). Model: ~ 0 + group_timepoint + Batch + BMI + calculatedAge + codedsiteid +
-#     pct_umi_dup + RIN + Sex + (1 | pid). "(1 | pid)" means each participant gets their own baseline.
-#   - MS proteomics (adipose, muscle): QC-normalised abundances; a protein is kept only if every
-#     group x timepoint has at least 3 participants measured both before and after exercise
+#     consortium's outlier review (package object OUTLIERS) are removed before normalisation, for every
+#     assay. Reasons recorded there are mostly low RNA quality (RIN < 5), principal-component outliers and
+#     blood contamination, plus a few genotype/sex-check failures.
+#   - RNA-seq (all 3 tissues): genes kept only if expressed above 0.5 counts per million in at least 10%
+#     of samples; counts normalised with TMM (edgeR); precision weights from voom; model fitted with dream
+#     (variancePartition, a linear mixed model). Model: ~ 0 + group_timepoint + Batch + BMI +
+#     calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid). "(1 | pid)" means each
+#     participant gets their own baseline.
+#   - MS proteomics (adipose, muscle; TMT labelling): values are log2 ratios to a pooled reference sample,
+#     median-normalised, with technical batch effects removed (limma removeBatchEffect) and features with
+#     too many missing values removed. A protein is then kept only if every group x timepoint that has
+#     paired data has at least 3 participants measured both before and after exercise
 #     (filter_paired_n). Model: ~ 0 + group_timepoint + BMI + calculatedAge + Sex + (1 | pid), dream.
 #   - OLINK proteomics (blood): a targeted panel of ~1,400 proteins, QC-normalised; same model as MS.
 #   - Every result table reports logFC (log2 fold change), its 95% confidence interval (CI.L, CI.R),
@@ -41,22 +47,34 @@
 #      layers by their Entrez gene ID. Blood protein is OLINK, a fixed ~1,400-protein panel, and that is
 #      what limits the count to 471.
 #   3. One measurement per gene per tissue x layer: if several transcripts or proteins map to the same
-#      gene, we keep the most abundant one (highest average expression, "AveExpr"). Abundance has nothing
-#      to do with the exercise response, so this does not cherry-pick responsive features.
-#   4. Scaling: RNA and protein changes live on very different scales (RNA logFC ~0.1, OLINK ~0.4), so
-#      each tissue x layer block is divided by one number, its root-mean-square logFC (the typical size
-#      of a change in that block). The same number is used for both arms and all timepoints, so real
-#      differences between arms and between timepoints are kept; only the unit changes.
-#   5. Missing by design: adipose protein was only sampled 4 h after exercise, so its 0.5 h and 24 h
-#      columns are empty (NA) for every gene. They are left empty, never filled in.
+#      gene, we keep the one with the highest average value ("AveExpr"). For RNA that is the most highly
+#      expressed transcript. For MS proteomics AveExpr is an average log-ratio to the pooled reference,
+#      not abundance, so there it is simply a fixed tie-break (20 genes affected). Either way the rule
+#      never looks at the exercise response, so it cannot cherry-pick responsive features.
+#   4. Scaling: the six tissue x layer blocks differ in their typical logFC (root-mean-square: RNA
+#      0.11-0.22, MS protein 0.10-0.18, blood OLINK 0.38), so each block is divided by its own
+#      root-mean-square logFC. The same number is used for both arms and all timepoints, so differences
+#      between arms and between timepoints inside a block are kept; only the unit changes.
+#      How to read the scaled values: most of each block's spread is measurement noise (its RMS logFC is
+#      only 1.0-1.75 x its typical standard error), so the divisor largely equalises NOISE between blocks.
+#      Scaled values are comparable within a block, but equal scaled values in two different blocks do
+#      not mean equal biological effect sizes. Adipose protein's divisor comes from 4 h only (the other
+#      blocks pool three times), which slightly shrinks its values relative to the others.
+#   5. Missing by design: adipose tissue was biopsied at all three times, but adipose PROTEOMICS was only
+#      profiled at 4 h, so its 0.5 h and 24 h columns are empty (NA) for every gene. They are left empty,
+#      never filled in.
+#   6. Time labels: "0.5h" is the package's post_15_30_45_min bin and "4h" its post_3.5_4_hr bin; the exact
+#      collection time within a bin differs between tissues, so the same label is the same window, not
+#      the same minute.
 #
 # EMBEDDING LAYOUT (18 numbers per gene per arm)
 #   adipose rna 0.5/4/24 h, adipose prot 0.5/4/24 h, blood rna ..., blood prot ..., muscle rna ..., muscle prot ...
 #
 # UNCERTAINTY, SAVED FOR STEP 4
 #   Every number is an estimate. We also save its standard error (how wide its error bar is) on the same
-#   scale, and the correlation between a gene's endurance and resistance estimates. The two are
-#   correlated because both are compared against the SAME control group.
+#   scale, and the correlation between the ERRORS of a gene's endurance and resistance estimates. That
+#   correlation (median ~0.6) exists because both are compared against the SAME control group; it is a
+#   property of the measurement, not a similarity between the two arms' biological responses.
 #
 # TECH STACK
 #   R 4.4; packages data.table (tables), MotrpacHumanPreSuspensionAnalysis (the data).
@@ -65,7 +83,7 @@
 #   01_nodes_EE.csv, 01_nodes_RE.csv            the scaled 18-number vectors (the node tables)
 #   01_nodes_EE_raw_logFC.csv, ..._RE_raw_...   the same before scaling
 #   01_nodes_EE_se.csv, 01_nodes_RE_se.csv       standard error of every number, same scale
-#   01_nodes_arm_corr.csv                        correlation between a gene's EE and RE estimates
+#   01_nodes_arm_corr.csv                        correlation between the errors of a gene's EE and RE estimates
 #   01_scale_factors.csv                         the one divisor used for each tissue x layer
 #   01_nodes_feature_provenance.csv              which transcript/protein was used for each gene
 # =====================================================================================================
@@ -114,11 +132,13 @@ da <- rbindlist(lapply(seq_len(nrow(cells)), function(i) {
   #   and only the three post-exercise times
   x <- as.data.table(get(obj))[contrast_category %in% c(ARMS, "EE-RE") & Timepoint %in% TPS,
          # the columns we keep: feature, which comparison, which time (short label), the change (logFC),
-         # average abundance, and the standard error. The package gives a 95% confidence interval, so the
-         # standard error is its half-width divided by the matching t-distribution value.
+         # the feature's average value (AveExpr), and the standard error. The standard error is exactly
+         # logFC / t, because the package's t statistic is logFC divided by its standard error. (Rebuilding
+         # it from the confidence interval would need the model's moderated degrees of freedom, which the
+         # table does not store, so that route is used only in the rare case t = 0.)
          .(assay, feature_id, arm = as.character(contrast_category),
            tp = names(TPS)[match(as.character(Timepoint), TPS)], logFC, AveExpr,
-           se = (CI.R - CI.L) / (2 * qt(0.975, degrees_of_freedom)))]
+           se = fifelse(!is.na(t) & t != 0, logFC / t, (CI.R - CI.L) / (2 * qt(0.975, degrees_of_freedom))))]
   # label every row with its tissue and layer
   x[, `:=`(tissue = tis, ome = ome)]
   # attach the gene each feature belongs to (features without a gene are dropped here)
@@ -140,17 +160,20 @@ stopifnot(length(universe) == 471)
 # Throw away rows for genes outside the universe.
 da <- da[entrez_gene %in% universe]
 
-# ---- one feature per gene per tissue x layer: the most abundant --------------------------------------
-# List every candidate feature for each gene in each tissue x layer, with its average abundance
-# (AveExpr is the same in every comparison for a feature; averaging just collapses the duplicates).
+# ---- one feature per gene per tissue x layer: the highest average value ("AveExpr") ------------------
+# List every candidate feature for each gene in each tissue x layer, with its AveExpr (the same in every
+# comparison for a feature; averaging just collapses the duplicates). For RNA, AveExpr is average
+# expression, so this picks the most highly expressed transcript. For MS proteomics it is the average
+# log-ratio to the pooled reference sample, not abundance; the rule is then an arbitrary but fixed
+# tie-break. Either way it never looks at the exercise response.
 feat_expr <- unique(da[, .(tissue, ome, entrez_gene, feature_id, AveExpr)])[
   , .(AveExpr = mean(AveExpr)), by = .(tissue, ome, entrez_gene, feature_id)]
-# Sort so the most abundant feature comes first for each gene (ties broken by feature name, so the
+# Sort so the highest-AveExpr feature comes first for each gene (ties broken by feature name, so the
 # choice is always the same on every run).
 setorder(feat_expr, tissue, ome, entrez_gene, -AveExpr, feature_id)
 # Record how many candidates each gene had (for the provenance file).
 feat_expr[, n_candidates := .N, by = .(tissue, ome, entrez_gene)]
-# Keep the first (most abundant) feature for each gene in each tissue x layer.
+# Keep the first (highest-AveExpr) feature for each gene in each tissue x layer.
 chosen <- feat_expr[, .SD[1], by = .(tissue, ome, entrez_gene)]
 # Keep only the rows of the chosen features in the main table.
 da <- da[chosen[, .(tissue, ome, entrez_gene, feature_id)], on = .(tissue, ome, entrez_gene, feature_id)]
@@ -162,13 +185,13 @@ stopifnot(!anyDuplicated(da[, .(tissue, ome, entrez_gene, arm, tp)]))
 # We know all three standard errors, so we can solve for the covariance and turn it into a correlation:
 #   rho = (se_EE^2 + se_RE^2 - se_diff^2) / (2 se_EE se_RE)
 # Keep the EE-RE rows for exactly the features chosen above.
-arm_diff <- arm_diff[chosen[, .(tissue, ome, entrez_gene, feature_id)], on = .(tissue, ome, feature_id), nomatch = NULL]
+arm_diff <- arm_diff[chosen[, .(tissue, ome, entrez_gene, feature_id)], on = .(tissue, ome, entrez_gene, feature_id), nomatch = NULL]
 # Put the EE and RE standard errors side by side, one row per gene x tissue x layer x time.
 se_w <- dcast(da, tissue + ome + entrez_gene + tp ~ arm, value.var = "se")
 # Add the standard error of the EE-RE difference next to them.
 se_w <- arm_diff[, .(tissue, ome, entrez_gene, tp, se_diff = se)][se_w, on = .(tissue, ome, entrez_gene, tp)]
-# Safety check: every row must have its difference standard error.
-stopifnot(!anyNA(se_w$se_diff))
+# Safety checks: every row has its difference standard error, and no row was duplicated by the join.
+stopifnot(!anyNA(se_w$se_diff), !anyDuplicated(se_w[, .(tissue, ome, entrez_gene, tp)]))
 # Compute the correlation with the formula above; clamp it into the valid range -1..1 (rounding safety).
 se_w[, rho := pmin(1, pmax(-1, (`EE-CON`^2 + `RE-CON`^2 - se_diff^2) / (2 * `EE-CON` * `RE-CON`)))]
 # Attach the correlation to the main table.
@@ -178,6 +201,7 @@ da <- se_w[, .(tissue, ome, entrez_gene, tp, rho)][da, on = .(tissue, ome, entre
 # For each tissue x layer, compute one divisor: the root-mean-square logFC, i.e. the square root of the
 # average squared change, over all 471 genes, all its timepoints and BOTH arms together. Pooling both
 # arms matters: if one arm genuinely changes more, a shared divisor keeps that difference visible.
+# (As noted in the header, this divisor is dominated by measurement noise.)
 scale_f <- da[, .(rms_logFC = sqrt(mean(logFC^2)), n_values = .N,
                   timepoints = paste(names(TPS)[names(TPS) %in% tp], collapse = ",")),
               by = .(tissue, ome)]

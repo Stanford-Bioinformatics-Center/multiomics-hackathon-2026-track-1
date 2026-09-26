@@ -16,6 +16,9 @@
 #   Fatty Acyls, Glycerolipids, Glycerophospholipids, Sphingolipids, Sterol Lipids, Prenol Lipids,
 #   Saccharolipids, Polyketides. Everything else is non-lipid (mostly polar: amino acids, organic acids,
 #   nucleotides, sugars, ...).
+#   Caveat: this follows RefMet's chemical taxonomy, not "is it greasy". RefMet files some small, water-
+#   soluble acids under Fatty Acyls (e.g. 2- and 3-hydroxybutyric acid, GABA, glutaric, azelaic and sebacic
+#   acid), so the lipid count slightly overstates the number of true (hydrophobic) lipids.
 #
 # MISSING CLASSES
 #   A metabolite with no RefMet class is counted as "Unclassified" (never dropped, never assigned by
@@ -97,15 +100,15 @@ def main():
             "pct_of_450": round(100 * len(members) / total, 1),
             # how many of them got a ChEBI ID in step 1c
             "n_with_chebi": sum(bool(m["chebi_id"]) for m in members),
-            # up to five member names, alphabetically
-            "examples": "; ".join(sorted(m["metabolite"] for m in members)[:5]),
+            # up to five member names, alphabetically (ignoring upper/lower case)
+            "examples": "; ".join(sorted((m["metabolite"] for m in members), key=str.lower)[:5]),
         })
     # The size of each super class (used to order the table).
     super_size = {o["super_class"]: o["n_metabolites"] for o in out if o["level"] == "super_class"}
-    # Order: all super-class rows first (largest first), then main-class rows grouped under their super
-    # class in the same order (largest main class first within each).
-    out.sort(key=lambda o: (o["level"] != "super_class", -super_size[o["super_class"]], o["super_class"],
-                            -o["n_metabolites"], o["main_class"]))
+    # Order: all super-class rows first (largest first, "Unclassified" always last), then main-class rows
+    # grouped under their super class in the same order (largest main class first within each).
+    out.sort(key=lambda o: (o["level"] != "super_class", o["super_class"] == "Unclassified",
+                            -super_size[o["super_class"]], o["super_class"], -o["n_metabolites"], o["main_class"]))
 
     # Safety check: at each level the counts must add up to 450.
     for lvl in ("super_class", "main_class"):

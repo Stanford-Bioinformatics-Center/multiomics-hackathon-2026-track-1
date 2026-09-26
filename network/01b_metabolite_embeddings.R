@@ -9,7 +9,8 @@
 #   changed after one bout of exercise, in three tissues, at three times after exercise. Metabolomics is
 #   ONE molecular layer (genes had two: RNA and protein), so each vector has 3 tissues x 3 times = 9
 #   numbers, half the length of a gene's 18. Each metabolite gets TWO vectors, one for endurance and one
-#   for resistance, built completely separately so the two can later be compared honestly.
+#   for resistance, each computed from that arm's own comparison with the control group. (Both arms share
+#   the same control group, so their measurement errors are correlated; that correlation is saved.)
 #
 # THE DATA AND WHERE IT COMES FROM
 #   Source: the R package MotrpacHumanPreSuspensionAnalysis (v0.2.4), MoTrPAC human pre-suspension
@@ -18,17 +19,20 @@
 #
 # QUALITY CONTROL AND FILTERING DONE UPSTREAM (by the consortium, before we see the data)
 #   - Samples: first supervised exercise bout only (visit ADU_BAS); outlier samples from the
-#     consortium's review (package object OUTLIERS) removed.
+#     consortium's review (package object OUTLIERS) removed, per platform, before normalisation.
 #   - Platforms: each tissue was measured on 10-12 assays ("platforms"): targeted panels (known compounds,
 #     e.g. amino acids, TCA-cycle acids) and untargeted LC-MS (HILIC, ion-pairing, reversed-phase, lipid
 #     reversed-phase, positive and negative mode).
-#   - Per platform: features missing in more than 20% of samples removed; remaining gaps filled by
-#     k-nearest-neighbour imputation; log2 transform; median/MAD normalisation (untargeted platforms).
+#   - Per platform: zero or negative intensities set to missing; features missing in more than 20% of
+#     samples removed; remaining gaps imputed (a minimum-value / k-nearest-neighbour hybrid; small targeted
+#     panels of <= 12 features use half-minimum imputation); log2 transform; median/MAD normalisation for
+#     untargeted platforms, applied only where overall sample intensity is not associated with sex or group.
 #   - Names are standardised to RefMet (the Metabolomics Workbench reference nomenclature).
-#   - One platform per metabolite per tissue: if a metabolite was measured on several platforms, the
-#     one with the lowest technical coefficient of variation (CV, measured on repeated QC samples; the
-#     most reproducible) is kept (package function .prioritize_metab_by_cv_da, table METABOLOMICS_CVS).
-#     We checked: every metabolite appears on exactly one platform per tissue.
+#   - One platform per metabolite per tissue: if a metabolite was measured on several platforms, the one
+#     with the lowest technical coefficient of variation (CV; the most reproducible, per the consortium's
+#     METABOLOMICS_CVS table) is kept. We checked it from the data: every metabolite appears on exactly one
+#     platform per tissue, and for the 114 / 219 / 207 metabolites (adipose / blood / muscle) measured on
+#     several platforms the kept platform is always the lowest-CV one.
 #   - Model (dream linear mixed model, one per metabolite):
 #       targeted:   ~ 0 + group_timepoint + BMI + calculatedAge + codedsiteid + Sex + (1 | pid)
 #       untargeted: the same + raw_intensity_post (each sample's overall signal level, a technical covariate)
@@ -44,15 +48,20 @@
 #   4. Scaling: each tissue's metabolomics block is divided by one number, its root-mean-square logFC,
 #      pooled over the 450 metabolites, all three times and BOTH arms. One shared number per tissue is a
 #      common unit: it puts tissues on one footing while keeping real differences between arms and between
-#      times intact (a separate number per arm could hide a genuine arm difference).
+#      times intact (a separate number per arm could hide a genuine arm difference). As for genes, much of
+#      each block's spread is measurement noise, so equal scaled values in two tissues are not equal
+#      biological effect sizes.
 #   5. Nothing is missing by design: all three tissues have all three times in both arms.
+#   6. Time labels: "0.5h" is the package's post_15_30_45_min bin and "4h" its post_3.5_4_hr bin; the exact
+#      collection time within a bin differs between tissues.
 #
 # EMBEDDING LAYOUT (9 numbers per metabolite per arm)
 #   adipose 0.5/4/24 h, blood 0.5/4/24 h, muscle 0.5/4/24 h
 #
 # UNCERTAINTY, SAVED FOR LATER COMPARISON STEPS
-#   Each number's standard error (same scale) and the correlation between a metabolite's endurance and
-#   resistance estimates (correlated because both arms share one control group), exactly as for genes.
+#   Each number's standard error (same scale) and the correlation between the ERRORS of a metabolite's
+#   endurance and resistance estimates (correlated because both arms share one control group; a property
+#   of the measurement, not a similarity of responses), exactly as for genes.
 #
 # TECH STACK
 #   R 4.4; data.table (tables), MotrpacHumanPreSuspensionAnalysis (the data).
@@ -61,7 +70,7 @@
 #   01b_metab_nodes_EE.csv, 01b_metab_nodes_RE.csv      scaled 9-number vectors (the node tables)
 #   01b_metab_nodes_EE_raw_logFC.csv, ..._RE_...        the same before scaling
 #   01b_metab_nodes_EE_se.csv, 01b_metab_nodes_RE_se.csv standard errors, same scale
-#   01b_metab_nodes_arm_corr.csv                         correlation between EE and RE estimates
+#   01b_metab_nodes_arm_corr.csv                         correlation between the errors of EE and RE estimates
 #   01b_metab_scale_factors.csv                          the one divisor per tissue
 #   01b_metab_nodes_provenance.csv                       which platform measured each metabolite in each tissue
 # =====================================================================================================
@@ -90,11 +99,11 @@ da <- rbindlist(lapply(TISSUES, function(tis) {
   x <- as.data.table(get(paste0(toupper(tis), "_METAB_DA")))[
     contrast_category %in% c(ARMS, "EE-RE") & Timepoint %in% TPS,
     # the columns we keep: metabolite name, platform, comparison, time (short label), the change
-    # (logFC), and the standard error. The package gives a 95% confidence interval, so the standard
-    # error is its half-width divided by the matching t-distribution value.
+    # (logFC), and the standard error. The standard error is exactly logFC / t (the package's t statistic
+    # is logFC divided by its standard error); the confidence-interval route is used only if t = 0.
     .(metabolite = as.character(feature_id), platform = as.character(platform),
       arm = as.character(contrast_category), tp = names(TPS)[match(as.character(Timepoint), TPS)],
-      logFC, se = (CI.R - CI.L) / (2 * qt(0.975, degrees_of_freedom)))]
+      logFC, se = fifelse(!is.na(t) & t != 0, logFC / t, (CI.R - CI.L) / (2 * qt(0.975, degrees_of_freedom))))]
   # label every row with its tissue
   x[, tissue := tis]
 }))
@@ -126,8 +135,8 @@ arm_diff <- arm_diff[metabolite %in% universe]
 se_w <- dcast(da, tissue + metabolite + tp ~ arm, value.var = "se")
 # Add the standard error of the EE-RE difference next to them.
 se_w <- arm_diff[, .(tissue, metabolite, tp, se_diff = se)][se_w, on = .(tissue, metabolite, tp)]
-# Safety check: every row has its difference standard error.
-stopifnot(!anyNA(se_w$se_diff))
+# Safety checks: every row has its difference standard error, and no row was duplicated by the join.
+stopifnot(!anyNA(se_w$se_diff), !anyDuplicated(se_w[, .(tissue, metabolite, tp)]))
 # Compute the correlation; clamp into -1..1 (rounding safety).
 se_w[, rho := pmin(1, pmax(-1, (`EE-CON`^2 + `RE-CON`^2 - se_diff^2) / (2 * `EE-CON` * `RE-CON`)))]
 # Attach the correlation to the main table.
