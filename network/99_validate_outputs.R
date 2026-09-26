@@ -152,6 +152,44 @@ note("step4_edges_fdr_lt_0.1", v4[["edges_fdr_lt_0.1"]], 0); note("step4_edges_p
 # Record genes at FDR < 0.1.
 note("step4_genes_fdr_lt_0.1", v4[["nodes_fdr_lt_0.1_signed"]], 1)
 
+# ---- steps 5-7: metabolite-protein links (Rhea), metabolite networks, hub report ---------------------
+# Metabolite-protein links: every metabolite is one of the 450 and every gene one of the 471.
+lk <- rd("05_metabolite_protein_links.csv")
+# Check the links only use our metabolites and genes.
+check(all(lk$metabolite %in% ME$metabolite) && all(lk$entrez_gene %in% EE$entrez_gene), "step 5: links use our nodes")
+# Metabolite edges: both ends are metabolites, no self-links, no duplicate pairs.
+me <- rd("06_metabolite_edges.csv")
+# Check the metabolite edge list is clean.
+check(all(c(me$metabolite_a, me$metabolite_b) %in% ME$metabolite) && all(me$metabolite_a != me$metabolite_b) &&
+      !anyDuplicated(me[, .(pmin(metabolite_a, metabolite_b), pmax(metabolite_a, metabolite_b))]), "step 6: clean edge list")
+# The class rule holds: both ends of every edge have the edge's main class.
+ids2 <- rd("01c_metabolite_ids.csv"); cl <- setNames(ids2$main_class, ids2$metabolite)
+# Check both ends of every edge are in the edge's class.
+check(all(cl[me$metabolite_a] == me$main_class & cl[me$metabolite_b] == me$main_class), "step 6: same main class")
+# The protein rule holds: every listed shared protein handles both metabolites in step 5.
+sp <- me[, .(g = unlist(strsplit(shared_proteins, ";"))), by = .(metabolite_a, metabolite_b)]
+# Every metabolite-protein pair from step 5, as text keys.
+key <- paste(lk$metabolite, lk$gene_symbol)
+# Check each listed shared protein handles both metabolites.
+check(all(paste(sp$metabolite_a, sp$g) %in% key & paste(sp$metabolite_b, sp$g) %in% key), "step 6: shared protein handles both")
+# Metabolite edge weights are the dot products of the 9-number vectors.
+MEm <- as.matrix(ME[, -1]); rownames(MEm) <- ME$metabolite; MRm <- as.matrix(MR[, -1]); rownames(MRm) <- MR$metabolite
+# Check both arms' weights.
+check(isTRUE(all.equal(me$w_EE, unname(rowSums(MEm[me$metabolite_a, ] * MEm[me$metabolite_b, ])))) &&
+      isTRUE(all.equal(me$w_RE, unname(rowSums(MRm[me$metabolite_a, ] * MRm[me$metabolite_b, ])))), "step 6: weights = dot products")
+# Record the headline numbers for steps 5-7.
+s5 <- rd("05_rhea_summary.csv"); v5 <- setNames(s5$value, s5$metric)
+# Record metabolites linked to our genes.
+note("step5_metabolites_linked", as.numeric(v5[["metabolites_linked_to_our_genes"]]), 60)
+# Record genes linked to our metabolites.
+note("step5_genes_linked", as.numeric(v5[["genes_linked_to_our_metabolites"]]), 80)
+# Record the number of metabolite edges.
+note("step6_metabolite_edges", nrow(me), 78)
+# Record gene hubs above the Tukey fence.
+hs <- rd("07_hub_summary.csv"); note("step7_gene_hubs_tukey", hs[1, n_hubs_tukey], 13)
+# Record hubs flagged by the El-Kebir rule in any network.
+note("step7_hubs_elkebir_all_networks", sum(hs$n_hubs_elkebir), 0)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))
