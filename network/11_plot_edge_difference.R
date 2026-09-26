@@ -31,7 +31,8 @@
 #     shows measured differences only, without error bars. Differences here are not tested against noise.
 #   - Nodes: grey (colour is reserved for the edges), size = |difference in node strength| between arms
 #     (sum of |w_EE| minus sum of |w_RE| over the node's edges), labels for the 10 genes with the largest
-#     strength difference / every metabolite. Genes: squares. Metabolites: shape = RefMet super class.
+#     strength difference / every metabolite. Genes: squares. Metabolites: shape = RefMet super class, and
+#     each connected group is labelled with its super-class name (each group is a single class).
 #   - Only nodes with at least one edge are drawn (286 genes, 44 metabolites).
 #   Titles are descriptive only; interpretation belongs in the report text.
 #
@@ -82,7 +83,7 @@ norm01 <- function(v) if (diff(range(v)) < 1e-9) rep(0.5, length(v)) else (v - m
 #   node_order: all node names in the same order step 10 used (so the layout matches 10a / 10b)
 #   edges: data.table(a, b, w_EE, w_RE, w_diff); nodes: data.table(node, delta, shape_key)
 draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name, label_rule, file,
-                      width = 10.5, height = 5.4) {
+                      width = 10.5, height = 5.4, group_labels = FALSE) {
   # the network over the connected nodes, built exactly as in step 10 (same vertex order, same edge order)
   g <- graph_from_data_frame(edges[, .(a, b)], directed = FALSE,
                              vertices = data.table(node = node_order[node_order %in% c(edges$a, edges$b)]))
@@ -104,6 +105,11 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
   # labels for the chosen nodes
   N[, rk := frank(-abs(delta), ties.method = "first")]
   N[, lab := fifelse(label_rule(rk), node, NA_character_)]
+  # which connected group each node belongs to
+  N[, comp := components(g)$membership[node]]
+  # class labels (metabolites): one per connected group, centred above it (each group is a single class
+  # because edges require the same class; the label is the shape key, i.e. the super class)
+  GL <- N[, .(x = mean(range(x)), y = max(y) + 0.09, lab = as.character(shape_key[1])), by = comp]
   # the plot, back to front
   p <- ggplot() +
     # edges: colour and width = the difference
@@ -114,6 +120,9 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
     # labels that avoid each other and the nodes
     geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.3, colour = "grey15",
                     min.segment.length = 0.2, segment.size = 0.15, max.overlaps = Inf, seed = SEED) +
+    # the class label above each group (only when requested, i.e. for metabolites)
+    (if (group_labels) geom_text(data = GL, aes(x, y, label = lab), size = 2.9, colour = "grey35",
+                                 fontface = "bold.italic") else NULL) +
     # blue - grey - red scale centred at zero
     scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-lim, lim),
                            oob = scales::squish, name = "edge difference  w_EE − w_RE",
@@ -128,7 +137,7 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
     guides(colour = guide_colourbar(order = 1, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"),
                                     title.position = "top", title.hjust = 0.5),
            shape = guide_legend(order = 3, override.aes = list(size = 2.6)), size = guide_legend(order = 4)) +
-    coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.02), clip = "off") +
+    coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.1), clip = "off") +
     labs(title = title) + theme_net()
   # save with a white background at 300 dpi
   ggsave(file, p, width = width, height = height, dpi = 300, bg = "white")
@@ -169,5 +178,5 @@ cls <- sort(unique(as.character(mn$shape_key)))
 # Draw and save the metabolite figure.
 draw_diff(morder, me, mn, "Metabolite network: endurance minus resistance edge weights (shared Rhea enzyme among the 471 genes + same RefMet super class)",
           shape_values = setNames(c(21, 22, 24, 23, 25)[seq_along(cls)], cls), shape_name = "RefMet super class",
-          label_rule = function(rk) rep(TRUE, length(rk)),
+          label_rule = function(rk) rep(TRUE, length(rk)), group_labels = TRUE,
           file = file.path(FIG, "11b_metabolite_network_edge_difference.png"))

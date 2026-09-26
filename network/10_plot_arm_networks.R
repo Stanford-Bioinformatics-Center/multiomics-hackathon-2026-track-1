@@ -26,7 +26,9 @@
 #     in the same direction on balance); dashed = negative weight (opposite directions).
 #   - Node shape: genes: all squares. Metabolites: shape = RefMet super class.
 #     (No significance marks: the bootstrap test of arm differences has been removed for now.)
-#   - Labels: the 10 strongest nodes of each layer (genes); every node (metabolites, only 44).
+#   - Labels: the 10 strongest nodes of each layer (genes); every node (metabolites, only 44). In the
+#     metabolite figure each connected group also gets its RefMet super-class name above it (every group
+#     is a single class, because metabolite edges require the same class).
 #   - Display filter: only nodes with at least one edge are drawn (isolated nodes carry no network
 #     information); the numbers of drawn nodes and edges are stated in each panel's side label.
 #   Titles are descriptive only; interpretation belongs in the report text.
@@ -88,9 +90,10 @@ build <- function(nodes, edges) {
   set.seed(SEED); L0 <- layout_with_fr(g)
   # scaled to 0..1
   x0 <- norm01(L0[, 1]); y0 <- norm01(L0[, 2])
-  # the same positions in both layers: EE in the top band (0.55-1), RE in the bottom band (0-0.45)
-  lay <- rbind(data.table(node = V(g)$name, arm = "EE", x = x0, y = 0.55 + 0.45 * y0),
-               data.table(node = V(g)$name, arm = "RE", x = x0, y = 0.45 * y0))
+  # the same positions in both layers: EE in the top band (0.55-0.91), RE in the bottom band (0.05-0.41);
+  # the gap above each band leaves room for the metabolite class labels
+  lay <- rbind(data.table(node = V(g)$name, arm = "EE", x = x0, y = 0.55 + 0.36 * y0),
+               data.table(node = V(g)$name, arm = "RE", x = x0, y = 0.05 + 0.36 * y0))
   # node strength per arm = sum of the sizes of its edge weights
   both <- rbind(edges[, .(node = a, w_EE, w_RE)], edges[, .(node = b, w_EE, w_RE)])
   st <- both[, .(EE = sum(abs(w_EE)), RE = sum(abs(w_RE))), by = node]
@@ -113,17 +116,24 @@ build <- function(nodes, edges) {
   E[, direction := factor(fifelse(w >= 0, "same direction (w > 0)", "opposite direction (w < 0)"),
                           levels = c("same direction (w > 0)", "opposite direction (w < 0)"))]
   # the drawing data and the counts shown in the side labels
+  # which connected group each node belongs to (used for the metabolite class labels)
+  N[, comp := components(g)$membership[node]]
+  # the drawing data and the counts shown in the side labels
   list(N = N, E = E, n_nodes = vcount(g), n_edges = ecount(g))
 }
 
 # Draw one figure from build()'s output.
-draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 10.5, height = 6.2) {
+draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 10.5, height = 6.2,
+                 group_labels = FALSE) {
   # which nodes get a label in each layer
   N <- copy(G$N)
   N[, rk := frank(-strength, ties.method = "first"), by = arm]
   N[, lab := fifelse(label_rule(rk), node, NA_character_)]
+  # class labels (metabolites): one per connected group per layer, centred above the group. Every group is a
+  # single class because edges require the same class; the label is the shape key (the super class).
+  GL <- N[, .(x = mean(range(x)), y = max(y) + 0.06, lab = as.character(shape_key[1])), by = .(arm, comp)]
   # side labels for the two layers, stating what is drawn
-  SL <- data.table(x = -0.06, y = c(0.775, 0.225),
+  SL <- data.table(x = -0.06, y = c(0.73, 0.23),
                    lab = sprintf(c("endurance vs control\n%d nodes · %d edges", "resistance vs control\n%d nodes · %d edges"),
                                  G$n_nodes, G$n_edges))
   # the plot, layer by layer (back to front)
@@ -138,6 +148,9 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
     # labels that avoid each other and the nodes
     geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.3, colour = "grey15",
                     min.segment.length = 0.2, segment.size = 0.15, max.overlaps = Inf, seed = SEED) +
+    # the class label above each group (only when requested, i.e. for metabolites)
+    (if (group_labels) geom_text(data = GL, aes(x, y, label = lab), size = 2.9, colour = "grey35",
+                                 fontface = "bold.italic") else NULL) +
     # the layer names on the left
     geom_text(data = SL, aes(x, y, label = lab), angle = 90, size = 2.6, colour = "grey30", fontface = "bold", lineheight = 0.9) +
     # scales: line types, widths, node sizes, shapes, colours
@@ -196,5 +209,5 @@ cls <- sort(unique(as.character(G2$N$shape_key)))
 # Draw and save the metabolite figure.
 draw(G2, "Metabolite networks: endurance vs resistance (shared Rhea enzyme among the 471 genes + same RefMet super class)",
      shape_values = setNames(c(21, 22, 24, 23, 25)[seq_along(cls)], cls), shape_name = "RefMet super class",
-     label_rule = function(rk) rep(TRUE, length(rk)),
+     label_rule = function(rk) rep(TRUE, length(rk)), group_labels = TRUE,
      file = file.path(FIG, "10b_metabolite_networks_EE_vs_RE.png"))

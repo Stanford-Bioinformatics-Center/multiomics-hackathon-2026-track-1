@@ -351,14 +351,15 @@ carry no information. With identical positions, the differences between arms are
 encodings. Node colour = mean scaled
 response across the node's dimensions (violet down, orange up, limits ±2); node size = strength in that
 arm; edge width = |w|, solid = positive, dashed = negative. Genes: squares. Metabolites: shape = RefMet
-super class. Only
+super class, and each connected group is labelled with its super-class name. Only
 connected nodes are drawn (286 genes, 44 metabolites). Titles are descriptive only.
 
 **Step 11 — edge-difference figures.** One network per data type, in the same node positions as
 10a / 10b. Edge colour and width show w_diff = w_EE − w_RE: red and thicker = endurance weight higher,
 blue and thicker = resistance weight higher, thin light grey = the same in both arms (colour limits
 symmetric at the 95th percentile of |w_diff|). No significance marks (the test is removed for now).
-Nodes are grey, sized by the absolute difference in strength (sum of |w_EE| minus sum of |w_RE|).
+Nodes are grey, sized by the absolute difference in strength (sum of |w_EE| minus sum of |w_RE|);
+in 11b each metabolite group is labelled with its super-class name.
 **Read with care:** the difference is of *signed* weights, so for an edge that is negative in both arms,
 red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −9.2 in EE, −54.0 in
 RE). The legend therefore says "higher", not "stronger"; the weights are in `03_weighted_edges.csv` /
