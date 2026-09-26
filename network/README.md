@@ -600,8 +600,8 @@ Counts come from `network/inventory/` (see its README). **Read with care:** colo
 summaries (the site, tissue and time are in `16_protein_annotation.csv`); glycosylation is prior knowledge,
 not an exercise response; nothing here is tested.
 
-**16c — both layers and site-level crosstalk.** Fill = the 16a phospho category, ring = the 16b glycosylation
-category, and a diamond on proteins where a phosphosite MoTrPAC measured is the **same residue** as an
+**16c — both layers and site-level crosstalk.** Fill = the 16a phospho category, ring = glycosylated or not
+(any type, site known or protein-level: 276 of the 304 drawn proteins; the types are in 16b), and a diamond on proteins where a phosphosite MoTrPAC measured is the **same residue** as an
 O-glycosylation site GlyGen lists (same canonical protein, position and residue; plain accessions matched on
 GlyGen's canonical, isoform accessions only when GlyGen's canonical is that isoform; multi-site features
 contribute each residue). Phosphorylation and O-GlcNAcylation compete for the same serine / threonine

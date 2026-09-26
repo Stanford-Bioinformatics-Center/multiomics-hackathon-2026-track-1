@@ -20,8 +20,8 @@
 #         no glycosylation record · glycosylated, site unknown (protein-level evidence) · N-linked sites
 #         only · O-linked sites only (incl. O-GlcNAc) · both N- and O-linked sites. Labels: the proteins
 #         with the most glycosylation sites, with site and glycan-structure counts.
-#     16c, both together + site-level crosstalk: fill = the 16a phospho category, ring = the 16b glycosylation
-#         category, and a diamond on proteins where a measured phosphosite is the SAME residue as a known
+#     16c, both together + site-level crosstalk: fill = the 16a phospho category, ring = glycosylated or not
+#         (any type, site known or protein-level; the types are in 16b), and a diamond on proteins where a measured phosphosite is the SAME residue as a known
 #         O-glycosylation (mostly O-GlcNAc) site (same canonical protein, position, residue; multi-site
 #         features contribute each residue); gold diamond = such a residue responds to exercise.
 #
@@ -219,20 +219,23 @@ xp[, xt_label := fifelse(xt_n > 4, sprintf("%s  %d residues", protein, xt_n), xt
 xp[, xt_label := sprintf("%s (%d/%d respond)", xt_label, xt_resp, xt_n)]
 P3 <- xp[N[node_type == "protein"], on = c(protein = "node")]; setnames(P3, "protein", "node")
 P3[is.na(xt_n), `:=`(xt_n = 0L, xt_resp = 0L)]
-P3[, `:=`(ph_f = factor(ph_cat, levels = PH_LEV), gl_f = factor(gl_cat, levels = GL_LEV))]
-# ring colours for glycosylation (darker than the 16b fills so a ring stays visible)
-GL_RING <- setNames(c("grey55", "#A6D96A", "#1B9E77", "#D95F02", "#7570B3"), GL_LEV)
+# 16c keeps glycosylation general (any type, site known or not) so the figure stays simple; 16b has the types
+GLY2 <- c("glycosylated (any type; site known or protein-level)", "no glycosylation record")
+P3[, `:=`(ph_f = factor(ph_cat, levels = PH_LEV), gly2 = factor(fifelse(gl_cat == GL_LEV[1], GLY2[2], GLY2[1]), levels = GLY2))]
+# ring: a thick teal ring for glycosylated proteins, a thin grey border otherwise
+GL_RING <- setNames(c("#1B9E77", "grey35"), GLY2)
+P3[, ring_stroke := fifelse(gly2 == GLY2[1], 0.8, 0.3)]
 nlab <- function(df, col, lev) { n <- df[, .N, by = c(col)]; sub("\\(NA\\)", "(0)", sprintf("%s (%d)", lev, n$N[match(lev, n[[col]])])) }
 # the crosstalk marker: a diamond just above-right of the protein, gold if a crosstalk residue responds
 MK <- P3[xt_n > 0][, `:=`(mx = x + 0.009, my = y + 0.014, mk = factor(fifelse(xt_resp > 0, "a shared residue responds (either arm)", "shared residue(s), none respond"),
                                                                    levels = c("a shared residue responds (either arm)", "shared residue(s), none respond")))]
 q <- base_plot() +
   ggnewscale::new_scale_colour() +
-  geom_point(data = P3, aes(x, y, size = abs_delta, shape = node_type, fill = ph_f, colour = gl_f), stroke = 1.05) +
+  geom_point(data = P3, aes(x, y, size = abs_delta, shape = node_type, fill = ph_f, colour = gly2), stroke = P3$ring_stroke) +
   scale_fill_manual(values = PH_COL, labels = setNames(nlab(P3, "ph_cat", PH_LEV), PH_LEV), drop = FALSE, name = "fill: MoTrPAC phosphosites",
                     guide = guide_legend(order = 1, ncol = 3, override.aes = list(shape = 21, size = 3, colour = "grey20", stroke = 0.3))) +
-  scale_colour_manual(values = GL_RING, labels = setNames(nlab(P3, "gl_cat", GL_LEV), GL_LEV), drop = FALSE, name = "ring: GlyGen glycosylation",
-                      guide = guide_legend(order = 2, ncol = 3, override.aes = list(shape = 21, size = 3, fill = "white", stroke = 1.3))) +
+  scale_colour_manual(values = GL_RING, labels = setNames(nlab(P3, "gly2", GLY2), GLY2), drop = FALSE, name = "ring: GlyGen glycosylation",
+                      guide = guide_legend(order = 2, override.aes = list(shape = 21, size = 3, fill = "white", stroke = c(1, 0.3)))) +
   ggnewscale::new_scale_fill() +
   geom_point(data = MK, aes(mx, my, fill = mk), shape = 23, size = 2.1, colour = "grey10", stroke = 0.35) +
   scale_fill_manual(values = c("a shared residue responds (either arm)" = "#FFD700", "shared residue(s), none respond" = "white"), drop = FALSE,
