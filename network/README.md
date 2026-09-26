@@ -110,7 +110,8 @@ install.packages(c("data.table", "igraph", "nanoparquet", "Matrix"))
 | Rhea (step 5) | downloaded automatically from ftp.expasy.org/databases/rhea/ on first run (release 142) | `HACK_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/rhea`) |
 | Results folder | created by step 1 | `HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`) |
 
-Code and results are kept in separate trees: nothing is written inside the repo.
+Code and results are kept in separate trees: nothing is written inside the repo, except the small
+reference lists in `network/resource/` (step 9), which are committed on purpose for teammates.
 
 ## 5. Inputs, outputs and quick start
 
@@ -128,6 +129,7 @@ Rscript network/05_rhea_metabolite_protein.R  # metabolite-protein links (downlo
 Rscript network/06_metabolite_network.R       # metabolite networks, EE and RE
 Rscript network/07_hub_report.R               # hubs in all four networks (nothing removed)
 Rscript network/08_metabolite_rule_experiments.R  # how the metabolite edge rule affects coverage (report only)
+Rscript network/09_export_resources.R         # refresh the shareable feature lists in network/resource/
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -160,6 +162,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 6 | `06_metabolite_nodes.csv`, `06_metabolite_summary.csv` | per metabolite: class, proteins, degree, component; headline counts |
 | 7 | `07_hub_summary.csv` | per network × hub type: degree distribution, El-Kebir and Tukey cutoffs, number of hubs, top hub, top strength per arm |
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
+| 9 | `network/resource/proteins_471.csv`, `metabolites_450.csv` (in the repo) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
 
 **Gene vector layout (18 dimensions, per arm)**
@@ -430,6 +433,11 @@ network/
   06_metabolite_network.R  step 6   metabolite networks
   07_hub_report.R          step 7   hub report (all four networks)
   08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
+  09_export_resources.R    step 9   writes the feature lists below
+  resource/
+    README.md              column definitions
+    proteins_471.csv       the 471 proteins: symbol, Entrez, UniProt, Ensembl, STRING
+    metabolites_450.csv    the 450 metabolites: RefMet, classes, ChEBI, PubChem, InChIKey, KEGG, platforms
   99_validate_outputs.R    checks
 ```
 
