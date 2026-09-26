@@ -92,6 +92,7 @@ flowchart LR
 | `igraph` | 2.2 | network components |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
+| TinyTeX (R `tinytex`) | via `tinytex::install_tinytex()` | step 13 (compiles the LaTeX table to PDF) |
 | Internet | — | step 1c only |
 
 **Install**
@@ -136,6 +137,7 @@ Rscript network/resource/export_feature_lists.R  # shareable feature lists -> $H
 Rscript network/10_plot_arm_networks.R        # figures: EE vs RE networks, genes and metabolites -> $HACK_FIG
 Rscript network/11_plot_edge_difference.R     # figures: one network per data type, edges = w_EE - w_RE -> $HACK_FIG
 Rscript network/12_normalization_comparison.R # four normalisations side by side (report only) -> $HACK_FIG
+Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -166,6 +168,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
+| 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs linked, edges, metabolites in the network, cor(w_EE, w_RE), sign changes, change vs baseline |
@@ -456,6 +459,22 @@ How to read it:
 Panels in figures 12a/12b show each option's edge differences relative to that panel's own 95th
 percentile of |w_EE − w_RE|, so compare patterns, not magnitudes.
 
+**Step 13 — descriptive statistics of the log fold changes.** The unnormalised log2 fold changes of the
+network features (471 genes as RNA and protein; 450 metabolites; 0.5 / 4 / 24 h; adipose, blood, muscle),
+summarised per ome as n, minimum, maximum, mean and SD, pooled across the two study arms (table 1) and by
+arm (table 2), written as a LaTeX PDF. The script checks that each ome has features × dimensions × arms
+values and that each pooled maximum |logFC| equals the step 1 / 1b divisor.
+
+| Ome | Pooled: min / max / mean / SD | Endurance: min / max | Resistance: min / max |
+|---|---|---|---|
+| RNA (n = 8,478) | −2.372 / 2.746 / 0.014 / 0.184 | −2.372 / 1.475 | −1.340 / 2.746 |
+| Protein (n = 6,594) | −1.332 / 1.763 / 0.057 / 0.259 | −1.332 / 1.314 | −1.199 / 1.763 |
+| Metabolites (n = 8,100) | −2.349 / 4.204 / 0.000 / 0.264 | −1.866 / 2.124 | −2.349 / 4.204 |
+
+The omes' ranges differ (metabolite maximum 4.2 vs protein 1.8), which is what the critical normalisation
+step corrects; the largest changes in every ome occur in the resistance arm, which is why per-arm
+max-normalisation (step 12, option 2) shrinks resistance relative to endurance.
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -542,6 +561,7 @@ network/
   10_plot_arm_networks.R   step 10  figures of the EE vs RE networks (written outside the repo)
   11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)
   12_normalization_comparison.R  step 12  four normalisation options compared (report only)
+  13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
