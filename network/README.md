@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (25 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Status | Gene and metabolite networks built and validated (29 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 14, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -76,7 +76,9 @@ flowchart LR
    Nothing is removed.
 8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
    side, to choose the approach.
-9. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
+9. **Descriptive and exploratory tables (steps 13, 14).** Statistics of the log fold changes per ome
+   and arm (LaTeX PDF), and T2D-relevant lipid classes per arm with the clinical NEFA check (section 7b).
+10. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
    metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
 
 ## 4. Setup
@@ -138,6 +140,7 @@ Rscript network/10_plot_arm_networks.R        # figures: EE vs RE networks, gene
 Rscript network/11_plot_edge_difference.R     # figures: one network per data type, edges = w_EE - w_RE -> $HACK_FIG
 Rscript network/12_normalization_comparison.R # four normalisations side by side (report only) -> $HACK_FIG
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
+Rscript network/14_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -168,6 +171,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
+| 14 | `14_t2d_class_summary.csv`, `14_t2d_species.csv`, `14_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
@@ -497,7 +501,13 @@ max-normalisation (step 12, option 2) shrinks resistance relative to endurance.
   test, *JMLR* 13:723–773 ·
   Szklarczyk D et al. STRING database, *Nucleic Acids Res.* · Fahy E, Subramaniam S (2020) RefMet,
   *Nat. Methods* 17:1173 · Bansal P et al. (2022) Rhea, the reaction knowledgebase in 2022,
-  *Nucleic Acids Res.* 50:D693 · Tukey JW (1977) *Exploratory Data Analysis*.
+  *Nucleic Acids Res.* 50:D693 · Tukey JW (1977) *Exploratory Data Analysis* · Liu C et al. (2009)
+  Lactate inhibits lipolysis in fat cells through activation of GPR81, *J Biol Chem* · Ahmed K et al. (2010)
+  An autocrine lactate loop mediates insulin-dependent inhibition of lipolysis through GPR81, *Cell Metab* ·
+  Bergman BC et al. (2015) Serum sphingolipids and changes with exercise, *Am J Physiol Endocrinol Metab* ·
+  Wigger L et al. (2017) Plasma dihydroceramides are diabetes susceptibility biomarker candidates, *Cell Rep*
+  · Adams SH et al. (2009) Plasma acylcarnitine profiles in type 2 diabetes, *J Nutr* · MoTrPAC (2026)
+  human acute-exercise papers: skeletal muscle, subcutaneous adipose tissue and blood (bioRxiv / PMC).
 - **Licence:** MIT (repository `LICENSE`, © 2026 Stanford Bioinformatics Center).
 
 ## 7. Validation
@@ -524,6 +534,52 @@ test against measurement noise, none of these differences is established: most r
 relative to their error (median |value| / SE = 0.83 for genes, 0.80 for metabolites), so many sign
 changes are near-zero weights flipping within noise. Whether r = 0.45 means "similar" or "different"
 also needs a noise-only reference (roadmap).
+
+### 7b. Preliminary biological observations (descriptive, NOT tested)
+
+These notes record what the data show and how they relate to the literature, so the team can decide
+what to pursue. None of the differences between the arms is statistically tested (the bootstrap was
+removed); treat every item as a hypothesis. Tables: step 14 outputs; drivers from steps 1b and 6.
+
+**Sphingolipids vs fatty acyls differ between the arms, each driven by one tissue and time.**
+- *Ceramides* (C14–C22) are more coordinated after **endurance**, driven by **adipose at 4 h**: all five
+  rise together, more after endurance (≈ +0.32 log2) than resistance (≈ +0.18). In muscle at 0.5 h they
+  fall similarly in both arms.
+- *Free fatty acids* are more coordinated after **resistance**, driven by **plasma at 0.5 h**: mean
+  −0.24 log2 after resistance (29 of 55 clearly down) vs +0.02 after endurance; mostly medium-chain
+  (capric, lauric, myristic) and linoleic acid, while palmitate and oleate barely move.
+- *Independent confirmation:* the consortium's clinical chemistry shows total plasma free fatty acids
+  (NEFA) −0.58 log2 at 0.5 h after resistance (adj p ≈ 5×10⁻⁸) and a rebound at 4 h (+0.57), while
+  lactate is much higher after resistance (+2.0 vs +0.86 log2). Glycerol also rises after resistance
+  (+0.50), so fat breakdown is not fully suppressed.
+- *Literature fit:* lactate inhibits adipose lipolysis through GPR81/HCAR1 (Liu et al. 2009, *J Biol
+  Chem*; Ahmed et al. 2010, *Cell Metab*), and plasma fatty-acid release is suppressed at high exercise
+  intensity; MoTrPAC reports plasma acylcarnitines rising after endurance and falling after resistance
+  (MoTrPAC blood paper, 2026) and rapid muscle ceramide loss after endurance (MoTrPAC muscle paper, 2026).
+  Circulating ceramides rise transiently during exercise (Bergman et al. 2015, *Am J Physiol Endocrinol
+  Metab*). No study found showing a larger adipose ceramide rise after endurance than resistance.
+
+**Relation to type 2 diabetes (T2D).** In T2D, plasma free fatty acids (especially saturated),
+acylcarnitines and ceramides (plasma C18:0 / C22:0; muscle C18:0; adipose) are elevated; linoleic and
+odd-chain fatty acids are *inversely* associated with risk (e.g. Wigger et al. 2017, *Cell Rep*;
+plasma-ceramide cohort studies in *J Lipid Res* 2021 and EPIC-Potsdam, *Nat Commun* 2022; Adams et al. 2009, *J Nutr*; fatty-acid biomarker meta-analyses).
+Acutely:
+
+| T2D-elevated class | Endurance | Resistance |
+|---|---|---|
+| Plasma free fatty acids, 0.5 h | ≈ 0 | ↓ (then ↑ above baseline at 4 h) |
+| Acylcarnitines, muscle / plasma 0.5 h | ↑ (expected: more fat oxidation) | ↓ |
+| Muscle ceramides, 0.5 h | ↓ | ↓ (similar) |
+| Adipose ceramides incl. C18:0 / C22:0, 4 h | ↑ (larger) | ↑ (smaller) |
+| Plasma ceramides | ≈ 0 | ≈ 0 |
+
+A defensible summary: after a single bout, resistance produced a more T2D-favourable *acute* shift in
+circulating lipids (lower free fatty acids and acylcarnitines, smaller adipose risk-ceramide rise), and
+both modes lowered muscle ceramides similarly. Caveats: the resistance effects are transient; part of the
+fatty-acid drop is linoleic acid (protective in T2D); an exercise-induced acylcarnitine rise is not the
+incomplete oxidation of T2D; and protection against T2D comes from repeated training, which a single
+bout does not measure. The Track 1 brief warns that overlap or reversal does not demonstrate clinical
+benefit; our week-1 disease-mirror work also found the T2D mirror did not survive a same-ome test.
 
 **Known failure modes and limits**
 
@@ -562,6 +618,7 @@ network/
   11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)
   12_normalization_comparison.R  step 12  four normalisation options compared (report only)
   13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
+  14_t2d_lipid_classes.R         step 14  T2D-relevant lipid classes per arm (tables behind section 7b)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
