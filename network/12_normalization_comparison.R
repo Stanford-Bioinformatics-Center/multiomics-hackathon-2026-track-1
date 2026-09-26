@@ -31,6 +31,13 @@
 #   $HACK_OUT/12_normalization_summary.csv   per option and network: correlation between the arms' edge
 #       weights, edges changing sign, share of edges higher in endurance, rank correlation of the edge
 #       differences with option 1, and overlap of the 20 largest differences with option 1
+#   $HACK_OUT/12_threshold_robustness.csv    can a weight cut-off survive the normalisation choice? For
+#       each network, weight (w_EE, w_RE, w_diff) and cut-off "keep the top X% of edges by |weight|"
+#       (X = 1 ... 50): k, edges kept under all four options, smallest and mean pairwise Jaccard overlap
+#       of the kept sets, sign agreement of the edges kept in all four, the cut-off in option 1 units and
+#       as a fraction of option 1's largest |weight|. A fixed ABSOLUTE cut-off cannot be compared across
+#       options (max- and mean-normalised weights differ ~100-fold), so cut-offs are expressed as ranks.
+#   $HACK_OUT/12_threshold_pairwise.csv      the same Jaccard overlap for every pair of options (top 10%, 20%)
 #   $HACK_FIG/12a_gene_network_normalization_comparison.png        2 x 2 panels, genes
 #   $HACK_FIG/12b_metabolite_network_normalization_comparison.png  2 x 2 panels, metabolites
 #   Each panel is the step 11 difference network (red = endurance weight higher, blue = resistance higher,
@@ -220,6 +227,43 @@ ids <- fread(file.path(OUT, "01c_metabolite_ids.csv")); cls <- setNames(ids$supe
 draw_grid(M$edges, M$summary, fread(file.path(OUT, "01b_metab_nodes_EE.csv"))$metabolite, me, cls,
           "Metabolite network: endurance minus resistance edge weights under four normalisations (Rhea + STRING-linked enzymes, same super class)",
           file.path(FIG, "12b_metabolite_network_normalization_comparison.png"), label_all = TRUE)
+
+# ---- threshold robustness: which cut-off keeps the same edges under every normalisation? ------------
+# Jaccard overlap of two edge sets (shared / all).
+jac <- function(x, y) length(intersect(x, y)) / length(union(x, y))
+# Cut-offs as "top X% of edges by |weight|" (ranks are comparable across options; raw values are not).
+TOP_PCT <- c(1, 2, 5, 10, 15, 20, 25, 30, 40, 50)
+# Helper: the edges kept by each option at the top-k cut-off for one weight column.
+kept <- function(ed, col, k) lapply(OPTIONS, function(o) { x <- ed[option == o]; paste(x$a, x$b)[order(-abs(x[[col]]))][seq_len(k)] })
+# Helper: one robustness row per cut-off for one network and weight column.
+robust <- function(ed, net, col) rbindlist(lapply(TOP_PCT, function(pct) {
+  # number of edges kept (at least 1)
+  k <- max(1, round(pct / 100 * uniqueN(paste(ed$a, ed$b))))
+  # kept sets under the four options, and the edges kept by all four
+  sets <- kept(ed, col, k); common <- Reduce(intersect, sets)
+  # smallest and mean overlap over the 6 pairs of options
+  pj <- combn(length(OPTIONS), 2, function(ix) jac(sets[[ix[1]]], sets[[ix[2]]]))
+  # of the edges kept by all four, the share whose sign is the same under all four
+  sg <- ed[paste(a, b) %in% common, .(same = uniqueN(sign(get(col))) == 1), by = .(a, b)][, mean(same)]
+  # option 1's |weight| at the cut-off (its own units) and as a share of option 1's largest |weight|
+  r1 <- sort(abs(ed[option == OPTIONS[1]][[col]]), decreasing = TRUE)
+  data.table(network = net, weight = col, top_pct = pct, k = k, kept_by_all_4 = length(common),
+             min_jaccard = round(min(pj), 2), mean_jaccard = round(mean(pj), 2),
+             sign_agreement = if (length(common)) round(sg, 2) else NA_real_,
+             option1_cutoff = signif(r1[k], 2), option1_cutoff_share_of_max = round(r1[k] / r1[1], 2))
+}))
+# Every network x weight combination.
+thr <- rbindlist(lapply(c("w_diff", "w_EE", "w_RE"), function(col) rbind(robust(G$edges, "genes", col), robust(M$edges, "metabolites", col))))
+fwrite(thr, file.path(OUT, "12_threshold_robustness.csv"))
+# Pairwise overlaps (which options disagree) at the top 10% and 20% of |w_diff|.
+pw <- rbindlist(lapply(list(genes = G$edges, metabolites = M$edges), function(ed) rbindlist(lapply(c(10, 20), function(pct) {
+  k <- round(pct / 100 * uniqueN(paste(ed$a, ed$b))); sets <- kept(ed, "w_diff", k)
+  rbindlist(combn(length(OPTIONS), 2, function(ix) data.table(top_pct = pct, option_a = OPTIONS[ix[1]], option_b = OPTIONS[ix[2]],
+                                                               jaccard = round(jac(sets[[ix[1]]], sets[[ix[2]]]), 2)), simplify = FALSE))
+}))), idcol = "network")
+fwrite(pw, file.path(OUT, "12_threshold_pairwise.csv"))
+# Show the w_diff rows.
+print(thr[weight == "w_diff"])
 
 # ---- tables ---------------------------------------------------------------------------------------
 # All divisors.

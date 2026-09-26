@@ -485,6 +485,31 @@ How to read it:
 Panels in figures 12a/12b show each option's edge differences relative to that panel's own 95th
 percentile of |w_EE − w_RE|, so compare patterns, not magnitudes.
 
+**Step 12 (continued) — is there a weight cut-off that survives the normalisation choice?** A fixed
+*absolute* cut-off is meaningless across options: max-normalised and mean-normalised weights differ
+~100-fold (median |w_diff| for genes 0.05 under option 1 vs 8.5 under option 3). Cut-offs are therefore
+tested as ranks — "keep the top X% of edges by |weight|" — and a cut-off counts as robust if the four
+options keep the same edges (Jaccard overlap of the kept sets; `12_threshold_robustness.csv`,
+`12_threshold_pairwise.csv`).
+
+| Network, weight | Smallest pairwise Jaccard at top 10% / 20% / 50% | Robust cut-off? |
+|---|---|---|
+| metabolites, w_EE or w_RE | 1.00 / 1.00 / 1.00 | **any** — one ome, so every option only rescales an arm by a constant and never changes the ranking |
+| metabolites, w_diff | 0.43 / 0.49 / 0.53 | options 1, 3 and 4 agree exactly (Jaccard 1.00); **option 2 disagrees** because resistance's max (hypoxanthine, 4.2) is double endurance's, so per-arm max rescaling halves RE relative to EE |
+| genes, w_EE | 0.19 / 0.28 / 0.54 | **none** |
+| genes, w_RE | 0.32 / 0.46 / 0.60 | **none** |
+| genes, w_diff | 0.25 / 0.39 / 0.50 | **none**; the split is max (1, 2) vs mean (3, 4): within families 0.56–0.62 and 0.87, across families 0.25–0.45 |
+
+For genes no cut-off from 1% to 50% keeps even 60% of edges in common across the four options, and the
+disagreement is not noise at the tail: it comes from how the options weight **RNA against protein**
+(max vs mean gives the two omes different relative sizes), which re-ranks edges everywhere. A threshold
+cannot fix that; the normalisation choice (open item) has to be made first. Where edges do survive all
+four options their sign almost always agrees (0.98–1.00 for genes). Until the choice is made, the
+defensible option is a **consensus set** rather than a threshold — e.g. the 45 gene edges in the top 20%
+of |w_diff| under all four options (`kept_by_all_4`) — and, for metabolites, any rank cut-off on per-arm
+weights, or any cut-off on w_diff if option 2 is excluded. Option 1 units for reference: top 10% of gene
+|w_diff| is |w_diff| ≥ 0.17 (0.37 × the largest); top 20% is ≥ 0.12.
+
 **Step 13 — descriptive statistics of the log fold changes.** The unnormalised log2 fold changes of the
 network features (471 genes as RNA and protein; 450 metabolites; 0.5 / 4 / 24 h; adipose, blood, muscle),
 summarised per ome as n, minimum, maximum, mean and SD, pooled across the two study arms (table 1) and by
