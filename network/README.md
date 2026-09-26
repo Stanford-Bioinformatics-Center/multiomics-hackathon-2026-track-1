@@ -1,16 +1,24 @@
-# Exercise network: node embeddings
+# Exercise network: endurance vs resistance
 
-Step 1 of the network build: one node per gene, carrying an 18-value exercise-response
-vector. The next step links the nodes with STRING.
+Goal: two networks over the same genes, one for endurance vs control (EE) and one for resistance
+vs control (RE), to compare against each other.
+
+- **Step 1 — nodes** (`01_node_embeddings.R`): one node per gene. Each node has **two** 18-value
+  exercise-response vectors, one per arm, built independently from that arm's contrast.
+- **Step 2 — edges** (`02_string_edges.R`): STRING links between the nodes, built with the
+  network rules of El-Kebir et al. 2015.
 
 ## Run
 
 ```bash
 Rscript network/01_node_embeddings.R
+Rscript network/02_string_edges.R
 ```
 
-Requires R with `data.table` and `MotrpacHumanPreSuspensionAnalysis` (the MoTrPAC human
-pre-suspension package, which ships the differential analysis results and the feature-to-gene map).
+Requires R with `data.table`, `igraph`, `nanoparquet` and `MotrpacHumanPreSuspensionAnalysis`
+(the MoTrPAC human pre-suspension package, which ships the differential analysis results and the
+feature-to-gene map). Step 2 reads the STRING file from `$STRING_PARQUET` (default
+`~/Downloads/Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet`).
 Outputs go to `$HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`); code and
 results are kept in separate trees, so nothing is written inside the repo.
 
@@ -77,6 +85,44 @@ depend on the exercise response, so this does not select for responsive features
 
 The script checks that the universe is exactly 471 genes and that each table is 471 × 18.
 
-## Next
+## Step 2: edges
 
-Map the 471 genes to STRING protein IDs and pull the edges between them (step 2).
+Rules follow El-Kebir et al. 2015 (xHeinz, *Bioinformatics* 31:3147), section 3.3:
+
+1. **Background network:** STRING protein–protein interactions. We use the curated file with
+   `combined_score >= 700` (124,099 edges, 13,855 proteins, UniProt IDs).
+2. **Undirected, no self-loops, one edge per pair.** The file already satisfies this.
+3. **Outlier hubs removed:** nodes with degree above the 75th percentile + 40 × IQR of the degree
+   distribution, computed on the full background network before restricting to our genes. Here the
+   cutoff is 21 + 40 × 18 = 741; the highest degree is 407, so **no hubs are removed** (the paper
+   removed ELAVL1 and ubiquitin from the raw STRING, and this file has already been curated).
+4. **Induced subnetwork:** only edges where both ends are among the 471 genes.
+
+The paper's network is **unweighted**; `combined_score` is kept as an attribute. Proteins are
+mapped to genes through the UniProt accessions in `HUMAN_FEATURE_TO_GENE` (isoform suffix
+stripped); where several protein pairs map to one gene pair, the highest score is kept.
+
+**Same topology for both arms.** STRING does not depend on the exercise data, so EE and RE share
+one edge set. The arms differ in their node vectors, and in two per-edge attributes added here
+(not part of El-Kebir): `cos_EE` and `cos_RE`, the cosine similarity of the two endpoints'
+embeddings in that arm, over the dimensions present in both.
+
+**Result:**
+
+| | |
+|---|---|
+| Nodes | 471 (444 in STRING; 27 have no edge ≥ 700 anywhere in the file) |
+| Edges | 431 |
+| Isolated nodes | 185 |
+| Largest connected component | 230 nodes |
+| Other components | 20 small ones (sizes 2–7) |
+| Median degree | 1 (top hubs: ITGB1 21, CD34 16, NT5E 16, ITGAM 14) |
+
+The network is small and sparse because OLINK limits the node set to secreted and cell-surface
+proteins (integrins, adhesion molecules, cytokines).
+
+| File | Contents |
+|------|----------|
+| `02_edges.csv` | One row per edge: Entrez, symbol and UniProt for both ends, `combined_score`, `cos_EE`, `cos_RE` |
+| `02_nodes_string.csv` | Per node: UniProt, whether it is in STRING, degree, component id and size |
+| `02_network_summary.csv` | The counts above |
