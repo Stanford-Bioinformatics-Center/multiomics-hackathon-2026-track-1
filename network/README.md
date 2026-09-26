@@ -14,6 +14,8 @@ the upstream QC, the methods and the tools.
 - **Step 1b — metabolite nodes** (`01b_metabolite_embeddings.R`): one node per metabolite (450).
   Metabolomics is one layer, so each vector has 9 values (3 tissues × 3 times), half a gene's 18;
   again two vectors per metabolite, one per arm, built independently.
+- **Step 1c — metabolite IDs** (`01c_metabolite_ids.py`): ChEBI, RefMet, PubChem and InChIKey
+  identifiers for the 450 metabolites, for sharing and for linking to outside resources.
 - **Step 2 — edges** (`02_string_edges.R`): STRING links between the nodes, built with the
   network rules of El-Kebir et al. 2015. STRING gates whether an edge exists.
 - **Step 3 — edge weights** (`03_edge_weights.R`): each STRING edge is weighted by the dot product
@@ -26,6 +28,7 @@ the upstream QC, the methods and the tools.
 ```bash
 Rscript network/01_node_embeddings.R
 Rscript network/01b_metabolite_embeddings.R
+python3 network/01c_metabolite_ids.py     # needs internet; EXPORT_COPY=path writes a second copy
 Rscript network/02_string_edges.R
 Rscript network/03_edge_weights.R
 Rscript network/04_compare_arms.R      # ~10 s; N_BOOT (default 10000) sets the draws
@@ -47,6 +50,7 @@ results are kept in separate trees, so nothing is written inside the repo.
 | `data.table` | 1.18 | tables |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | `igraph` | 2.2 | connected components |
+| Python 3 (standard library only) | — | step 1c web lookups (RefMet, UniChem, PubChem, EBI OLS) |
 | `Matrix` | 1.7 | sparse gene × edge matrix (step 4) |
 | STRING (curated file) | combined_score ≥ 700 | which genes are connected |
 
@@ -183,6 +187,34 @@ muscle 0.307). Nothing is missing by design. Standard errors and the EE/RE estim
 | `01b_metab_nodes_arm_corr.csv` | Correlation between each metabolite's EE and RE estimate per dimension |
 | `01b_metab_scale_factors.csv` | The divisor for each tissue |
 | `01b_metab_nodes_provenance.csv` | The platform that measured each metabolite in each tissue |
+
+## Step 1c: metabolite IDs (ChEBI)
+
+Looks up database identifiers for the 450 metabolites by querying public web services with the
+metabolite names (no data values are sent):
+
+1. **RefMet** (Metabolomics Workbench): RefMet ID, chemical class, PubChem CID and InChIKey (a
+   fingerprint of the exact structure).
+2. **UniChem** (EBI): InChIKey → ChEBI, a structure-level match; PubChem synonyms as a fallback.
+3. **Lipid species with no single structure** (e.g. `PC 16:0_18:1`, chains in unknown positions):
+   one fixed reformat to ChEBI's style (`PC(16:0_18:1)`), accepted only on an **exact** ChEBI name
+   match. No fuzzy matching: a blank is better than a wrong ID.
+
+**Result: ChEBI IDs for 195 of 450** (187 by structure via UniChem, 1 via PubChem, 7 by exact lipid
+name). The 255 blanks are almost all lipid species (102 glycerophospholipids, 69 glycerolipids, 44
+sphingolipids, 32 fatty acyls): RefMet defines them only at the species level, so they have no
+InChIKey, and ChEBI mostly has no entry for them. Also blank: `Citric acid/Isocitric acid` and
+`Leucine/Isoleucine` (the assay cannot separate the two isomers) and `C1-DeoxyCer 18:0;O/24:1`.
+
+Notes for users: `chebi_id` is the lowest-numbered ID; `chebi_all` lists every ChEBI entry for that
+structure (32 metabolites have more than one, usually a neutral and a charged form of the same
+molecule). RefMet assigns stereo-specific structures where it can (e.g. lactic acid → L-lactic acid,
+CHEBI:422) even if the assay does not separate stereoisomers. Web services change, so a rerun can
+differ slightly; `chebi_method` records how each ID was found.
+
+| File | Contents |
+|------|----------|
+| `01c_metabolite_ids.csv` | Per metabolite: `refmet_name`, `refmet_id`, `super_class`, `main_class`, `pubchem_cid`, `inchi_key`, `chebi_id`, `chebi_all`, `chebi_method` |
 
 ## Step 2: edges
 
