@@ -126,6 +126,7 @@ python3 network/01d_metabolite_classes.py     # metabolite class counts (offline
 Rscript network/02_string_edges.R             # STRING edges
 Rscript network/03_edge_weights.R             # per-arm edge weights
 Rscript network/04_compare_arms.R             # EE vs RE comparison (~10 s; N_BOOT sets the draws)
+Rscript network/04b_compare_arms_metabolites.R  # the same comparison for the metabolite networks (run after step 6)
 Rscript network/05_rhea_metabolite_protein.R  # metabolite-protein links (downloads Rhea once to $HACK_EXT)
 Rscript network/06_metabolite_network.R       # metabolite networks, EE and RE
 Rscript network/07_hub_report.R               # hubs in all four networks (nothing removed)
@@ -158,6 +159,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 4 | `04_node_diff.csv` | per gene with ≥ 1 edge: degree, strength per arm (signed and 0–1), difference with interval, p, FDR |
 | 4 | `04_diff_subnetworks.csv` | connected groups of differing edges (FDR < 0.1: none; exploratory tier at p < 0.05) |
 | 4 | `04_summary.csv` | headline numbers |
+| 4b | `04b_metab_edge_diff.csv`, `04b_metab_node_diff.csv`, `04b_metab_diff_subnetworks.csv`, `04b_metab_summary.csv` | the step 4 comparison for the metabolite networks (same columns, metabolites instead of genes) |
 | 5 | `05_metabolite_protein_links.csv` | per metabolite–gene link: classes, UniProt, `n_reactions`, `example_reactions` (Rhea IDs), `matched_via` (as-is or pH 7.3 form) |
 | 5 | `05_rhea_summary.csv` | Rhea release and coverage counts |
 | 6 | `06_metabolite_edges.csv` | per metabolite edge: `main_class`, `n_shared_proteins`, `shared_proteins`, `w_EE`, `w_RE`, `w_diff`, `sig_EE`, `sig_RE` |
@@ -316,6 +318,29 @@ s = 1.82). The two arms' metabolite edge weights correlate at r = 0.15 and 41 of
 (no noise reference yet; the step 4 comparison has not been run on metabolites). The edge table keeps
 both metabolites' main classes (`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
 
+**Step 4b — metabolite networks, EE vs RE.** The step 4 method (Monte Carlo error propagation from
+standard errors, EE/RE error correlation included, 10,000 rounds, BH FDR) applied to the 122 metabolite
+edges and 44 metabolites. Unlike the gene networks, there is more signal than chance: **14 edges pass
+p < 0.05 (≈ 6 expected by chance), 2 pass FDR < 0.1**, and **4 metabolites pass FDR < 0.1**.
+
+| Result | EE | RE | FDR | Higher in |
+|---|---|---|---|---|
+| edge CMP–Inosine (shared enzyme NT5E) | −1.3 | 62.0 | 0.012 | RE |
+| edge Ketoleucine–Lactic acid (SLC16A1 / MCT1) | 0.5 | 12.3 | 0.012 | RE |
+| metabolite Cer 18:1;O2/16:0 (strength) | 10.8 | 2.3 | 0.015 | EE |
+| metabolite Arachidonic acid (strength) | −2.6 | 19.8 | 0.015 | RE |
+| metabolite Ketoleucine (strength) | −3.7 | 16.2 | 0.015 | RE |
+| metabolite CMP (strength) | 2.7 | 59.5 | 0.033 | RE |
+
+The exploratory tier (p < 0.05) groups into a fatty-acid block (arachidonic, linoleic, capric, lauric
+acid, oleoyl-EA; all higher in RE), a lactate/pyruvate/ketoleucine block around the lactate transporter
+SLC16A1 (higher in RE), the nucleotide block around NT5E (adenosine, CMP, inosine, UMP), ceramides via
+CERT1 (higher in EE) and 2-oxoglutarate–glutamate via KYAT1 (higher in RE). The two arms' metabolite edge
+weights correlate at r = 0.15 (under re-measurement noise: median 0.23, middle 95% −0.03 to 0.48). Same
+caveats as step 4: errors assumed independent between metabolites and between dimensions (p-values may be
+somewhat optimistic); several results are driven by one strongly responding metabolite (e.g. inosine in
+RE), and CMP is not significant on the 0–1 weights (p = 0.94).
+
 **Step 7 — hubs (nothing removed).**
 
 | Network (EE and RE share edges) | Hub type | Connected nodes | El-Kebir hubs | Tukey hubs (cutoff) | Top hub (what hangs on it) |
@@ -384,7 +409,7 @@ connected nodes are drawn (286 genes, 44 metabolites). Titles are descriptive on
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **29 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **31 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; sigmoid correct; p-values and FDR valid; strengths equal summed weights;
 class counts add up to 450; metabolite edges obey the class and shared-protein rules) and compares the headline numbers below, printing "same" or "CHANGED".
@@ -402,6 +427,7 @@ class counts add up to 450; metabolite edges obey the class and shared-protein r
 | Metabolites / genes linked through Rhea | 60 / 80 |
 | Metabolite edges / metabolites in the network (super class) | 122 / 44 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
+| Metabolite networks EE vs RE: edges at FDR < 0.1 / p < 0.05 (chance ≈ 6) / metabolites at FDR < 0.1 | 2 / 14 / 4 |
 
 **Result, stated carefully.** The two arms' edge weights correlate at r = 0.64. Re-drawing the
 measurement noise pulls that correlation down (median 0.53, middle 95% 0.34–0.69); this spread is *not*
@@ -442,7 +468,8 @@ network/
   01d_metabolite_classes.py    step 1d  metabolite class counts
   02_string_edges.R        step 2   STRING edges
   03_edge_weights.R        step 3   per-arm edge weights
-  04_compare_arms.R        step 4   EE vs RE comparison
+  04_compare_arms.R        step 4   EE vs RE comparison (genes)
+  04b_compare_arms_metabolites.R  step 4b  EE vs RE comparison (metabolites)
   05_rhea_metabolite_protein.R  step 5  metabolite-protein links (Rhea)
   06_metabolite_network.R  step 6   metabolite networks
   07_hub_report.R          step 7   hub report (all four networks)

@@ -192,6 +192,23 @@ hs <- rd("07_hub_summary.csv"); note("step7_gene_hubs_tukey", hs[1, n_hubs_tukey
 # Record hubs flagged by the El-Kebir rule in any network.
 note("step7_hubs_elkebir_all_networks", sum(hs$n_hubs_elkebir), 0)
 
+# ---- step 4b: metabolite EE vs RE comparison -----------------------------------------------------------
+# Per-edge and per-metabolite results.
+e4b <- rd("04b_metab_edge_diff.csv"); n4b <- rd("04b_metab_node_diff.csv"); s4b <- rd("04b_metab_summary.csv")
+# The comparison covers exactly the step 6 edges.
+check(nrow(e4b) == nrow(me), "step 4b: same edges as step 6")
+# p-values within range and FDR never below the raw p, for edges and metabolites.
+check(all(e4b$p_boot > 0 & e4b$p_boot <= 1 & e4b$fdr >= e4b$p_boot - 1e-12) &&
+      all(n4b$p_boot > 0 & n4b$p_boot <= 1 & n4b$fdr >= n4b$p_boot - 1e-12), "step 4b: p/FDR valid")
+# Record the headline numbers.
+v4b <- setNames(s4b$value, s4b$metric)
+# Record metabolite edges at FDR < 0.1.
+note("step4b_metab_edges_fdr_lt_0.1", v4b[["edges_fdr_lt_0.1"]], 2)
+# Record metabolite edges at nominal p < 0.05.
+note("step4b_metab_edges_p_lt_0.05", v4b[["edges_p_lt_0.05"]], 14)
+# Record metabolites at FDR < 0.1.
+note("step4b_metabolites_fdr_lt_0.1", v4b[["metabolites_fdr_lt_0.1_signed"]], 4)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))
