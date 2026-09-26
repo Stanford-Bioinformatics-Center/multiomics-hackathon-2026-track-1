@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (36 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); interactive, navigable versions of all three networks plus Cytoscape files (step 17); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 16, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Status | Gene and metabolite networks built and validated (36 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); sample annotation of that network with MoTrPAC phospho and GlyGen glycosylation (step 16); interactive, navigable versions of all three networks plus Cytoscape files (step 17); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 18, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -60,6 +60,8 @@ flowchart LR
   G --> J
   J --> Q[Step 15<br/>joint network with metabolites<br/>grouped into named class bubbles]
   Q --> U
+  Q --> A[Step 16<br/>15b annotated with MoTrPAC phospho (16a)<br/>and GlyGen glycosylation (16b)]
+  A --> U
   Q --> I[Step 17<br/>interactive pages + Cytoscape files<br/>search, highlight, filter, EE / RE / difference]
   P --> I
   I --> U
@@ -84,7 +86,7 @@ flowchart LR
    Nothing is removed.
 8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
    side, to choose the approach.
-9. **Descriptive and exploratory tables (steps 13, 16).** Statistics of the log fold changes per ome
+9. **Descriptive and exploratory tables (steps 13, 18).** Statistics of the log fold changes per ome
    and arm (LaTeX PDF), and T2D-relevant lipid classes per arm with the clinical NEFA check (section 7b).
 10. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
    metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
@@ -96,6 +98,8 @@ flowchart LR
 12. **Metabolite classes on the joint network (step 15).** The step 14 network redrawn with metabolites of
    the same RefMet super class pulled together into an outlined, named group ("bubble"). As in step 14,
    15a shows the two arms separately and 15b their difference.
+12b. **Annotated networks (step 16).** Figure 15b with protein circles recoloured by MoTrPAC phosphosite
+   response (16a) or GlyGen glycosylation (16b): a sample of what those data layers would add.
 13. **Interactive networks (step 17).** The joint, gene and metabolite networks as browser pages you can
    navigate like Cytoscape (search, neighbour highlight, filters, EE / RE / difference views, collapsible
    classes, tooltips), plus Cytoscape import files for teammates who use Cytoscape.
@@ -164,8 +168,9 @@ Rscript network/12_normalization_comparison.R # four normalisations side by side
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
 Rscript network/15_joint_network_classes.R    # joint network, metabolites grouped by class, figures 15a / 15b -> $HACK_FIG
+Rscript network/16_annotated_networks.R       # 15b annotated with phospho (16a) / glycosylation (16b) -> $HACK_FIG (needs network/inventory first)
 Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/17_interactive; Cytoscape files -> $HACK_OUT/17_cytoscape
-Rscript network/16_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
+Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -202,9 +207,10 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 15 | `15_class_layout.csv` | node positions of the class-grouped layout: `node`, `node_type`, `class`, `x`, `y` |
 | 15 | `$HACK_FIG/15a_joint_classes_EE_vs_RE.png`, `15b_joint_classes_edge_difference.png` (not committed) | the joint network with metabolites grouped by class: 15a the arms separately (14a style), 15b their difference (14b style) |
 | 10 | `10_layout_genes.csv`, `10_layout_metabolites.csv` | node positions (0..1) of the figure 10 / 11 layouts, reused by step 17 |
+| 16 | `16_protein_annotation.csv`; `$HACK_FIG/16a_joint_edge_difference_phospho.png`, `16b_joint_edge_difference_glycosylation.png` (not committed) | per network protein: MoTrPAC phosphosites measured / responding (EE, RE) and GlyGen glycosylation category and counts; the two annotated figures |
 | 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
 | 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
-| 16 | `16_t2d_class_summary.csv`, `16_t2d_species.csv`, `16_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
+| 18 | `18_t2d_class_summary.csv`, `18_t2d_species.csv`, `18_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
@@ -579,6 +585,20 @@ and metabolites triangles. A colour-by-class version was tried and not kept. **R
 positions are shaped by the class links, so distances are not comparable with 14a / 14b, and grouping
 says nothing about whether the metabolites of a class behave alike.
 
+**Step 16 — the joint difference network annotated with phospho and glycosylation (sample).** Figure 15b
+is redrawn unchanged (layout, class bubbles, edges = w_EE − w_RE, node sizes, grey metabolite triangles)
+and only the 304 protein circles are recoloured. **16a, MoTrPAC phosphoproteomics** (measured; muscle 0.5 /
+4 / 24 h, adipose 4 h; a site "responds" at adj. p < 0.05 in that arm's exercise-vs-control contrast at any
+time point): not measured 165, measured with no responding site 85, a site responds after endurance only
+6, after resistance only 26, after both 22; labels give responding / measured sites for the 12 proteins
+with the most responding sites (e.g. GYS1 21/44, BAG3 17/31, HSPB1 12/15). **16b, GlyGen glycosylation**
+(release 2.11.1; database knowledge — MoTrPAC has no glycoproteomics): no record 28, glycosylated with the
+site unknown (protein-level, mostly the O-GlcNAc Database) 77, N-linked sites only 30, O-linked only (incl.
+O-GlcNAc) 73, both 96; labels give site and glycan-structure counts for the 12 most glycosylated proteins.
+Counts come from `network/inventory/` (see its README). **Read with care:** colours are protein-level
+summaries (the site, tissue and time are in `16_protein_annotation.csv`); glycosylation is prior knowledge,
+not an exercise response; nothing here is tested.
+
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
 figures). Each network (joint: 364 nodes / 764 edges, class-grouped layout of 15a / 15b; genes: 286 / 431,
@@ -673,7 +693,7 @@ also needs a noise-only reference (roadmap).
 
 These notes record what the data show and how they relate to the literature, so the team can decide
 what to pursue. None of the differences between the arms is statistically tested (the bootstrap was
-removed); treat every item as a hypothesis. Tables: step 16 outputs; drivers from steps 1b and 6.
+removed); treat every item as a hypothesis. Tables: step 18 outputs; drivers from steps 1b and 6.
 
 **Sphingolipids vs fatty acyls differ between the arms, each driven by one tissue and time.**
 - *Ceramides* (C14–C22) are more coordinated after **endurance**, driven by **adipose at 4 h**: all five
@@ -754,12 +774,13 @@ network/
   13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
   14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
   15_joint_network_classes.R     step 15  joint network with metabolites grouped by class (figures 15a / 15b)
+  16_annotated_networks.R        step 16  15b annotated with MoTrPAC phospho (16a) and GlyGen glycosylation (16b)
   17_interactive_networks.R      step 17  interactive pages of all three networks + Cytoscape files
   inventory/                     which MoTrPAC phospho + GlyGen (human) data exist for the 471 proteins / 450
                                  metabolites (planning the next graph layers); README.md has the results
   neo4j/                         Neo4j graph of the networks for the visualiser: export_neo4j.R, import.cypher,
                                  queries.cypher, run_local_neo4j.sh, README.md (graph model, key-file map)
-  16_t2d_lipid_classes.R         step 16  T2D-relevant lipid classes per arm (tables behind section 7b)
+  18_t2d_lipid_classes.R         step 18  T2D-relevant lipid classes per arm (tables behind section 7b)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
