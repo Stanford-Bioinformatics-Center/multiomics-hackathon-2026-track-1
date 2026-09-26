@@ -6,13 +6,16 @@ vs control (RE), to compare against each other.
 - **Step 1 — nodes** (`01_node_embeddings.R`): one node per gene. Each node has **two** 18-value
   exercise-response vectors, one per arm, built independently from that arm's contrast.
 - **Step 2 — edges** (`02_string_edges.R`): STRING links between the nodes, built with the
-  network rules of El-Kebir et al. 2015.
+  network rules of El-Kebir et al. 2015. STRING gates whether an edge exists.
+- **Step 3 — edge weights** (`03_edge_weights.R`): each STRING edge is weighted by the dot product
+  of its two genes' embeddings, once per arm, giving the EE and RE weighted networks.
 
 ## Run
 
 ```bash
 Rscript network/01_node_embeddings.R
 Rscript network/02_string_edges.R
+Rscript network/03_edge_weights.R
 ```
 
 Requires R with `data.table`, `igraph`, `nanoparquet` and `MotrpacHumanPreSuspensionAnalysis`
@@ -126,3 +129,34 @@ proteins (integrins, adhesion molecules, cytokines).
 | `02_edges.csv` | One row per edge: Entrez, symbol and UniProt for both ends, `combined_score`, `cos_EE`, `cos_RE` |
 | `02_nodes_string.csv` | Per node: UniProt, whether it is in STRING, degree, component id and size |
 | `02_network_summary.csv` | The counts above |
+
+## Step 3: edge weights
+
+STRING decides whether an edge exists; the exercise data decides how strong it is in each arm.
+Following the encoder–decoder framing of node embeddings (similarity(u, v) ≈ z_uᵀz_v, Stanford
+CS224W), each edge gets the **dot product of its endpoints' embeddings**, computed per arm:
+
+```
+w_EE(u,v) = z_u(EE) · z_v(EE)        w_RE(u,v) = z_u(RE) · z_v(RE)        w_diff = w_EE − w_RE
+```
+
+- **Whole vector, one number.** The dot product runs over the entire embedding (all tissues ×
+  RNA and protein × every timepoint), not per tissue or ome. The two adipose protein columns that
+  exist for no gene (0.5 h, 24 h) are left out, so every edge uses the same 16 dimensions.
+- **Signed.** Positive = the two genes respond in the same direction; negative = opposite
+  directions; near 0 = at least one barely responds. Large values need both genes to respond strongly.
+- **Untransformed**, so both arms are on the same scale (the embeddings share scale factors) and
+  `w_diff` is directly interpretable.
+
+| | EE | RE |
+|---|---|---|
+| Median weight | 1.24 | 1.89 |
+| Range | −14.8 to 66.2 | −54.0 to 66.8 |
+| Negative edges | 145 of 431 | 137 of 431 |
+
+The two arms' weights correlate at r = 0.64, and 130 of 431 edges change sign between arms (e.g.
+HSPA1A–DNAJB1: +22.9 in EE, −3.1 in RE).
+
+| File | Contents |
+|------|----------|
+| `03_weighted_edges.csv` | One row per edge: Entrez and symbol for both ends, `combined_score`, `w_EE`, `w_RE`, `w_diff` |
