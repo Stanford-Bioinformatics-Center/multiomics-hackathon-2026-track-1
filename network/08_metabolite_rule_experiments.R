@@ -14,6 +14,13 @@
 #     experiment 1  proteins = ALL human reviewed enzymes in Rhea;   class = MAIN class
 #     experiment 2  proteins = our 471 genes;                        class = RefMet SUPER class (14) (chosen rule)
 #     (side line)   proteins = all Rhea enzymes from ANY organism;   class = MAIN class
+#     experiment 3  proteins = our 471 genes;                        class = SUPER class; two metabolites
+#                   are also linked if their proteins are DIFFERENT but interact in STRING (>= 700),
+#                   i.e. "same protein OR STRING-interacting proteins" instead of "same protein" only.
+#   For every rule the table also reports how the two arms compare on that network: the correlation
+#   between the arms' edge weights (dot products of the step 1b vectors) and how many edges change sign.
+#   Terminology: none of these is a physical interaction BETWEEN metabolites. The metabolite-protein link
+#   is enzyme-substrate (Rhea); the protein-protein link is STRING association from all evidence types.
 #   "Human reviewed enzymes" = UniProtKB/Swiss-Prot entries for Homo sapiens (organism 9606), downloaded
 #   from the UniProt REST API. Rhea lists enzymes from every organism, so without this filter a bacterial
 #   enzyme could link two human metabolites; the side line shows what that would do.
@@ -23,13 +30,16 @@
 #   (the human Swiss-Prot list is cached in $HACK_EXT next to the Rhea files from step 5).
 #
 # INPUTS:  Rhea files cached by step 5 ($HACK_EXT); $HACK_OUT/01c_metabolite_ids.csv;
+#          $HACK_OUT/01b_metab_nodes_{EE,RE}.csv (vectors); $STRING_PARQUET (the step 2 STRING file);
 #          $HACK_OUT/01_nodes_EE.csv (our 471 genes)
-# OUTPUT:  $HACK_OUT/08_metabolite_rule_experiments.csv   one row per rule: metabolites with a protein,
+# OUTPUT:  $HACK_OUT/08_string_neighbour_extra_edges.csv   the edges experiment 3 adds to experiment 2, with
+#          the protein pair(s) that link them and both arms' weights
+#          $HACK_OUT/08_metabolite_rule_experiments.csv   one row per rule: metabolites with a protein,
 #          metabolite pairs sharing a protein, edges, metabolites in the network, change vs baseline
 # =====================================================================================================
 
 # Load packages quietly.
-suppressMessages({ library(MotrpacHumanPreSuspensionAnalysis); library(data.table) })
+suppressMessages({ library(MotrpacHumanPreSuspensionAnalysis); library(data.table); library(nanoparquet) })
 
 # Results folder and external-file cache (same settings as step 5).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
@@ -88,34 +98,82 @@ ours <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[assay %in% c("prot-pr", "pro
   , .(entrez_gene = as.character(entrez_gene), uniprot = sub("-[0-9]+$", "", as.character(uniprot)))][
   entrez_gene %in% g471 & !is.na(uniprot), uniprot])
 
+# ---- STRING protein pairs and the metabolite vectors ------------------------------------------------
+# The same STRING file as step 2 (override with STRING_PARQUET).
+STRING_PARQUET <- Sys.getenv("STRING_PARQUET", unset = path.expand(
+  "~/Downloads/Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet"))
+# Every interacting protein pair as a text key, in both orders (so the order of a pair never matters).
+sp <- as.data.table(read_parquet(STRING_PARQUET))[, .(a = as.character(protein1), b = as.character(protein2))]
+# (the keys, e.g. "P12345 Q67890", for both orders of every pair)
+skey <- unique(c(paste(sp$a, sp$b), paste(sp$b, sp$a)))
+# Helper: read one arm's normalised metabolite vectors (step 1b) as a matrix.
+vec <- function(arm) { x <- fread(file.path(OUT, sprintf("01b_metab_nodes_%s.csv", arm)))
+  m <- as.matrix(x[, -1]); rownames(m) <- x$metabolite; m }
+# Both arms.
+ME <- vec("EE"); MR <- vec("RE")
+
 # ---- the rule, parameterised ------------------------------------------------------------------------
-# Helper: apply the step 6 rule (shared protein AND same class) for a given protein set and class level.
-run_rule <- function(protein_set, class_col, label) {
+# Helper: apply the step 6 rule for a given protein set and class level. link = "shared": the two
+# metabolites share a protein; link = "string": they share a protein OR their proteins interact in STRING.
+# Returns the counts row and the edge list (with the protein pairs that justify each edge).
+run_rule <- function(protein_set, class_col, label, link = "shared") {
   # metabolite -> protein links restricted to the chosen proteins
   mp <- m_enz[uniprot %in% protein_set]
-  # pairs of metabolites that share a protein (each unordered pair once, no self-pairs)
-  pr <- unique(merge(mp[, .(m1 = metabolite, uniprot)], mp[, .(m2 = metabolite, uniprot)],
-                     by = "uniprot", allow.cartesian = TRUE)[m1 < m2, .(m1, m2)])
+  # metabolite pairs that share a protein (a join on the protein; each metabolite pair once)
+  pp <- merge(mp[, .(m1 = metabolite, u1 = uniprot)], mp[, .(m2 = metabolite, u2 = uniprot)],
+              by.x = "u1", by.y = "u2", allow.cartesian = TRUE)[m1 < m2][, u2 := u1]
+  # for link = "string", also pairs whose proteins differ but interact in STRING: compare every
+  # (metabolite, protein) with every other (only done for small protein sets, e.g. our 471 genes)
+  if (link == "string") {
+    # all pairs of (metabolite, protein) x (metabolite, protein), each metabolite pair once
+    allp <- merge(mp[, .(k = 1L, m1 = metabolite, u1 = uniprot)], mp[, .(k = 1L, m2 = metabolite, u2 = uniprot)],
+                  by = "k", allow.cartesian = TRUE)[m1 < m2 & u1 != u2]
+    # keep those whose two proteins interact in STRING, and add them to the shared-protein pairs
+    pp <- rbind(pp[, .(m1, m2, u1, u2)], allp[paste(u1, u2) %in% skey, .(m1, m2, u1, u2)])
+  }
+  # one row per metabolite pair, with the protein pairs that link it
+  pr <- pp[, .(via = paste(sort(unique(fifelse(u1 == u2, u1, paste0(u1, "~", u2)))), collapse = ";")), by = .(m1, m2)]
   # each metabolite's class at the chosen level (blank = Unclassified, never matches)
   cl <- setNames(ids[[class_col]], ids$metabolite)
   # keep pairs in the same class
   e <- pr[!is.na(cl[m1]) & cl[m1] != "" & cl[m1] == cl[m2]]
-  # one row of counts
-  data.table(rule = label, proteins_allowed = length(unique(protein_set)),
-             metabolites_with_a_protein = uniqueN(mp$metabolite), pairs_sharing_a_protein = nrow(pr),
-             edges = nrow(e), metabolites_in_network = uniqueN(c(e$m1, e$m2)))
+  # both arms' edge weights (dot products of the normalised vectors)
+  e[, `:=`(w_EE = rowSums(ME[m1, , drop = FALSE] * ME[m2, , drop = FALSE]),
+           w_RE = rowSums(MR[m1, , drop = FALSE] * MR[m2, , drop = FALSE]))]
+  # one row of counts, plus how the arms compare on this network
+  row <- data.table(rule = label, proteins_allowed = length(unique(protein_set)),
+                    metabolites_with_a_protein = uniqueN(mp$metabolite), pairs_linked = nrow(pr),
+                    edges = nrow(e), metabolites_in_network = uniqueN(c(e$m1, e$m2)),
+                    cor_w_EE_w_RE = if (nrow(e) > 2) round(cor(e$w_EE, e$w_RE), 3) else NA_real_,
+                    edges_sign_change = sum(sign(e$w_EE) != sign(e$w_RE)))
+  # return both
+  list(row = row, edges = e)
 }
 
 # ---- run the rules ---------------------------------------------------------------------------------
-res <- rbind(
-  # the current step 6 network
+runs <- list(
+  # the original main-class rule
   run_rule(ours, "main_class", "baseline: our 471 genes, main class"),
   # experiment 1: every human reviewed Rhea enzyme may link metabolites
   run_rule(intersect(unique(enz$uniprot), human), "main_class", "exp 1: all human Rhea enzymes, main class"),
-  # experiment 2: broader chemical class
-  run_rule(ours, "super_class", "exp 2: our 471 genes, super class"),
+  # experiment 2: broader chemical class (the adopted step 6 rule)
+  run_rule(ours, "super_class", "exp 2: our 471 genes, super class (step 6 rule)"),
   # side line: enzymes from any organism (for reference only)
-  run_rule(unique(enz$uniprot), "main_class", "side line: Rhea enzymes from any organism, main class"))
+  run_rule(unique(enz$uniprot), "main_class", "side line: Rhea enzymes from any organism, main class"),
+  # experiment 3: the step 6 rule, but STRING-interacting proteins also link metabolites
+  run_rule(ours, "super_class", "exp 3: step 6 rule + STRING-interacting proteins (>= 700)", link = "string"))
+# The counts table, one row per rule.
+res <- rbindlist(lapply(runs, `[[`, "row"))
+# The edges experiment 3 adds to experiment 2 (same proteins and class; only the STRING step differs).
+e2 <- runs[[3]]$edges; e3 <- runs[[5]]$edges
+extra <- e3[!paste(m1, m2) %in% paste(e2$m1, e2$m2)][, class := ids$super_class[match(m1, ids$metabolite)]]
+# (UniProt accessions shown as gene symbols for readability, using the package's lookup table)
+u2s <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[!is.na(uniprot), .(u = sub("-[0-9]+$", "", as.character(uniprot)), g = as.character(gene_symbol))])
+sym <- function(x) { for (i in seq_len(nrow(u2s))) x <- gsub(paste0("\\b", u2s$u[i], "\\b"), u2s$g[i], x); x }
+extra[, via_genes := sym(via)]
+# Save the extra edges.
+fwrite(extra[, .(metabolite_a = m1, metabolite_b = m2, class, linked_by = via_genes, w_EE, w_RE, w_diff = w_EE - w_RE)],
+       file.path(OUT, "08_string_neighbour_extra_edges.csv"))
 # Change in the number of metabolites in the network relative to the baseline.
 res[, change_vs_baseline := metabolites_in_network - metabolites_in_network[1]]
 # Safety check: the rule matching step 6's class level reproduces step 6 exactly.

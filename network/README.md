@@ -163,7 +163,8 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
-| 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
+| 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs linked, edges, metabolites in the network, cor(w_EE, w_RE), sign changes, change vs baseline |
+| 8 | `08_string_neighbour_extra_edges.csv` | the 25 edges the STRING-neighbour rule adds, with the linking protein pair(s) and both arms' weights |
 
 **Gene vector layout (18 dimensions, per arm)**
 
@@ -367,15 +368,26 @@ shared-protein support is ATP–ADP (20 shared kinases and other ATP-using enzym
 0.90 in RE, and as the protein behind the nucleotide block 0.46 vs 1.17 (normalised units).
 
 **Step 8 — metabolite rule experiments (report only; steps 5–6 outputs unchanged).** One change at a
-time from the original main-class rule (shared protein only, no hub removal). The team then adopted
-experiment 2 as the step 6 rule, keeping our 471 genes as the more rigorous protein set:
+time (shared protein only unless stated, no hub removal). For each rule the table also shows how the two
+arms compare on that network (correlation between the arms' edge weights; edges changing sign):
 
-| Rule | Proteins allowed | Metabolites with a protein | Edges | Metabolites in network | Change |
-|---|---|---|---|---|---|
-| Baseline: our 471 genes, main class (50) | 472 | 60 | 78 | 39 | — |
-| Exp 1: all human reviewed Rhea enzymes, main class | 4,140 | 155 | 555 | **126** | **+87** |
-| **Exp 2: our 471 genes, super class (14) — adopted** | 472 | 60 | 122 | **44** | **+5** |
-| Side line: Rhea enzymes from any organism, main class | 236,245 | 171 | 618 | 138 | +99 |
+| Rule | Proteins allowed | Metabolites with a protein | Edges | Metabolites in network | cor(w_EE, w_RE) | Sign changes |
+|---|---|---|---|---|---|---|
+| Baseline: our 471 genes, main class (50) | 472 | 60 | 78 | 39 | 0.17 | 27 |
+| Exp 1: all human reviewed Rhea enzymes, main class | 4,140 | 155 | 555 | 126 | 0.49 | 162 |
+| **Exp 2: our 471 genes, super class (14) — step 6 rule** | 472 | 60 | 122 | **44** | 0.17 | 42 |
+| Exp 3: step 6 rule + STRING-interacting proteins (≥ 700) | 472 | 60 | 147 | **44** | 0.18 | 52 |
+| Side line: Rhea enzymes from any organism, main class | 236,245 | 171 | 618 | 138 | 0.49 | 185 |
+
+**Same protein vs STRING-interacting proteins (exp 2 vs exp 3).** The step 6 rule connects two
+metabolites only if the *same* protein (among our 471 genes) handles both in Rhea. Letting *different*
+proteins count when they interact in STRING (≥ 700) adds **25 edges and no metabolites** (44 either way),
+because every metabolite that can be connected already is. The extra edges (listed in
+`08_string_neighbour_extra_edges.csv`) are 18 among nucleic acids, almost all through NT5E ~ NMNAT1 (and
+NT5E ~ SORD), and 7 among organic acids through GGT5 / LAP3 / KYAT1. They carry small weights (|w| ≤ 0.12,
+most < 0.03), so the arm comparison barely moves (correlation 0.17 → 0.18). The step 6 rule stays
+"same protein". Neither rule is a physical interaction between metabolites: the metabolite–protein link
+is enzyme–substrate (Rhea), and the protein–protein link is STRING association from all evidence types.
 
 "Human reviewed" = UniProtKB/Swiss-Prot, organism 9606 (20,431 accessions, downloaded 2026-09-26).
 Coverage is limited by which proteins may link metabolites, not by the class rule: the class level
@@ -402,10 +414,6 @@ in 11b each metabolite group is labelled with its super-class name.
 red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −0.035 in EE, −0.246
 in RE). The legend therefore says "higher", not "stronger"; the weights are in `03_weighted_edges.csv` /
 `06_metabolite_edges.csv`.
-
-**Metabolite edge rule, STRING neighbours (checked 2026-09-26, not adopted).** Letting two metabolites
-connect through *interacting* proteins (STRING ≥ 700) instead of only a shared protein would add 25 edges
-(122 → 147) but no metabolites (44 → 44) under the current super-class rule; the shared-protein rule is kept.
 
 ### External code, AI use, citations, licence
 
