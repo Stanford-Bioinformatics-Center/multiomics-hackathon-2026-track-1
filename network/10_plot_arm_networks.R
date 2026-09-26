@@ -24,9 +24,8 @@
 #   - Node size: the node's strength in that arm (sum of the sizes of its edge weights).
 #   - Edge width: the size of the edge weight in that arm. Solid = positive weight (the two nodes respond
 #     in the same direction on balance); dashed = negative weight (opposite directions).
-#   - Node shape: genes: triangle = the gene's strength differs between arms at uncorrected p < 0.05 in the
-#     step 4 bootstrap (hypothesis-level only; none survive correction except HSPB1), square = otherwise.
-#     Metabolites: shape = RefMet super class.
+#   - Node shape: genes: all squares. Metabolites: shape = RefMet super class.
+#     (No significance marks: the bootstrap test of arm differences has been removed for now.)
 #   - Labels: the 10 strongest nodes of each layer (genes); every node (metabolites, only 44).
 #   - Display filter: only nodes with at least one edge are drawn (isolated nodes carry no network
 #     information); the numbers of drawn nodes and edges are stated in each panel's side label.
@@ -36,7 +35,7 @@
 #   R 4.4; data.table, igraph (layouts), ggplot2, ggrepel (non-overlapping labels).
 #
 # INPUTS:  $HACK_OUT: 01_nodes_{EE,RE}.csv, 01b_metab_nodes_{EE,RE}.csv, 03_weighted_edges.csv,
-#          04_node_diff.csv, 06_metabolite_edges.csv, 01c_metabolite_ids.csv
+#          06_metabolite_edges.csv, 01c_metabolite_ids.csv
 # OUTPUTS: $HACK_FIG (default ~/Desktop/output/hackathon; figures are never written into the repo)
 # =====================================================================================================
 
@@ -167,20 +166,15 @@ ge <- fread(file.path(OUT, "01_nodes_EE.csv")); gr <- fread(file.path(OUT, "01_n
 gn <- data.table(node = ge$gene_symbol,
                  resp_EE = rowMeans(as.matrix(ge[, -(1:2)]), na.rm = TRUE),
                  resp_RE = rowMeans(as.matrix(gr[, -(1:2)]), na.rm = TRUE))
-# Genes whose strength differs between arms at uncorrected p < 0.05 (step 4).
-nd <- fread(file.path(OUT, "04_node_diff.csv"))
-# (the symbols of those genes)
-flag <- nd[p_boot < 0.05, gene_symbol]
-# Shape key: triangle for flagged genes, square otherwise.
-gn[, shape_key := factor(fifelse(node %in% flag, "strength differs EE vs RE (p < 0.05, uncorrected)", "no nominal difference"),
-                         levels = c("no nominal difference", "strength differs EE vs RE (p < 0.05, uncorrected)"))]
+# Shape key: every gene is drawn as a square.
+gn[, shape_key := factor("gene")]
 # Weighted gene edges (step 3), named by gene symbol.
 gw <- fread(file.path(OUT, "03_weighted_edges.csv"))[, .(a = symbol_a, b = symbol_b, w_EE, w_RE, sig_EE, sig_RE)]
 # Build and draw.
 G1 <- build(gn, gw)
 # Draw and save the gene figure.
 draw(G1, "Gene networks: endurance vs resistance (471 genes, STRING combined score >= 700)",
-     shape_values = c("no nominal difference" = 22, "strength differs EE vs RE (p < 0.05, uncorrected)" = 24),
+     shape_values = c(gene = 22),
      shape_name = "node", label_rule = function(rk) rk <= NLAB,
      file = file.path(FIG, "10a_gene_networks_EE_vs_RE.png"))
 

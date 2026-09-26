@@ -7,7 +7,7 @@
 #   After running steps 1-4, run this to confirm the results are sound. It does two kinds of checks:
 #   1. HARD CHECKS (must always hold; the script stops with an error if one fails): table sizes, no
 #      unexpected missing values, no duplicated or self-linked edges, edge weights that really are the dot
-#      products of the node vectors, p-values in the valid range, class counts that add up, and so on.
+#      products of the node vectors, class counts that add up, metabolite edges obeying their rules, etc.
 #   2. EXPECTED NUMBERS (the headline results as of 2026-09-26, with the MoTrPAC package v0.2.4 and the
 #      first curated STRING file): each is printed as "same" or "CHANGED". A change is not necessarily an
 #      error (e.g. a new STRING file will change the edge counts), but it must be explained.
@@ -15,7 +15,7 @@
 # TECH STACK
 #   R 4.4; data.table.
 #
-# INPUT:  every CSV written by steps 1, 1b, 1c, 1d, 2, 3, 4 in $HACK_OUT
+# INPUT:  every CSV written by steps 1, 1b, 1c, 1d, 2, 3, 5, 6, 7 in $HACK_OUT
 # OUTPUT: a report on screen; nothing is written
 # =====================================================================================================
 
@@ -131,27 +131,6 @@ note("step3_sigmoid_scale", round(s, 3), 2.667); note("step3_cor_EE_RE", round(c
 # Record the sign changes.
 note("step3_sign_changes", sum(sign(w$w_EE) != sign(w$w_RE)), 130)
 
-# ---- step 4: comparison ------------------------------------------------------------------------------
-# Per-edge and per-gene results.
-ed <- rd("04_edge_diff.csv"); nd <- rd("04_node_diff.csv"); s4 <- rd("04_summary.csv"); v4 <- setNames(s4$value, s4$metric)
-# Smallest possible bootstrap p-value.
-pmin_ <- 2 / (v4[["bootstrap_draws"]] + 1)
-# p-values within their valid range, and FDR-adjusted values never below the raw p.
-check(all(ed$p_boot >= pmin_ - 1e-12 & ed$p_boot <= 1) && all(ed$fdr >= ed$p_boot - 1e-12), "step 4: edge p/FDR valid")
-# Check the gene p-values and FDR.
-check(all(nd$p_boot >= pmin_ - 1e-12 & nd$p_boot <= 1) && all(nd$fdr >= nd$p_boot - 1e-12), "step 4: gene p/FDR valid")
-# Each 95% interval is ordered (lower end below upper end).
-check(all(ed$w_diff_lo <= ed$w_diff_hi), "step 4: intervals ordered")
-# Gene strength equals the sum of its edge weights (check endurance); as.numeric turns tapply's
-# one-dimensional array into a plain vector so the comparison is like-for-like.
-st <- tapply(c(w$w_EE, w$w_EE), c(w$entrez_a, w$entrez_b), sum)
-# Check the strengths.
-check(isTRUE(all.equal(as.numeric(st[nd$entrez_gene]), nd$strength_EE)), "step 4: strength = sum of edge weights")
-# Expected headline numbers.
-note("step4_edges_fdr_lt_0.1", v4[["edges_fdr_lt_0.1"]], 0); note("step4_edges_p_lt_0.05", v4[["edges_p_lt_0.05"]], 12)
-# Record genes at FDR < 0.1.
-note("step4_genes_fdr_lt_0.1", v4[["nodes_fdr_lt_0.1_signed"]], 1)
-
 # ---- steps 5-7: metabolite-protein links (Rhea), metabolite networks, hub report ---------------------
 # Metabolite-protein links: every metabolite is one of the 450 and every gene one of the 471.
 lk <- rd("05_metabolite_protein_links.csv")
@@ -191,23 +170,6 @@ note("step6_metabolites_in_network", uniqueN(c(me$metabolite_a, me$metabolite_b)
 hs <- rd("07_hub_summary.csv"); note("step7_gene_hubs_tukey", hs[1, n_hubs_tukey], 13)
 # Record hubs flagged by the El-Kebir rule in any network.
 note("step7_hubs_elkebir_all_networks", sum(hs$n_hubs_elkebir), 0)
-
-# ---- step 4b: metabolite EE vs RE comparison -----------------------------------------------------------
-# Per-edge and per-metabolite results.
-e4b <- rd("04b_metab_edge_diff.csv"); n4b <- rd("04b_metab_node_diff.csv"); s4b <- rd("04b_metab_summary.csv")
-# The comparison covers exactly the step 6 edges.
-check(nrow(e4b) == nrow(me), "step 4b: same edges as step 6")
-# p-values within range and FDR never below the raw p, for edges and metabolites.
-check(all(e4b$p_boot > 0 & e4b$p_boot <= 1 & e4b$fdr >= e4b$p_boot - 1e-12) &&
-      all(n4b$p_boot > 0 & n4b$p_boot <= 1 & n4b$fdr >= n4b$p_boot - 1e-12), "step 4b: p/FDR valid")
-# Record the headline numbers.
-v4b <- setNames(s4b$value, s4b$metric)
-# Record metabolite edges at FDR < 0.1.
-note("step4b_metab_edges_fdr_lt_0.1", v4b[["edges_fdr_lt_0.1"]], 2)
-# Record metabolite edges at nominal p < 0.05.
-note("step4b_metab_edges_p_lt_0.05", v4b[["edges_p_lt_0.05"]], 14)
-# Record metabolites at FDR < 0.1.
-note("step4b_metabolites_fdr_lt_0.1", v4b[["metabolites_fdr_lt_0.1_signed"]], 4)
 
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.

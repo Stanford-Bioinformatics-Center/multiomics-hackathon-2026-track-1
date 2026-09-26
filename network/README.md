@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built, compared between arms (steps 4, 4b) and validated (31 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); disease layer not started |
+| Status | Gene and metabolite networks built and validated (25 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -28,15 +28,15 @@ molecules change, which is closer to how exercise is thought to act on disease p
   response to endurance exercise wired more similarly or more differently from the response to
   resistance exercise, and which connections differ?
 - **Approach:** an honest representation of both. Nothing is designed to make the two networks look
-  alike: each arm's values come from its own comparison with the control group, both are measured in
-  one shared unit, and every difference is compared against measurement noise.
+  alike: each arm's values come from its own comparison with the control group, and both are measured
+  in one shared unit. (Testing differences against measurement noise is paused; see roadmap.)
 - **Scope:** human pre-suspension (pre-COVID) adults, first acute bout, 0.5 / 4 / 24 h after exercise;
   genes measured as RNA and protein in all three tissues (471 genes); metabolites measured in all
   three tissues (450), connected through shared enzymes (Rhea).
-- **Success means:** (a) every edge and gene difference between arms comes with an error bar and a
-  multiple-testing-corrected p-value; (b) a reference tells us whether the overall similarity
-  (r = 0.64) is higher or lower than measurement noise alone would give (*not yet computed*, see
-  roadmap); (c) anyone can rerun the pipeline and get the numbers in section 7.
+- **Success means:** (a) both networks and their per-edge differences are built transparently from
+  exercise-independent edges; (b) later, differences are tested against measurement noise and the overall
+  similarity (r = 0.64 for genes) is compared with a noise-only reference (*not yet done*, see roadmap);
+  (c) anyone can rerun the pipeline and get the numbers in section 7.
 
 ## 3. Workflow
 
@@ -46,18 +46,16 @@ flowchart LR
   S[Curated STRING file<br/>combined_score >= 700] --> C[Step 2<br/>edges: El-Kebir 2015 rules<br/>431 edges, same for both arms]
   B --> D[Step 3<br/>edge weight = dot product<br/>of the two genes' vectors, per arm]
   C --> D
-  D --> E[Step 4<br/>EE vs RE per edge and gene<br/>error bars from standard errors]
   B --> F[Step 1c / 1d<br/>metabolite IDs ChEBI<br/>and class counts]
-  E --> U[User: which relationships differ,<br/>how confidently]
+  D --> P[Steps 10, 11<br/>figures: EE vs RE layers;<br/>edge differences w_EE - w_RE]
   R[Rhea reactions<br/>enzyme-substrate] --> G[Step 5<br/>metabolite-protein links<br/>to our 471 genes]
   F --> G
   G --> H[Step 6<br/>metabolite networks EE / RE<br/>shared protein + same class]
   B --> H
   D --> K[Step 7<br/>hub report, all 4 networks]
   H --> K
-  H --> M[Step 4b<br/>metabolite EE vs RE<br/>error bars from standard errors]
-  E --> P[Steps 10, 11<br/>figures: EE vs RE layers;<br/>edge differences]
-  M --> P
+  H --> P
+  P --> U[User: which relationships differ<br/>between the arms]
   F --> U
 ```
 
@@ -68,8 +66,6 @@ flowchart LR
    data, so both arms have the same 431 edges.
 3. **Weights (step 3).** The exercise data decides *how strong* each edge is in each arm: the dot
    product of the two genes' vectors.
-4. **Comparison (step 4).** Per edge and per gene, is the endurance–resistance difference bigger than
-   the measurement noise?
 5. **Metabolite identifiers (steps 1c, 1d).** ChEBI and other database IDs and class counts.
 6. **Metabolite networks (steps 5, 6).** Rhea links each metabolite to the proteins (among our 471
    genes) that use it as an enzyme substrate or product. Two metabolites are connected if they share
@@ -77,8 +73,7 @@ flowchart LR
    vectors, per arm. Same edges in both arms, as for genes.
 7. **Hub report (step 7).** How many hubs each of the four networks has, and what hangs on them.
    Nothing is removed.
-8. **Metabolite comparison (step 4b).** The step 4 test applied to the metabolite networks.
-9. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
+8. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
    metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
 
 ## 4. Setup
@@ -93,7 +88,6 @@ flowchart LR
 | `data.table` | 1.18 | tables |
 | `igraph` | 2.2 | network components |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
-| `Matrix` | 1.7 | sparse gene × edge matrix (step 4) |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
 | Internet | — | step 1c only |
 
@@ -131,8 +125,6 @@ python3 network/01c_metabolite_ids.py         # metabolite IDs (web); EXPORT_COP
 python3 network/01d_metabolite_classes.py     # metabolite class counts (offline)
 Rscript network/02_string_edges.R             # STRING edges
 Rscript network/03_edge_weights.R             # per-arm edge weights
-Rscript network/04_compare_arms.R             # EE vs RE comparison (~10 s; N_BOOT sets the draws)
-Rscript network/04b_compare_arms_metabolites.R  # the same comparison for the metabolite networks (run after step 6)
 Rscript network/05_rhea_metabolite_protein.R  # metabolite-protein links (downloads Rhea once to $HACK_EXT)
 Rscript network/06_metabolite_network.R       # metabolite networks, EE and RE
 Rscript network/07_hub_report.R               # hubs in all four networks (nothing removed)
@@ -162,11 +154,6 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 2 | `02_nodes_string.csv` | per gene: UniProt, in STRING or not, degree, component |
 | 2 | `02_network_summary.csv` | headline counts |
 | 3 | `03_weighted_edges.csv` | per edge: `w_EE`, `w_RE`, `w_diff`, `sig_EE`, `sig_RE` |
-| 4 | `04_edge_diff.csv` | per edge: weights, `w_diff` with 95% interval, `p_boot`, `fdr`, `higher_in` (arm with the higher signed weight), `larger_abs_in` (arm with the larger weight ignoring sign), `sign_change` |
-| 4 | `04_node_diff.csv` | per gene with ≥ 1 edge: degree, strength per arm (signed and 0–1), difference with interval, p, FDR |
-| 4 | `04_diff_subnetworks.csv` | connected groups of differing edges (FDR < 0.1: none; exploratory tier at p < 0.05) |
-| 4 | `04_summary.csv` | headline numbers |
-| 4b | `04b_metab_edge_diff.csv`, `04b_metab_node_diff.csv`, `04b_metab_diff_subnetworks.csv`, `04b_metab_summary.csv` | the step 4 comparison for the metabolite networks (same columns, metabolites instead of genes) |
 | 5 | `05_metabolite_protein_links.csv` | per metabolite–gene link: classes, UniProt, `n_reactions`, `example_reactions` (Rhea IDs), `matched_via` (as-is or pH 7.3 form) |
 | 5 | `05_rhea_summary.csv` | Rhea release and coverage counts |
 | 6 | `06_metabolite_edges.csv` | per metabolite edge: `main_class`, `n_shared_proteins`, `shared_proteins`, `w_EE`, `w_RE`, `w_diff`, `sig_EE`, `sig_RE` |
@@ -175,7 +162,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
-| 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); solid = bootstrap p < 0.05 |
+| 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
 
 **Gene vector layout (18 dimensions, per arm)**
@@ -227,7 +214,6 @@ missing.
 | 2 | El-Kebir et al. 2015 §3.3 network rules on the curated STRING file | published construction; note the background network differs from theirs (below) |
 | 3 | Edge weight = dot product of the whole 16-dimension vectors, per arm | encoder–decoder node-similarity framework (Hamilton, Ying & Leskovec 2017) |
 | 3 | 0–1 weights σ(w / s), s = median \|w\| over both arms (2.667) | temperature scaling; s set by analogy with the median heuristic |
-| 4 | Monte Carlo error propagation from standard errors, with the EE/RE error correlation | error bars for every difference; ignoring the correlation would hide real differences |
 | 5 | Metabolite–protein = Rhea enzyme–substrate, human proteins among our 471 genes; our ChEBI IDs also matched in their pH 7.3 form | curated, keyed by ChEBI and UniProt; Rhea writes molecules as they exist at physiological pH |
 | 6 | Metabolite edge = shares ≥ 1 of our 471 genes' proteins AND same RefMet super class (14; team rule, chosen after step 8); weight = dot product of 9-number vectors | exercise-independent gate, as for genes; restricting to our measured genes is the more rigorous choice; inferred functional links, not physical |
 | 7 | Hubs reported with the El-Kebir cutoff (Q75 + 40 × IQR) and the Tukey fence (Q75 + 1.5 × IQR); none removed | team decision: inspect before removing |
@@ -303,11 +289,12 @@ kernel widths (Gretton et al. 2012), and it is one constant for both arms: a uni
 real arm difference passes through unchanged, whereas a separate s per arm could hide one. Because the
 sigmoid is curved, similarity-vs-difference conclusions use raw w.
 
-**Step 4 — EE vs RE.** In each of 10,000 rounds every value is redrawn from its standard error, the
-EE and RE values of a gene jointly with their error correlation, and all weights recomputed. Two-sided
-p = 2 × min(share ≤ 0, share ≥ 0); Benjamini–Hochberg FDR within edges and within genes (Efron &
-Tibshirani 1993 for the bootstrap). An arm-label swap permutation was tried and rejected: with two
-genes per edge, half of all swaps reproduce the observed |w_diff|, so no edge can reach p < ~0.5.
+**Testing arm differences (removed for now).** A bootstrap test of every edge and node difference
+(Monte Carlo error propagation from the standard errors, with the EE/RE error correlation) was built as
+steps 4 and 4b and then removed at the team's request; it is recoverable from git history (commits up to
+6cf4b44). The standard errors and EE/RE error correlations that such a test needs are still written by
+steps 1 and 1b. Until a test is reinstated, the differences shown in steps 10–11 are measured values
+without error bars, and none should be read as statistically established.
 
 **Step 5 — metabolite–protein links (Rhea).** Rhea release 142 (2026-09-02), downloaded 2026-09-26
 (files cached in `$HACK_EXT`). A metabolite is linked to one of our genes if it is a participant in a
@@ -323,31 +310,8 @@ back to the 50 main classes). 161 metabolite pairs share a protein; **122 also s
 become edges**, among **44 metabolites** in 5 components (largest 15): nucleic acids 54 edges, fatty
 acyls 35, organic acids 23, sphingolipids 10. Same edges in both arms; weights per arm (sigmoid scale
 s = 1.82). The two arms' metabolite edge weights correlate at r = 0.15 and 41 of 122 edges change sign
-(no noise reference yet; the step 4 comparison has not been run on metabolites). The edge table keeps
+(no noise reference or test yet). The edge table keeps
 both metabolites' main classes (`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
-
-**Step 4b — metabolite networks, EE vs RE.** The step 4 method (Monte Carlo error propagation from
-standard errors, EE/RE error correlation included, 10,000 rounds, BH FDR) applied to the 122 metabolite
-edges and 44 metabolites. Unlike the gene networks, there is more signal than chance: **14 edges pass
-p < 0.05 (≈ 6 expected by chance), 2 pass FDR < 0.1**, and **4 metabolites pass FDR < 0.1**.
-
-| Result | EE | RE | FDR | Higher in |
-|---|---|---|---|---|
-| edge CMP–Inosine (shared enzyme NT5E) | −1.3 | 62.0 | 0.012 | RE |
-| edge Ketoleucine–Lactic acid (SLC16A1 / MCT1) | 0.5 | 12.3 | 0.012 | RE |
-| metabolite Cer 18:1;O2/16:0 (strength) | 10.8 | 2.3 | 0.015 | EE |
-| metabolite Arachidonic acid (strength) | −2.6 | 19.8 | 0.015 | RE |
-| metabolite Ketoleucine (strength) | −3.7 | 16.2 | 0.015 | RE |
-| metabolite CMP (strength) | 2.7 | 59.5 | 0.033 | RE |
-
-The exploratory tier (p < 0.05) groups into a fatty-acid block (arachidonic, linoleic, capric, lauric
-acid, oleoyl-EA; all higher in RE), a lactate/pyruvate/ketoleucine block around the lactate transporter
-SLC16A1 (higher in RE), the nucleotide block around NT5E (adenosine, CMP, inosine, UMP), ceramides via
-CERT1 (higher in EE) and 2-oxoglutarate–glutamate via KYAT1 (higher in RE). The two arms' metabolite edge
-weights correlate at r = 0.15 (under re-measurement noise: median 0.23, middle 95% −0.03 to 0.48). Same
-caveats as step 4: errors assumed independent between metabolites and between dimensions (p-values may be
-somewhat optimistic); several results are driven by one strongly responding metabolite (e.g. inosine in
-RE), and CMP is not significant on the 0–1 weights (p = 0.94).
 
 **Step 7 — hubs (nothing removed).**
 
@@ -386,19 +350,19 @@ whereas our two networks contain exactly the same nodes and edges by constructio
 carry no information. With identical positions, the differences between arms are read from the
 encodings. Node colour = mean scaled
 response across the node's dimensions (violet down, orange up, limits ±2); node size = strength in that
-arm; edge width = |w|, solid = positive, dashed = negative. Genes: triangle = strength differs between
-arms at uncorrected p < 0.05 (step 4; hypothesis-level). Metabolites: shape = RefMet super class. Only
+arm; edge width = |w|, solid = positive, dashed = negative. Genes: squares. Metabolites: shape = RefMet
+super class. Only
 connected nodes are drawn (286 genes, 44 metabolites). Titles are descriptive only.
 
 **Step 11 — edge-difference figures.** One network per data type, in the same node positions as
 10a / 10b. Edge colour and width show w_diff = w_EE − w_RE: red and thicker = endurance weight higher,
 blue and thicker = resistance weight higher, thin light grey = the same in both arms (colour limits
-symmetric at the 95th percentile of |w_diff|). Solid edges pass the step 4 / 4b bootstrap at uncorrected
-p < 0.05; the rest are dotted and faded. Nodes are grey, sized by the absolute difference in strength.
+symmetric at the 95th percentile of |w_diff|). No significance marks (the test is removed for now).
+Nodes are grey, sized by the absolute difference in strength (sum of |w_EE| minus sum of |w_RE|).
 **Read with care:** the difference is of *signed* weights, so for an edge that is negative in both arms,
 red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −9.2 in EE, −54.0 in
-RE). The legend therefore says "higher", not "stronger"; signs are in `04_edge_diff.csv` /
-`04b_metab_edge_diff.csv`.
+RE). The legend therefore says "higher", not "stronger"; the weights are in `03_weighted_edges.csv` /
+`06_metabolite_edges.csv`.
 
 **Metabolite edge rule, STRING neighbours (checked 2026-09-26, not adopted).** Letting two metabolites
 connect through *interacting* proteins (STRING ≥ 700) instead of only a shared protein would add 25 edges
@@ -423,7 +387,7 @@ connect through *interacting* proteins (STRING ≥ 700) instead of only a shared
   LINE, *WWW* · Kipf TN, Welling M (2016) Variational graph auto-encoders, arXiv:1611.07308 · Hinton G,
   Vinyals O, Dean J (2015) Distilling the knowledge in a neural network, arXiv:1503.02531 · Guo C et al.
   (2017) On calibration of modern neural networks, *ICML* · Gretton A et al. (2012) A kernel two-sample
-  test, *JMLR* 13:723–773 · Efron B, Tibshirani RJ (1993) *An Introduction to the Bootstrap* ·
+  test, *JMLR* 13:723–773 ·
   Szklarczyk D et al. STRING database, *Nucleic Acids Res.* · Fahy E, Subramaniam S (2020) RefMet,
   *Nat. Methods* 17:1173 · Bansal P et al. (2022) Rhea, the reaction knowledgebase in 2022,
   *Nucleic Acids Res.* 50:D693 · Tukey JW (1977) *Exploratory Data Analysis*.
@@ -431,10 +395,9 @@ connect through *interacting* proteins (STRING ≥ 700) instead of only a shared
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **31 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **25 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
-product of the node vectors; sigmoid correct; p-values and FDR valid; strengths equal summed weights;
-class counts add up to 450; metabolite edges obey the class and shared-protein rules) and compares the headline numbers below, printing "same" or "CHANGED".
+product of the node vectors; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules) and compares the headline numbers below, printing "same" or "CHANGED".
 
 | Result | Expected (2026-09-26) |
 |---|---|
@@ -444,31 +407,22 @@ class counts add up to 450; metabolite edges obey the class and shared-protein r
 | Edges / isolated genes / largest component / hubs removed | 431 / 185 / 230 / 0 |
 | Sigmoid scale s | 2.667 |
 | cor(w_EE, w_RE) / edges changing sign | 0.64 / 130 |
-| Edges at FDR < 0.1 / nominal p < 0.05 (chance: ~22) | 0 / 12 |
-| Genes at FDR < 0.1 | 1 (HSPB1) |
 | Metabolites / genes linked through Rhea | 60 / 80 |
 | Metabolite edges / metabolites in the network (super class) | 122 / 44 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
-| Metabolite networks EE vs RE: edges at FDR < 0.1 / p < 0.05 (chance ≈ 6) / metabolites at FDR < 0.1 | 2 / 14 / 4 |
 
-**Result, stated carefully.** The two arms' edge weights correlate at r = 0.64. Re-drawing the
-measurement noise pulls that correlation down (median 0.53, middle 95% 0.34–0.69); this spread is *not*
-a confidence interval for the true correlation. Whether 0.64 means "similar" or "different" needs the
-noise-only reference (roadmap). No edge difference survives FDR < 0.1. Twelve edges pass an uncorrected
-p < 0.05, **fewer than the ~22 expected by chance** among 431, so they are hypotheses only: HSPA1A–HSPB1,
-HSPB1–BAG3, CD55–CD59, LPL–SORT1, ITGAV–ITGB1, ITGAV–MFGE8, PODXL–EZR and STIP1–CCT5 higher in RE;
-HSPA1A–DNAJB1, SLC16A1–BSG, CEBPB–FOXO1 and SCLY–TXNRD1 higher in EE. One gene passes FDR < 0.1,
-HSPB1 (FDR 0.057, higher in RE), largely through its single edge to HSPA1A, and not on the 0–1 weights.
-Many of the 130 sign changes are near-zero weights flipping within noise. Most responses are small
-relative to their error (median |value| / SE = 0.83 for genes, 0.80 for metabolites, both arms), so the
-tests have little power: **"not significant" is not evidence that the arms are the same.**
+**Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.64 (metabolite edges:
+r = 0.15), and 130 of 431 gene edges (41 of 122 metabolite edges) change sign between arms. Without a
+test against measurement noise, none of these differences is established: most responses are small
+relative to their error (median |value| / SE = 0.83 for genes, 0.80 for metabolites), so many sign
+changes are near-zero weights flipping within noise. Whether r = 0.64 means "similar" or "different"
+also needs a noise-only reference (roadmap).
 
 **Known failure modes and limits**
 
 - Step 1c depends on live web services; failed requests are marked `lookup_status = error` (none on
   2026-09-26) and a rerun can differ slightly as databases change.
-- Errors are treated as independent between genes and between the dimensions of one gene; real
-  correlations there could make p-values somewhat too small.
+- Arm differences are not tested against measurement noise (the bootstrap test is removed for now).
 - "0.5h" and "4h" are the package's collection windows, not exact minutes, and differ slightly by tissue.
 - Adipose protein exists at 4 h only, and its scale divisor uses 4 h only.
 - The universe is limited to 471 genes by the OLINK panel, biasing the network to secreted and
@@ -490,8 +444,6 @@ network/
   01d_metabolite_classes.py    step 1d  metabolite class counts
   02_string_edges.R        step 2   STRING edges
   03_edge_weights.R        step 3   per-arm edge weights
-  04_compare_arms.R        step 4   EE vs RE comparison (genes)
-  04b_compare_arms_metabolites.R  step 4b  EE vs RE comparison (metabolites)
   05_rhea_metabolite_protein.R  step 5  metabolite-protein links (Rhea)
   06_metabolite_network.R  step 6   metabolite networks
   07_hub_report.R          step 7   hub report (all four networks)
@@ -513,9 +465,9 @@ Please also cite MoTrPAC, STRING and the methods above.
 
 **Roadmap / next steps**
 
-1. Rerun steps 2–4 on the second curated STRING file when it arrives.
-2. Compute the noise-only reference for r (arms identical except for noise) and the unrelated-arms
-   floor, to answer similar-vs-different.
+1. Rerun steps 2–3 (and 10–11) on the second curated STRING file when it arrives.
+2. Reinstate a test of arm differences against measurement noise (the removed bootstrap is in git
+   history), and compute the noise-only reference for r, to answer similar-vs-different.
 3. Consider weighting each dimension by its precision (value / SE) to gain power.
 4. Decide on hub removal (step 7 report); consider expanding Rhea's generic lipid entries to cover
    lipid species (currently 44 of 450 metabolites are connected).
@@ -524,7 +476,7 @@ Please also cite MoTrPAC, STRING and the methods above.
 
 **Contributors and roles:** Vidal Arroyo — analysis design, direction, review. *TODO: add teammates.*
 
-**Honest roadblocks:** low statistical power (responses near their noise level); the OLINK panel limits
-the gene set; the curated STRING file's release and processing are undocumented; the similar-vs-different
-verdict still needs its reference distribution; metabolite edges rest on single shared enzymes, and
-several metabolite differences are driven by one strongly responding metabolite (inosine).
+**Honest roadblocks:** arm differences are currently untested; responses are near their noise level;
+the OLINK panel limits the gene set; the curated STRING file's release and processing are undocumented;
+metabolite edges rest on single shared enzymes, and several metabolite differences are driven by one
+strongly responding metabolite (inosine).

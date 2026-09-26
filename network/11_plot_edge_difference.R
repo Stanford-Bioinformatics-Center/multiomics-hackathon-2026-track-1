@@ -14,8 +14,8 @@
 #   the endurance co-response is stronger. For an edge that is NEGATIVE in both arms (the two nodes respond
 #   in opposite directions), red means the endurance edge is closer to zero, i.e. the RESISTANCE edge is the
 #   more strongly negative one (e.g. IL18-CCL5: -9.2 in endurance, -54.0 in resistance -> red). The legend
-#   therefore says "higher", not "stronger"; the per-edge signs are in 04_edge_diff.csv / 04b_metab_edge_diff.csv
-#   (columns w_EE, w_RE, higher_in, larger_abs_in).
+#   therefore says "higher", not "stronger"; the per-edge weights are in 03_weighted_edges.csv /
+#   06_metabolite_edges.csv (columns w_EE, w_RE, w_diff).
 #   Two figures:
 #     11a_gene_network_edge_difference.png        genes (STRING edges, 471-gene universe)
 #     11b_metabolite_network_edge_difference.png  metabolites (Rhea + super-class edges, step 6)
@@ -25,14 +25,13 @@
 # HOW EACH ELEMENT IS DRAWN
 #   - Edge colour: w_diff on a blue - grey - red scale centred at 0. The colour limits are symmetric at
 #     the 95th percentile of |w_diff|, so a few extreme edges do not wash out the rest; edges beyond it are
-#     drawn in the strongest colour (their exact values are in 04_edge_diff.csv / 04b_metab_edge_diff.csv).
+#     drawn in the strongest colour (their exact values are in 03_weighted_edges.csv / 06_metabolite_edges.csv).
 #   - Edge width: |w_diff| (thin = little difference).
-#   - Edge line type: solid if the difference passes the bootstrap test at uncorrected p < 0.05 (steps
-#     4 / 4b), dotted and faded otherwise (so large differences that are within noise do not dominate). This separates differences larger than measurement noise from those that
-#     are not; p < 0.05 without correction is hypothesis-level only (see README for the FDR results).
+#   - No significance marks: the bootstrap test of arm differences has been removed for now, so the figure
+#     shows measured differences only, without error bars. Differences here are not tested against noise.
 #   - Nodes: grey (colour is reserved for the edges), size = |difference in node strength| between arms
-#     (step 4 / 4b), labels for the 10 genes with the largest strength difference / every metabolite.
-#     Genes: triangle = strength differs at uncorrected p < 0.05. Metabolites: shape = RefMet super class.
+#     (sum of |w_EE| minus sum of |w_RE| over the node's edges), labels for the 10 genes with the largest
+#     strength difference / every metabolite. Genes: squares. Metabolites: shape = RefMet super class.
 #   - Only nodes with at least one edge are drawn (286 genes, 44 metabolites).
 #   Titles are descriptive only; interpretation belongs in the report text.
 #
@@ -40,7 +39,7 @@
 #   R 4.4; data.table, igraph (layout), ggplot2, ggrepel (labels).
 #
 # INPUTS:  $HACK_OUT: 01_nodes_EE.csv, 01b_metab_nodes_EE.csv, 01c_metabolite_ids.csv,
-#          04_edge_diff.csv, 04_node_diff.csv, 04b_metab_edge_diff.csv, 04b_metab_node_diff.csv
+#          03_weighted_edges.csv, 06_metabolite_edges.csv
 # OUTPUTS: $HACK_FIG (default ~/Desktop/output/hackathon; never inside the repo)
 # =====================================================================================================
 
@@ -81,7 +80,7 @@ norm01 <- function(v) if (diff(range(v)) < 1e-9) rep(0.5, length(v)) else (v - m
 
 # Build and draw one difference network.
 #   node_order: all node names in the same order step 10 used (so the layout matches 10a / 10b)
-#   edges: data.table(a, b, w_diff, p_boot); nodes: data.table(node, delta, shape_key)
+#   edges: data.table(a, b, w_EE, w_RE, w_diff); nodes: data.table(node, delta, shape_key)
 draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name, label_rule, file,
                       width = 10.5, height = 5.4) {
   # the network over the connected nodes, built exactly as in step 10 (same vertex order, same edge order)
@@ -91,16 +90,13 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
   set.seed(SEED); L0 <- layout_with_fr(g)
   # node positions scaled to 0..1
   pos <- data.table(node = V(g)$name, x = norm01(L0[, 1]), y = norm01(L0[, 2]))
-  # edge segments with their difference and test result
+  # edge segments with their difference
   E <- copy(edges)
   E[, `:=`(x = pos$x[match(a, pos$node)], y = pos$y[match(a, pos$node)],
            xend = pos$x[match(b, pos$node)], yend = pos$y[match(b, pos$node)])]
-  # solid for differences beyond measurement noise at uncorrected p < 0.05, dotted otherwise
-  E[, tested := factor(fifelse(p_boot < 0.05, "p < 0.05 (uncorrected)", "not significant"),
-                       levels = c("p < 0.05 (uncorrected)", "not significant"))]
-  # drawing order: non-significant edges first, then smallest to largest difference, so the significant
-  # and large differences sit on top (base-R order: data.table's setorder cannot sort on abs())
-  E <- E[order(-as.integer(tested), abs(w_diff))]
+  # drawing order: smallest to largest difference, so the large differences sit on top
+  # (base-R order: data.table's setorder cannot sort on abs())
+  E <- E[order(abs(w_diff))]
   # symmetric colour limit at the 95th percentile of |w_diff|
   lim <- as.numeric(quantile(abs(E$w_diff), 0.95))
   # node table with positions, the strength difference and the shape key
@@ -110,11 +106,9 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
   N[, lab := fifelse(label_rule(rk), node, NA_character_)]
   # the plot, back to front
   p <- ggplot() +
-    # edges: colour and width = the difference; line type and opacity = bootstrap result
-    geom_segment(data = E, aes(x, y, xend = xend, yend = yend, colour = w_diff, linewidth = abs(w_diff), linetype = tested,
-                               alpha = tested), lineend = "round") +
-    # opacity: significant edges fully drawn, the rest faded
-    scale_alpha_manual(values = c("p < 0.05 (uncorrected)" = 1, "not significant" = 0.4), guide = "none") +
+    # edges: colour and width = the difference
+    geom_segment(data = E, aes(x, y, xend = xend, yend = yend, colour = w_diff, linewidth = abs(w_diff)),
+                 lineend = "round") +
     # nodes: grey, size = |strength difference|, shape = shape key
     geom_point(data = N, aes(x, y, size = abs(delta), shape = shape_key), fill = "grey80", colour = "grey30", stroke = 0.22) +
     # labels that avoid each other and the nodes
@@ -127,16 +121,12 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
                            labels = c("higher in resistance\n(w_RE > w_EE)", "same", "higher in endurance\n(w_EE > w_RE)")) +
     # widths: thin for no difference, thick for large differences
     scale_linewidth(range = c(0.1, 1.8), guide = "none") +
-    # line types for the bootstrap result
-    scale_linetype_manual(values = c("p < 0.05 (uncorrected)" = "solid", "not significant" = "12"),
-                          name = "difference vs noise (bootstrap)", drop = FALSE) +
     # node sizes and shapes
     scale_size(range = c(0.8, 4.5), name = "node strength difference (absolute)") +
     scale_shape_manual(values = shape_values, name = shape_name) +
     # legends
     guides(colour = guide_colourbar(order = 1, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"),
                                     title.position = "top", title.hjust = 0.5),
-           linetype = guide_legend(order = 2, override.aes = list(colour = "grey30", linewidth = 0.6)),
            shape = guide_legend(order = 3, override.aes = list(size = 2.6)), size = guide_legend(order = 4)) +
     coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.02), clip = "off") +
     labs(title = title) + theme_net()
@@ -145,46 +135,35 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
   message(sprintf("-> %s (%d nodes, %d edges; colour limit +-%.1f)", file, vcount(g), ecount(g), lim))
 }
 
+# Helper: per-node strength difference = (sum of |w_EE|) - (sum of |w_RE|) over the node's edges.
+strength_delta <- function(e) {
+  # every edge listed once from each end, with both arms' weights
+  both <- rbind(e[, .(node = a, w_EE, w_RE)], e[, .(node = b, w_EE, w_RE)])
+  # endurance strength minus resistance strength, per node
+  both[, .(delta = sum(abs(w_EE)) - sum(abs(w_RE))), by = node]
+}
+
 # ---- figure 11a: genes ---------------------------------------------------------------------------
 # Node order exactly as step 10 used it (gene symbols in the order of the step 1 node table).
 gorder <- fread(file.path(OUT, "01_nodes_EE.csv"))$gene_symbol
-# Edge differences and bootstrap p-values (step 4), in the step 3 edge order used by step 10.
-w3 <- fread(file.path(OUT, "03_weighted_edges.csv"))[, .(a = symbol_a, b = symbol_b)]
-# (the differences and p-values from step 4)
-d4 <- fread(file.path(OUT, "04_edge_diff.csv"))[, .(a = symbol_a, b = symbol_b, w_diff, p_boot)]
-# (merge back onto the step 3 order so the layout is computed on the same edge sequence as step 10)
-ge <- d4[w3, on = .(a, b)]
-# Safety check: every edge found its difference.
-stopifnot(!anyNA(ge$w_diff))
-# Per-gene strength difference and whether it passes p < 0.05 (step 4).
-nd <- fread(file.path(OUT, "04_node_diff.csv"))
-# (one row per gene: name, strength difference, shape key)
-gn <- data.table(node = nd$gene_symbol, delta = nd$delta_strength,
-                 shape_key = factor(fifelse(nd$p_boot < 0.05, "strength differs EE vs RE (p < 0.05, uncorrected)", "no nominal difference"),
-                                    levels = c("no nominal difference", "strength differs EE vs RE (p < 0.05, uncorrected)")))
+# Edge weights and their difference from step 3, in the step 3 edge order (the order step 10 used).
+ge <- fread(file.path(OUT, "03_weighted_edges.csv"))[, .(a = symbol_a, b = symbol_b, w_EE, w_RE, w_diff)]
+# Per-gene strength difference; every gene is drawn as a square.
+gn <- strength_delta(ge)[, shape_key := factor("gene")]
 # Draw and save the gene figure.
 draw_diff(gorder, ge, gn, "Gene network: endurance minus resistance edge weights (471 genes, STRING combined score >= 700)",
-          shape_values = c("no nominal difference" = 22, "strength differs EE vs RE (p < 0.05, uncorrected)" = 24),
-          shape_name = "node", label_rule = function(rk) rk <= NLAB,
+          shape_values = c(gene = 22), shape_name = "node", label_rule = function(rk) rk <= NLAB,
           file = file.path(FIG, "11a_gene_network_edge_difference.png"))
 
 # ---- figure 11b: metabolites -----------------------------------------------------------------------
 # Node order exactly as step 10 used it (metabolites in the order of the step 1b node table).
 morder <- fread(file.path(OUT, "01b_metab_nodes_EE.csv"))$metabolite
-# Edge differences and bootstrap p-values (step 4b), in the step 6 edge order used by step 10.
-w6 <- fread(file.path(OUT, "06_metabolite_edges.csv"))[, .(a = metabolite_a, b = metabolite_b)]
-# (the differences and p-values from step 4b)
-d4b <- fread(file.path(OUT, "04b_metab_edge_diff.csv"))[, .(a = metabolite_a, b = metabolite_b, w_diff, p_boot)]
-# (merge back onto the step 6 order)
-me <- d4b[w6, on = .(a, b)]
-# Safety check: every edge found its difference.
-stopifnot(!anyNA(me$w_diff))
-# Per-metabolite strength difference (step 4b) and super class (step 1c).
-nb <- fread(file.path(OUT, "04b_metab_node_diff.csv"))
-# (the metabolite classes from step 1c)
+# Edge weights and their difference from step 6, in the step 6 edge order (the order step 10 used).
+me <- fread(file.path(OUT, "06_metabolite_edges.csv"))[, .(a = metabolite_a, b = metabolite_b, w_EE, w_RE, w_diff)]
+# The metabolite classes from step 1c.
 ids <- fread(file.path(OUT, "01c_metabolite_ids.csv"))
-# (one row per metabolite: name, strength difference, super class as shape)
-mn <- data.table(node = nb$metabolite, delta = nb$delta_strength, shape_key = factor(ids$super_class[match(nb$metabolite, ids$metabolite)]))
+# Per-metabolite strength difference, with the super class as the shape.
+mn <- strength_delta(me)[, shape_key := factor(ids$super_class[match(node, ids$metabolite)])]
 # The super classes present get distinct shapes (same order as step 10).
 cls <- sort(unique(as.character(mn$shape_key)))
 # Draw and save the metabolite figure.

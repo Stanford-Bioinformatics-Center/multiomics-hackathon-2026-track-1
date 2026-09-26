@@ -51,7 +51,7 @@
 #   difference between the arms is carried through. Giving each arm its own s would do the opposite: it
 #   would rescale each network to its own typical edge and could hide a genuine overall difference.
 #   Caveat: the sigmoid is non-linear, so it compresses big differences. Conclusions about whether the
-#   arms are more similar or different should be drawn from the raw w (as step 4 does), with the 0-1
+#   arms are more similar or different should be drawn from the raw w, with the 0-1
 #   version used only where a method requires positive weights.
 #
 # TECH STACK

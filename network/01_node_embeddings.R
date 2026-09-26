@@ -10,7 +10,7 @@
 #   18 numbers are the gene's "embedding vector" (its coordinates). Each gene gets TWO vectors: one for
 #   the endurance arm and one for the resistance arm, each computed from that arm's own comparison with
 #   the control group. (Both arms are compared with the SAME control group, so their measurement errors
-#   are correlated; that correlation is saved and accounted for in step 4.)
+#   are correlated; that correlation is saved for a future arm-comparison test.)
 #
 # THE DATA AND WHERE IT COMES FROM
 #   Source: the R package MotrpacHumanPreSuspensionAnalysis (v0.2.4), from the MoTrPAC consortium's
@@ -70,7 +70,7 @@
 # EMBEDDING LAYOUT (18 numbers per gene per arm)
 #   adipose rna 0.5/4/24 h, adipose prot 0.5/4/24 h, blood rna ..., blood prot ..., muscle rna ..., muscle prot ...
 #
-# UNCERTAINTY, SAVED FOR STEP 4
+# UNCERTAINTY, SAVED FOR A FUTURE ARM-COMPARISON TEST (a bootstrap test was built and removed for now)
 #   Every number is an estimate. We also save its standard error (how wide its error bar is) on the same
 #   scale, and the correlation between the ERRORS of a gene's endurance and resistance estimates. That
 #   correlation (median ~0.6) exists because both are compared against the SAME control group; it is a
