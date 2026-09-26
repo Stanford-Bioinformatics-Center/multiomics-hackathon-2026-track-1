@@ -214,6 +214,15 @@ check(isTRUE(all.equal(sort(je[edge_type == "protein - protein", w_EE]), sort(w$
 note("step14_joint_edges", nrow(je), 764)
 note("step14_cross_edges_cor", round(cor(jx$w_EE, jx$w_RE), 3), 0.375)
 
+# ---- step 15: joint network with metabolite classes ------------------------------------------------------
+# The grouped layout (option 1) and the step 14 nodes.
+cl <- rd("15_class_layout.csv"); jn <- rd("14_joint_nodes.csv")
+# Check the grouped layout places exactly the step 14 nodes, each once, with every metabolite classed.
+check(setequal(cl$node, jn$node) && !anyDuplicated(cl$node) && !anyNA(cl[node_type == "metabolite", class]),
+      "step 15: grouped layout covers the step 14 nodes, metabolites classed")
+# Record the number of metabolite classes shown.
+note("step15_metabolite_classes", uniqueN(cl[node_type == "metabolite", class]), 10)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))
