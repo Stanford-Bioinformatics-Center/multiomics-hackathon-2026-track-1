@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene networks (steps 1–4) and metabolite networks (steps 5–6) built and validated; hub report (step 7) computed, no hubs removed yet; disease layer not started |
+| Status | Gene and metabolite networks built, compared between arms (steps 4, 4b) and validated (31 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -55,6 +55,9 @@ flowchart LR
   B --> H
   D --> K[Step 7<br/>hub report, all 4 networks]
   H --> K
+  H --> M[Step 4b<br/>metabolite EE vs RE<br/>error bars from standard errors]
+  E --> P[Steps 10, 11<br/>figures: EE vs RE layers;<br/>edge differences]
+  M --> P
   F --> U
 ```
 
@@ -74,6 +77,9 @@ flowchart LR
    vectors, per arm. Same edges in both arms, as for genes.
 7. **Hub report (step 7).** How many hubs each of the four networks has, and what hangs on them.
    Nothing is removed.
+8. **Metabolite comparison (step 4b).** The step 4 test applied to the metabolite networks.
+9. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
+   metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
 
 ## 4. Setup
 
@@ -133,6 +139,7 @@ Rscript network/07_hub_report.R               # hubs in all four networks (nothi
 Rscript network/08_metabolite_rule_experiments.R  # how the metabolite edge rule affects coverage (report only)
 Rscript network/resource/export_feature_lists.R  # shareable feature lists -> $HACK_RES (not committed)
 Rscript network/10_plot_arm_networks.R        # figures: EE vs RE networks, genes and metabolites -> $HACK_FIG
+Rscript network/11_plot_edge_difference.R     # figures: one network per data type, edges = w_EE - w_RE -> $HACK_FIG
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -168,6 +175,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
 | 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
 | 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks in one identical layout |
+| 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); solid = bootstrap p < 0.05 |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
 
 **Gene vector layout (18 dimensions, per arm)**
@@ -382,6 +390,20 @@ arm; edge width = |w|, solid = positive, dashed = negative. Genes: triangle = st
 arms at uncorrected p < 0.05 (step 4; hypothesis-level). Metabolites: shape = RefMet super class. Only
 connected nodes are drawn (286 genes, 44 metabolites). Titles are descriptive only.
 
+**Step 11 — edge-difference figures.** One network per data type, in the same node positions as
+10a / 10b. Edge colour and width show w_diff = w_EE − w_RE: red and thicker = endurance weight higher,
+blue and thicker = resistance weight higher, thin light grey = the same in both arms (colour limits
+symmetric at the 95th percentile of |w_diff|). Solid edges pass the step 4 / 4b bootstrap at uncorrected
+p < 0.05; the rest are dotted and faded. Nodes are grey, sized by the absolute difference in strength.
+**Read with care:** the difference is of *signed* weights, so for an edge that is negative in both arms,
+red means the resistance edge is the more strongly negative one (e.g. IL18–CCL5: −9.2 in EE, −54.0 in
+RE). The legend therefore says "higher", not "stronger"; signs are in `04_edge_diff.csv` /
+`04b_metab_edge_diff.csv`.
+
+**Metabolite edge rule, STRING neighbours (checked 2026-09-26, not adopted).** Letting two metabolites
+connect through *interacting* proteins (STRING ≥ 700) instead of only a shared protein would add 25 edges
+(122 → 147) but no metabolites (44 → 44) under the current super-class rule; the shared-protein rule is kept.
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -475,6 +497,7 @@ network/
   07_hub_report.R          step 7   hub report (all four networks)
   08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
   10_plot_arm_networks.R   step 10  figures of the EE vs RE networks (written outside the repo)
+  11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
@@ -494,8 +517,8 @@ Please also cite MoTrPAC, STRING and the methods above.
 2. Compute the noise-only reference for r (arms identical except for noise) and the unrelated-arms
    floor, to answer similar-vs-different.
 3. Consider weighting each dimension by its precision (value / SE) to gain power.
-4. Decide on hub removal (step 7 report); run the step 4 comparison on the metabolite networks;
-   consider expanding Rhea's generic lipid entries to cover lipid species.
+4. Decide on hub removal (step 7 report); consider expanding Rhea's generic lipid entries to cover
+   lipid species (currently 44 of 450 metabolites are connected).
 5. Add the disease layer: the Track 1 brief asks each team to pick a single disease; this network work
    is disease-agnostic so far.
 
@@ -503,4 +526,5 @@ Please also cite MoTrPAC, STRING and the methods above.
 
 **Honest roadblocks:** low statistical power (responses near their noise level); the OLINK panel limits
 the gene set; the curated STRING file's release and processing are undocumented; the similar-vs-different
-verdict still needs its reference distribution.
+verdict still needs its reference distribution; metabolite edges rest on single shared enzymes, and
+several metabolite differences are driven by one strongly responding metabolite (inosine).
