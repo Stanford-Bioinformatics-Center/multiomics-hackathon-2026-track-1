@@ -6,8 +6,8 @@
 |---|---|
 | Question | Which phosphoproteomic (MoTrPAC, GlyGen) and glycosylation / other GlyGen (Homo sapiens) data exist for the 471 proteins and 450 metabolites in our graph, so the team can choose what to integrate into Neo4j? |
 | Status | Run 2026-09-26 against GlyGen release 2.11.1 and MotrpacHumanPreSuspensionAnalysis v0.2.4. Counts only; nothing is integrated yet |
-| Code | `glygen_protein_inventory.py` (GlyGen API, one call per protein), `glygen_motrpac_inventory.R` (MoTrPAC phospho, metabolite matching, coverage table) |
-| Outputs (never in the repo) | `$HACK_OUT/inventory/`: `coverage_summary.csv`, `protein_inventory.csv` (one row per protein, every count), `metabolite_inventory.csv`, `glygen_protein_counts.csv`, `glygen_phosphosites.csv` |
+| Code | `glygen_protein_inventory.py` (GlyGen API, one call per protein), `glygen_motrpac_inventory.R` (MoTrPAC phospho, metabolite matching, coverage table), `export_phospho_features.R` (CSV of every MoTrPAC phospho feature ID) |
+| Outputs (never in the repo) | `$HACK_OUT/inventory/`: `coverage_summary.csv`, `protein_inventory.csv` (one row per protein, every count), `metabolite_inventory.csv`, `glygen_protein_counts.csv`, `glygen_phosphosites.csv`, `motrpac_phospho_feature_ids.csv` (all 21,873 MoTrPAC phospho features with IDs and flags; `export_phospho_features.R`) |
 
 ## 2. How it was done
 
@@ -49,9 +49,9 @@
 | GlyGen | pathways (Reactome, KEGG); reactions; enzyme (EC) | 471; 179; 163 | 3; 6; 1 |
 | GlyGen | GO, function, structures (PDB), isoforms, orthologs, publications, cross-references | 470–471 each | — |
 
-**Phosphorylation, site level:** MoTrPAC measures 1,183 phosphosites on our proteins (739 muscle, 444
-adipose; 1,076 single-site, 1,027 confidently localised); 606 are sites GlyGen already lists; 202 respond
-(192 muscle, 10 adipose; 86 in EE, 181 in RE). GlyGen lists 2,699 phosphosites on our proteins, 398 with a
+**Phosphorylation, site level:** MoTrPAC measures 909 unique phosphosite features on our proteins (739 in
+muscle, 444 in adipose, 274 in both; 825 single-site, 787 confidently localised); 422 are sites GlyGen
+already lists; 202 respond (86 in EE, 181 in RE; by tissue 192 muscle and 10 adipose measurements). GlyGen lists 2,699 phosphosites on our proteins, 398 with a
 known kinase. Proteins with any phospho information: 398 (both sources 214, MoTrPAC only 13, GlyGen only
 171, neither 73). 38 proteins have a responding MoTrPAC site and a GlyGen kinase annotation.
 
