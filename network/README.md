@@ -604,6 +604,13 @@ were loaded in a headless browser with every control exercised and no script err
 in the cytoscape.js library with no dangling edges and every node positioned; the style file is well-formed
 XML. **Not checked:** opening the files in Cytoscape desktop (not installed on the machine that made them).
 
+**Neo4j graph (`network/neo4j/`).** For the teammate building a Neo4j visualiser: `export_neo4j.R` writes
+the genes, metabolites, classes, contrasts, responses and all three edge types (with weights, evidence and
+figure layouts) as Neo4j-ready CSVs to `$HACK_OUT/neo4j_import/`; `import.cypher` loads them (idempotent);
+`queries.cypher` has examples and in-database weight checks; `run_local_neo4j.sh` does export + Docker
+Neo4j + import in one command. Graph model, expected counts, the map from graph elements to our scripts
+and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to end on Neo4j 5 Community.
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -748,6 +755,8 @@ network/
   14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
   15_joint_network_classes.R     step 15  joint network with metabolites grouped by class (figures 15a / 15b)
   17_interactive_networks.R      step 17  interactive pages of all three networks + Cytoscape files
+  neo4j/                         Neo4j graph of the networks for the visualiser: export_neo4j.R, import.cypher,
+                                 queries.cypher, run_local_neo4j.sh, README.md (graph model, key-file map)
   16_t2d_lipid_classes.R         step 16  T2D-relevant lipid classes per arm (tables behind section 7b)
   resource/
     README.md              how to regenerate the feature lists, and their columns
