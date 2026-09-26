@@ -11,6 +11,9 @@ the upstream QC, the methods and the tools.
 
 - **Step 1 — nodes** (`01_node_embeddings.R`): one node per gene. Each node has **two** 18-value
   exercise-response vectors, one per arm, built independently from that arm's contrast.
+- **Step 1b — metabolite nodes** (`01b_metabolite_embeddings.R`): one node per metabolite (450).
+  Metabolomics is one layer, so each vector has 9 values (3 tissues × 3 times), half a gene's 18;
+  again two vectors per metabolite, one per arm, built independently.
 - **Step 2 — edges** (`02_string_edges.R`): STRING links between the nodes, built with the
   network rules of El-Kebir et al. 2015. STRING gates whether an edge exists.
 - **Step 3 — edge weights** (`03_edge_weights.R`): each STRING edge is weighted by the dot product
@@ -22,6 +25,7 @@ the upstream QC, the methods and the tools.
 
 ```bash
 Rscript network/01_node_embeddings.R
+Rscript network/01b_metabolite_embeddings.R
 Rscript network/02_string_edges.R
 Rscript network/03_edge_weights.R
 Rscript network/04_compare_arms.R      # ~10 s; N_BOOT (default 10000) sets the draws
@@ -59,6 +63,12 @@ We read published results; no statistics are re-run on raw data.
   timepoint has ≥ 3 participants measured both before and after exercise (`filter_paired_n`);
   model `~ 0 + group_timepoint + BMI + calculatedAge + Sex + (1 | pid)` (dream).
 - **OLINK proteomics (blood):** targeted ~1,400-protein panel, QC-normalised; same model as MS.
+- **Metabolomics (adipose, blood/plasma, muscle; 10–12 platforms per tissue):** features missing in
+  > 20% of samples removed; KNN imputation; log2; median/MAD normalisation (untargeted); names
+  standardised to RefMet; where a metabolite was measured on several platforms, the lowest-CV
+  (most reproducible) platform is kept (`METABOLOMICS_CVS`). Model: targeted
+  `~ 0 + group_timepoint + BMI + calculatedAge + codedsiteid + Sex + (1 | pid)`; untargeted adds
+  `raw_intensity_post` (each sample's overall signal level).
 - **STRING file:** already restricted to combined_score ≥ 700, UniProt IDs, one row per pair.
 
 ## Filtering and choices made in this pipeline
@@ -70,6 +80,8 @@ We read published results; no statistics are re-run on raw data.
 | 1 | One feature per gene: the most abundant (`AveExpr`) | independent of the exercise response |
 | 1 | One scale factor per tissue × layer, shared by both arms | puts RNA and protein on one footing without erasing arm differences |
 | 1 | Adipose protein 0.5 / 24 h left empty | those samples do not exist |
+| 1b | Metabolites measured in all three tissues, matched by exact RefMet name (450) | complete vectors; exact names because lipid punctuation is meaningful |
+| 1b | One scale factor per tissue, shared by both arms | same common-unit logic as genes |
 | 2 | El-Kebir 2015 network rules (hub removal removes nothing here) | published, standard construction |
 | 3 | Dot product over the whole 16-dimension vector | encoder–decoder node-similarity framework |
 | 3 | 0-1 weights: σ(w / s), s = median \|w\| over both arms | temperature scaling with the median heuristic (see step 3) |
@@ -139,6 +151,38 @@ depend on the exercise response, so this does not select for responsive features
 | `01_nodes_feature_provenance.csv` | The feature id behind each gene in each block, and how many candidates it was chosen from |
 
 The script checks that the universe is exactly 471 genes and that each table is 471 × 18.
+
+## Step 1b: metabolite nodes (450 metabolites)
+
+The metabolite counterpart of step 1. A metabolite is included if it is measured in all three tissues
+(both arms, all three post-exercise times), matched across tissues by **exact** RefMet name: no
+lower-casing or punctuation stripping, because in lipid names punctuation distinguishes different
+molecules. 450 metabolites qualify (71% lipids by RefMet class; 442 measured on untargeted platforms,
+8 on targeted panels in muscle). No duplicate handling is needed: upstream QC already keeps one
+(lowest-CV) platform per metabolite per tissue.
+
+**Embedding: 9 dimensions per arm**
+
+```
+adipose_metab_0.5h  adipose_metab_4h  adipose_metab_24h
+blood_metab_0.5h    blood_metab_4h    blood_metab_24h
+muscle_metab_0.5h   muscle_metab_4h   muscle_metab_24h
+```
+
+Values are the same delta-delta logFC as for genes (EE-CON, RE-CON), each tissue divided by one
+root-mean-square factor pooled over metabolites, times and both arms (adipose 0.249, blood 0.231,
+muscle 0.307). Nothing is missing by design. Standard errors and the EE/RE estimate correlation
+(median 0.65) are saved for later comparison steps, exactly as for genes. Median |value| / SE is
+0.76, similar to the genes.
+
+| File | Contents |
+|------|----------|
+| `01b_metab_nodes_EE.csv`, `01b_metab_nodes_RE.csv` | **The metabolite node tables.** 450 rows: `metabolite`, 9 scaled dimensions |
+| `01b_metab_nodes_{EE,RE}_raw_logFC.csv` | Same layout, unscaled logFC |
+| `01b_metab_nodes_{EE,RE}_se.csv` | Standard error of every value, same scale |
+| `01b_metab_nodes_arm_corr.csv` | Correlation between each metabolite's EE and RE estimate per dimension |
+| `01b_metab_scale_factors.csv` | The divisor for each tissue |
+| `01b_metab_nodes_provenance.csv` | The platform that measured each metabolite in each tissue |
 
 ## Step 2: edges
 
