@@ -39,6 +39,8 @@
 # INPUTS:  $HACK_OUT: 01_nodes_{EE,RE}.csv, 01b_metab_nodes_{EE,RE}.csv, 03_weighted_edges.csv,
 #          06_metabolite_edges.csv, 01c_metabolite_ids.csv
 # OUTPUTS: $HACK_FIG (default ~/Desktop/output/hackathon; figures are never written into the repo)
+#          $HACK_OUT/10_layout_genes.csv, 10_layout_metabolites.csv: node, x, y (0..1) of the shared layout,
+#          reused by steps 11 and 17 (interactive views) so every view shows the same positions
 # =====================================================================================================
 
 # Load packages quietly.
@@ -121,7 +123,7 @@ build <- function(nodes, edges) {
   # which connected group each node belongs to (used for the metabolite class labels)
   N[, comp := components(g)$membership[node]]
   # the drawing data and the counts shown in the side labels
-  list(N = N, E = E, n_nodes = vcount(g), n_edges = ecount(g))
+  list(N = N, E = E, n_nodes = vcount(g), n_edges = ecount(g), layout = data.table(node = V(g)$name, x = x0, y = y0))
 }
 
 # Draw one figure from build()'s output.
@@ -187,6 +189,8 @@ gn[, shape_key := factor("gene")]
 gw <- fread(file.path(OUT, "03_weighted_edges.csv"))[, .(a = symbol_a, b = symbol_b, w_EE, w_RE, sig_EE, sig_RE)]
 # Build and draw.
 G1 <- build(gn, gw)
+# Save the shared layout (0..1) for the interactive views (step 17).
+fwrite(G1$layout, file.path(OUT, "10_layout_genes.csv"))
 # Draw and save the gene figure.
 draw(G1, "Gene networks: endurance vs resistance (471 genes, STRING combined score >= 700)",
      shape_values = c(gene = 22),
@@ -206,6 +210,8 @@ mn[, shape_key := factor(ids$super_class[match(node, ids$metabolite)])]
 mw <- fread(file.path(OUT, "06_metabolite_edges.csv"))[, .(a = metabolite_a, b = metabolite_b, w_EE, w_RE, sig_EE, sig_RE)]
 # Build; the super classes that actually appear get distinct fillable shapes.
 G2 <- build(mn, mw)
+# Save the shared layout (0..1) for the interactive views (step 17).
+fwrite(G2$layout, file.path(OUT, "10_layout_metabolites.csv"))
 # (the super classes present among the drawn metabolites)
 cls <- sort(unique(as.character(G2$N$shape_key)))
 # Draw and save the metabolite figure.

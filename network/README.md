@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (34 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 16, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Status | Gene and metabolite networks built and validated (36 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); interactive, navigable versions of all three networks plus Cytoscape files (step 17); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 16, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -60,6 +60,9 @@ flowchart LR
   G --> J
   J --> Q[Step 15<br/>joint network with metabolites<br/>grouped into named class bubbles]
   Q --> U
+  Q --> I[Step 17<br/>interactive pages + Cytoscape files<br/>search, highlight, filter, EE / RE / difference]
+  P --> I
+  I --> U
   P --> U[User: which relationships differ<br/>between the arms]
   F --> U
 ```
@@ -93,6 +96,9 @@ flowchart LR
 12. **Metabolite classes on the joint network (step 15).** The step 14 network redrawn with metabolites of
    the same RefMet super class pulled together into an outlined, named group ("bubble"). As in step 14,
    15a shows the two arms separately and 15b their difference.
+13. **Interactive networks (step 17).** The joint, gene and metabolite networks as browser pages you can
+   navigate like Cytoscape (search, neighbour highlight, filters, EE / RE / difference views, collapsible
+   classes, tooltips), plus Cytoscape import files for teammates who use Cytoscape.
 
 ## 4. Setup
 
@@ -107,6 +113,7 @@ flowchart LR
 | `igraph` | 2.2 | network components |
 | `ggplot2`, `ggrepel` | 3.5.2, 0.9.8 | figures (steps 10-15) |
 | `ggforce` | 0.5.0 | step 15 (class outlines) |
+| `visNetwork`, `htmlwidgets`, `htmltools`, `jsonlite` + pandoc | 2.1.4, 1.6.4 | step 17 (interactive pages; pandoc ships with RStudio / Positron / Quarto) |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
 | TinyTeX (R `tinytex`) | via `tinytex::install_tinytex()` | step 13 (compiles the LaTeX table to PDF) |
@@ -119,7 +126,7 @@ if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install(version = "3.20")                      # R 4.4; see the MoTrPAC package README for R 4.5/4.6
 if (!require("pak", quietly = TRUE)) install.packages("pak")
 pak::pak("MoTrPAC/MotrpacHumanPreSuspensionAnalysis")       # github.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis
-install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "ggrepel", "ggforce"))
+install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "ggrepel", "ggforce", "visNetwork", "htmlwidgets", "htmltools", "jsonlite"))
 ```
 
 **Data**
@@ -157,6 +164,7 @@ Rscript network/12_normalization_comparison.R # four normalisations side by side
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
 Rscript network/15_joint_network_classes.R    # joint network, metabolites grouped by class, figures 15a / 15b -> $HACK_FIG
+Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/17_interactive; Cytoscape files -> $HACK_OUT/17_cytoscape
 Rscript network/16_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
@@ -193,6 +201,9 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 14 | `$HACK_FIG/14a_joint_network_EE_vs_RE.png`, `14b_joint_network_edge_difference.png` (not committed) | joint network: EE (top) and RE (bottom) in one layout; one network of w_EE − w_RE |
 | 15 | `15_class_layout.csv` | node positions of the class-grouped layout: `node`, `node_type`, `class`, `x`, `y` |
 | 15 | `$HACK_FIG/15a_joint_classes_EE_vs_RE.png`, `15b_joint_classes_edge_difference.png` (not committed) | the joint network with metabolites grouped by class: 15a the arms separately (14a style), 15b their difference (14b style) |
+| 10 | `10_layout_genes.csv`, `10_layout_metabolites.csv` | node positions (0..1) of the figure 10 / 11 layouts, reused by step 17 |
+| 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
+| 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
 | 16 | `16_t2d_class_summary.csv`, `16_t2d_species.csv`, `16_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
@@ -568,6 +579,31 @@ and metabolites triangles. A colour-by-class version was tried and not kept. **R
 positions are shaped by the class links, so distances are not comparable with 14a / 14b, and grouping
 says nothing about whether the metabolites of a class behave alike.
 
+**Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
+layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
+figures). Each network (joint: 364 nodes / 764 edges, class-grouped layout of 15a / 15b; genes: 286 / 431,
+layout of 10a / 11a; metabolites: 44 / 147, layout of 10b / 11b) becomes one self-contained HTML page
+(visNetwork / vis-network) with:
+
+| Control | What it does |
+|---|---|
+| View: Endurance / Resistance / Difference | switches the encoding, same positions: 14a style (node fill = mean normalised response, size = strength, edge colour = type, dashed = negative weight) or 14b style (edge colour and width = w_EE − w_RE, line style = type, grey nodes sized by the strength difference) |
+| Find | type a gene or metabolite; the page zooms to it and highlights it and its neighbours |
+| Click a node / empty space | highlight a node and its neighbours / clear |
+| Class (joint, metabolites) | highlight a metabolite class and its neighbours and zoom to it |
+| Edges (joint) | show or hide each edge type |
+| Class outlines, Collapse classes | the 15a bubbles; collapse each class into one node (double-click to open) |
+| Hover | every value: responses, strengths, weights, and the evidence behind the edge (STRING score, Rhea reactions, link rule and enzymes) |
+
+Proteins are circles and metabolites triangles in all three pages (figure 10a draws genes as squares).
+Colour limits are each network's own 95th percentiles, as in the figures. The Cytoscape export gives each
+network as Cytoscape.js JSON with node positions plus ready-made per-view colour / size / line columns,
+and one style file with three styles (`hackathon EE`, `hackathon RE`, `hackathon difference`) that map
+those columns; import with File > Import > Network from File, then Styles from File. **Checked:** the pages
+were loaded in a headless browser with every control exercised and no script errors; the .cyjs files load
+in the cytoscape.js library with no dangling edges and every node positioned; the style file is well-formed
+XML. **Not checked:** opening the files in Cytoscape desktop (not installed on the machine that made them).
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -601,9 +637,9 @@ says nothing about whether the metabolites of a class behave alike.
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **34 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **36 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
-product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes) and compares the headline numbers below, printing "same" or "CHANGED".
+product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
 | Result | Expected (2026-09-26) |
 |---|---|
@@ -711,6 +747,7 @@ network/
   13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
   14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
   15_joint_network_classes.R     step 15  joint network with metabolites grouped by class (figures 15a / 15b)
+  17_interactive_networks.R      step 17  interactive pages of all three networks + Cytoscape files
   16_t2d_lipid_classes.R         step 16  T2D-relevant lipid classes per arm (tables behind section 7b)
   resource/
     README.md              how to regenerate the feature lists, and their columns

@@ -223,6 +223,18 @@ check(setequal(cl$node, jn$node) && !anyDuplicated(cl$node) && !anyNA(cl[node_ty
 # Record the number of metabolite classes shown.
 note("step15_metabolite_classes", uniqueN(cl[node_type == "metabolite", class]), 10)
 
+# ---- step 17: interactive pages and Cytoscape files --------------------------------------------------------
+# Helper: read a Cytoscape.js file's node ids and edge table.
+cyjs <- function(stem) { j <- jsonlite::fromJSON(file.path(OUT, "17_cytoscape", sprintf("17_%s_network.cyjs", stem)))
+  list(nodes = j$elements$nodes$data$id, edges = as.data.table(j$elements$edges$data), pos = j$elements$nodes$position) }
+# The three exported networks.
+cj <- cyjs("joint"); cg <- cyjs("gene"); cm <- cyjs("metabolite")
+# Check sizes and that every node has a position.
+check(length(cj$nodes) == nrow(jn) && nrow(cj$edges) == nrow(je) && nrow(cg$edges) == nrow(w) && nrow(cm$edges) == nrow(me) &&
+      !anyNA(unlist(cj$pos)) && !anyNA(unlist(cg$pos)) && !anyNA(unlist(cm$pos)), "step 17: Cytoscape files match the source networks")
+# Check the exported weights equal the source weights (joint = step 14, genes = step 3).
+check(isTRUE(all.equal(cj$edges$w_diff, je$w_diff)) && isTRUE(all.equal(cg$edges$w_EE, w$w_EE)), "step 17: Cytoscape weights unchanged")
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))
