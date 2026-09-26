@@ -1,8 +1,19 @@
 # Feature lists: 471 proteins and 450 metabolites
 
 Reference lists of the features in the endurance-vs-resistance networks, for looking them up in other
-datasets. Names and identifiers only; no measurements. Regenerate with
-`Rscript network/09_export_resources.R` (after steps 1–2 and 1b–1c).
+datasets. Names and identifiers only; no measurements.
+
+**The tables are not stored in this repository** (to keep the data as private as possible); only the
+script that makes them is. To generate them, install the MoTrPAC R package (see `../README.md`, section
+4), run pipeline steps 1, 1b, 1c and 2, then:
+
+```bash
+Rscript network/resource/export_feature_lists.R
+```
+
+The two CSVs below are written to `$HACK_RES` (default
+`~/Desktop/output/hackathon-2026-track1/network/resource`), outside the repo. Share them directly with
+teammates who need them rather than committing them.
 
 ## `proteins_471.csv`
 

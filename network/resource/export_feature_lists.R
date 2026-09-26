@@ -1,16 +1,17 @@
 #!/usr/bin/env Rscript
 # =====================================================================================================
-# 09_export_resources.R — STEP 9: SHAREABLE LISTS OF OUR 471 PROTEINS AND 450 METABOLITES
+# export_feature_lists.R — STEP 9: SHAREABLE LISTS OF OUR 471 PROTEINS AND 450 METABOLITES
 # =====================================================================================================
 #
 # WHAT THIS SCRIPT DOES (plain language)
-#   Writes two small reference tables into the repository folder network/resource/, so teammates can
-#   look up our network's features in other datasets without running the pipeline:
-#     resource/proteins_471.csv     the 471 genes/proteins (measured as RNA and protein in all three tissues)
-#     resource/metabolites_450.csv  the 450 metabolites (measured in adipose, blood and muscle)
+#   Writes two small reference tables so teammates can look up our network's features in other datasets:
+#     proteins_471.csv     the 471 genes/proteins (measured as RNA and protein in all three tissues)
+#     metabolites_450.csv  the 450 metabolites (measured in adipose, blood and muscle)
 #   Each table carries the identifiers most other resources use, so a feature can be matched by whichever
-#   ID the other dataset has. Unlike every other step, these files ARE committed to the repo on purpose:
-#   they are small reference lists, not results. They contain names and IDs only, no measurements.
+#   ID the other dataset has. They contain names and IDs only, no measurements.
+#   To keep the data as private as possible, the TABLES ARE NOT COMMITTED to the repository: only this
+#   script is. A teammate with the MoTrPAC R package regenerates them locally by running the pipeline
+#   (steps 1, 1b, 1c, 2) and then this script; the tables are written to $HACK_RES, outside the repo.
 #
 # WHERE THE IDENTIFIERS COME FROM
 #   Proteins: Entrez gene ID and symbol (step 1); UniProt accessions (package table HUMAN_FEATURE_TO_GENE,
@@ -24,7 +25,9 @@
 #   R 4.4; data.table; MotrpacHumanPreSuspensionAnalysis.
 #
 # INPUTS:  $HACK_OUT/01_nodes_EE.csv, 02_nodes_string.csv, 01c_metabolite_ids.csv, 01b_metab_nodes_provenance.csv
-# OUTPUTS: network/resource/proteins_471.csv and network/resource/metabolites_450.csv (inside the repo)
+# OUTPUTS: $HACK_RES/proteins_471.csv and $HACK_RES/metabolites_450.csv
+#          ($HACK_RES defaults to $HACK_OUT/resource, i.e. ~/Desktop/output/hackathon-2026-track1/network/resource;
+#          never inside the repo)
 # =====================================================================================================
 
 # Load packages quietly.
@@ -32,13 +35,10 @@ suppressMessages({ library(MotrpacHumanPreSuspensionAnalysis); library(data.tabl
 
 # Results folder where the pipeline's outputs live (override with HACK_OUT).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
-# This script's own folder, found from how it was launched (falls back to the working directory).
-HERE <- tryCatch(dirname(normalizePath(sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1]))),
-                 error = function(e) getwd())
-# The resource folder inside the repo, next to this script.
-RES <- file.path(HERE, "resource")
+# Where the shareable tables are written (override with HACK_RES); outside the repo so no data is committed.
+RES <- Sys.getenv("HACK_RES", unset = file.path(OUT, "resource"))
 # Create it if needed.
-dir.create(RES, showWarnings = FALSE)
+dir.create(RES, recursive = TRUE, showWarnings = FALSE)
 # The package's feature-to-ID lookup table, all columns as text.
 map <- as.data.table(HUMAN_FEATURE_TO_GENE)[, lapply(.SD, as.character)]
 

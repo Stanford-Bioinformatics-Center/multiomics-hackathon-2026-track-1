@@ -110,8 +110,9 @@ install.packages(c("data.table", "igraph", "nanoparquet", "Matrix"))
 | Rhea (step 5) | downloaded automatically from ftp.expasy.org/databases/rhea/ on first run (release 142) | `HACK_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/rhea`) |
 | Results folder | created by step 1 | `HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`) |
 
-Code and results are kept in separate trees: nothing is written inside the repo, except the small
-reference lists in `network/resource/` (step 9), which are committed on purpose for teammates.
+Code and results are kept in separate trees: nothing is written inside the repo. That includes the
+shareable feature lists (step 9, written to `$HACK_RES`) and the figures (step 10, written to `$HACK_FIG`,
+default `~/Desktop/output/hackathon`).
 
 ## 5. Inputs, outputs and quick start
 
@@ -129,7 +130,8 @@ Rscript network/05_rhea_metabolite_protein.R  # metabolite-protein links (downlo
 Rscript network/06_metabolite_network.R       # metabolite networks, EE and RE
 Rscript network/07_hub_report.R               # hubs in all four networks (nothing removed)
 Rscript network/08_metabolite_rule_experiments.R  # how the metabolite edge rule affects coverage (report only)
-Rscript network/09_export_resources.R         # refresh the shareable feature lists in network/resource/
+Rscript network/resource/export_feature_lists.R  # shareable feature lists -> $HACK_RES (not committed)
+Rscript network/10_plot_arm_networks.R        # figures: EE vs RE networks, genes and metabolites -> $HACK_FIG
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -162,7 +164,8 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 6 | `06_metabolite_nodes.csv`, `06_metabolite_summary.csv` | per metabolite: class, proteins, degree, component; headline counts |
 | 7 | `07_hub_summary.csv` | per network × hub type: degree distribution, El-Kebir and Tukey cutoffs, number of hubs, top hub, top strength per arm |
 | 7 | `07_hub_list.csv` | every node above the Tukey fence, with its attached analytes and per-arm strength |
-| 9 | `network/resource/proteins_471.csv`, `metabolites_450.csv` (in the repo) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
+| 9 | `$HACK_RES/proteins_471.csv`, `metabolites_450.csv` (not committed) | feature lists with identifiers for searching other datasets; columns in `network/resource/README.md` |
+| 10 | `$HACK_FIG/10a_gene_networks_EE_vs_RE.png`, `10b_metabolite_networks_EE_vs_RE.png` (not committed) | the EE (top) and RE (bottom) networks, figure-3.1 style |
 | 8 | `08_metabolite_rule_experiments.csv` | per rule variant: proteins allowed, metabolites with a protein, pairs sharing a protein, edges, metabolites in the network, change vs baseline |
 
 **Gene vector layout (18 dimensions, per arm)**
@@ -343,6 +346,15 @@ experiment 2 as the step 6 rule, keeping our 471 genes as the more rigorous prot
 Coverage is limited by which proteins may link metabolites, not by the class rule: the class level
 only regroups the same 60 protein-linked metabolites.
 
+**Step 10 — figures.** In the style of week 5's figure 3.1 (El-Kebir et al. 2015, Figure 4): endurance
+network on top, resistance below, dotted violet lines joining each node to itself across the layers.
+Both layers share one starting layout (fixed seed), relaxed briefly with a small maximum step using each
+arm's 0–1 edge weights, so position differences reflect weight differences. Node colour = mean scaled
+response across the node's dimensions (violet down, orange up, limits ±2); node size = strength in that
+arm; edge width = |w|, solid = positive, dashed = negative. Genes: triangle = strength differs between
+arms at uncorrected p < 0.05 (step 4; hypothesis-level). Metabolites: shape = RefMet super class. Only
+connected nodes are drawn (286 genes, 44 metabolites). Titles are descriptive only.
+
 ### External code, AI use, citations, licence
 
 - **External code:** none copied; the method follows the papers cited here.
@@ -433,11 +445,10 @@ network/
   06_metabolite_network.R  step 6   metabolite networks
   07_hub_report.R          step 7   hub report (all four networks)
   08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
-  09_export_resources.R    step 9   writes the feature lists below
+  10_plot_arm_networks.R   step 10  figures of the EE vs RE networks (written outside the repo)
   resource/
-    README.md              column definitions
-    proteins_471.csv       the 471 proteins: symbol, Entrez, UniProt, Ensembl, STRING
-    metabolites_450.csv    the 450 metabolites: RefMet, classes, ChEBI, PubChem, InChIKey, KEGG, platforms
+    README.md              how to regenerate the feature lists, and their columns
+    export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
   99_validate_outputs.R    checks
 ```
 
