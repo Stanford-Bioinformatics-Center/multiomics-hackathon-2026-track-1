@@ -165,6 +165,10 @@ matching step 14.
 | New contrasts, tissues or time points | nothing structural: they appear as new `Contrast` nodes and `RESPONDS_IN` rows (update the counts) |
 | A different normalisation (step 12 is still an open decision) | re-run the pipeline, then the export; `Normalisation` nodes and `Dataset.code_commit` record what the graph holds |
 
+**Planning the next layers:** `inventory/` counts which MoTrPAC phosphoproteomic and GlyGen (Homo sapiens)
+data exist for our 471 proteins and 450 metabolites (see `inventory/README.md` for the results), to decide
+what to integrate next.
+
 Known limits: Rhea reactions are stored as the example IDs kept by step 5 (not reaction nodes);
 differences between arms are descriptive, not tested; `run_local_neo4j.sh` runs without a password and
 keeps the database inside the container (for local development only).
