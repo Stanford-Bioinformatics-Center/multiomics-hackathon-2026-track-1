@@ -16,7 +16,7 @@ differ between the two, and how confidently**.
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
 | Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
 | Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (34 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and two ways of showing metabolite classes on it (step 15); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 16, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Status | Gene and metabolite networks built and validated (34 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and two ways of showing metabolite classes on it (step 15); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (section 7b; the script behind them has been dropped). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
 yet most comparisons look at single molecules. A network view asks whether the *relationships* between
@@ -58,7 +58,7 @@ flowchart LR
   D --> J[Step 14<br/>joint protein + metabolite network<br/>Rhea cross-edges, doubled metabolite vector]
   H --> J
   G --> J
-  J --> Q[Step 15<br/>metabolite classes on the joint network<br/>15a grouped + named, 15b coloured]
+  J --> Q[Step 15<br/>metabolite classes on the joint network<br/>grouped + named, or coloured]
   Q --> U
   P --> U[User: which relationships differ<br/>between the arms]
   F --> U
@@ -81,8 +81,7 @@ flowchart LR
    Nothing is removed.
 8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
    side, to choose the approach.
-9. **Descriptive and exploratory tables (steps 13, 16).** Statistics of the log fold changes per ome
-   and arm (LaTeX PDF), and T2D-relevant lipid classes per arm with the clinical NEFA check (section 7b).
+9. **Descriptive tables (step 13).** Statistics of the log fold changes per ome and arm (LaTeX PDF).
 10. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
    metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
 11. **Joint network (step 14).** Genes/proteins and metabolites in one network: the gene edges (step 3),
@@ -91,8 +90,9 @@ flowchart LR
    multiplies RNA and protein equally) with the gene's 18-value embedding. Figures 14a (EE above RE) and
    14b (w_EE − w_RE); proteins are circles, metabolites triangles.
 12. **Metabolite classes on the joint network (step 15).** The same network drawn two ways for the team
-   to choose from: 15a groups metabolites of the same RefMet super class together and names each group;
-   15b keeps the step 14 layout and colours metabolites by class, with the class legend on the side.
+   to choose from: "grouped" pulls metabolites of the same RefMet super class together and names each
+   group; "coloured" keeps the step 14 layout and colours metabolites by class, with the class legend on
+   the side. As in step 14, 15a shows the two arms separately and 15b their difference.
 
 ## 4. Setup
 
@@ -105,7 +105,7 @@ flowchart LR
 | `MotrpacHumanPreSuspensionAnalysis` | 0.2.4 | the data: differential-analysis results and feature-to-gene map |
 | `data.table` | 1.18 | tables |
 | `igraph` | 2.2 | network components |
-| `ggplot2`, `ggrepel` | 3.5.2, 0.9.8 | figures (steps 10-15; ggplot2 ≥ 3.5 needed for the side legend in 15b) |
+| `ggplot2`, `ggrepel` | 3.5.2, 0.9.8 | figures (steps 10-15; ggplot2 ≥ 3.5 needed for the side legend in the "coloured" figures) |
 | `ggforce`, `ggnewscale` | 0.5.0, 0.5.2 | step 15 (class outlines; a second fill scale) |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
@@ -157,7 +157,6 @@ Rscript network/12_normalization_comparison.R # four normalisations side by side
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
 Rscript network/15_joint_network_classes.R    # metabolite classes on the joint network, figures 15a / 15b -> $HACK_FIG
-Rscript network/16_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 ```
 
@@ -192,8 +191,7 @@ Rscript network/99_validate_outputs.R         # checks everything; see section 7
 | 14 | `14_joint_nodes.csv`, `14_joint_summary.csv` | per node: type, class, mean response and strength per arm, degree per edge type; per edge type: count, cor(w_EE, w_RE), sign changes, median \|w\| |
 | 14 | `$HACK_FIG/14a_joint_network_EE_vs_RE.png`, `14b_joint_network_edge_difference.png` (not committed) | joint network: EE (top) and RE (bottom) in one layout; one network of w_EE − w_RE |
 | 15 | `15_class_layout.csv` | node positions of the class-grouped layout (option 1): `node`, `node_type`, `class`, `x`, `y` |
-| 15 | `$HACK_FIG/15a_joint_classes_grouped_{EE_vs_RE,edge_difference}.png`, `15b_joint_classes_coloured_{EE_vs_RE,edge_difference}.png` (not committed) | option 1 (grouped + named) and option 2 (coloured + side legend), each in the 14a and 14b styles |
-| 16 | `16_t2d_class_summary.csv`, `16_t2d_species.csv`, `16_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
+| 15 | `$HACK_FIG/15a_joint_classes_EE_vs_RE_{grouped,coloured}.png`, `15b_joint_classes_edge_difference_{grouped,coloured}.png` (not committed) | 15a = the arms drawn separately (14a style), 15b = their difference (14b style); each as option 1 (grouped + named) and option 2 (coloured + side legend) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
 | 11 | `$HACK_FIG/11a_gene_network_edge_difference.png`, `11b_metabolite_network_edge_difference.png` (not committed) | one network per data type; edge colour/width = w_EE − w_RE (red = higher in EE, blue = higher in RE, thin grey = same); no significance marks |
@@ -533,18 +531,20 @@ to the others; differences between the arms are not tested.
 recomputed: nodes, edges and weights come from step 14; the class is the RefMet super class (step 1c).
 The 60 metabolites fall into 10 classes (organic acids 19, nucleic acids 16, fatty acyls 11,
 sphingolipids 6, carbohydrates 2, glycerophospholipids 2; alkaloids, organoheterocyclic compounds,
-prenol lipids and sterol lipids 1 each). Each option is drawn in the 14a style (EE above RE) and the 14b
-style (w_EE − w_RE); proteins stay circles and metabolites triangles.
+prenol lipids and sterol lipids 1 each). As in step 14, **15a** draws the two arms separately (EE above
+RE) and **15b** their difference (w_EE − w_RE); each comes in both options (file suffix `_grouped` or
+`_coloured`). Proteins stay circles and metabolites triangles.
 
-| Figure | Option | Layout | How classes are shown |
+| File suffix | Option | Layout | How classes are shown |
 |---|---|---|---|
-| 15a | group + name | new: force-directed with extra links (weight 3; real edges weight 1) between every pair of same-class metabolites, **used for the layout only** — never drawn, never weighted by the data | faint outline around each class and its name above it; metabolite labels dropped (the class names replace them) |
-| 15b | colour + legend | unchanged step 14 layout | triangles filled by class (proteins keep the 14a / 14b fill, via a second fill scale); class legend with counts on the right, other legends at the bottom |
+| `_grouped` | group + name | new: force-directed with extra links (weight 3; real edges weight 1) between every pair of same-class metabolites, **used for the layout only** — never drawn, never weighted by the data | faint outline around each class and its name above it; metabolite labels dropped (the class names replace them) |
+| `_coloured` | colour + legend | unchanged step 14 layout | triangles filled by class (proteins keep the 14a / 14b fill, via a second fill scale); class legend with counts on the right, other legends at the bottom |
 
 The ten class colours deliberately avoid violet / orange (the response fill) and red / blue (the
-difference edges). **Read with care:** in 15a the positions are shaped by the class links, so distances
-there are not comparable with 14a / 15b, and grouping says nothing about whether the classes behave
-alike; 15b keeps the evidence-only layout but ten colours are hard to tell apart.
+difference edges). **Read with care:** in the grouped figures the positions are shaped by the class links,
+so distances there are not comparable with 14a / 14b or the coloured figures, and grouping says nothing
+about whether the classes behave alike; the coloured figures keep the evidence-only layout but ten
+colours are hard to tell apart.
 
 ### External code, AI use, citations, licence
 
@@ -608,7 +608,9 @@ also needs a noise-only reference (roadmap).
 
 These notes record what the data show and how they relate to the literature, so the team can decide
 what to pursue. None of the differences between the arms is statistically tested (the bootstrap was
-removed); treat every item as a hypothesis. Tables: step 16 outputs; drivers from steps 1b and 6.
+removed); treat every item as a hypothesis. The class and NEFA tables behind these notes came from a
+step 16 script that has since been dropped; it is recoverable from git history (commit b889d6c) and its
+outputs are archived in `$HACK_OUT/archive_step16_removed/`. Drivers come from steps 1b and 6.
 
 **Sphingolipids vs fatty acyls differ between the arms, each driven by one tissue and time.**
 - *Ceramides* (C14–C22) are more coordinated after **endurance**, driven by **adipose at 4 h**: all five
@@ -688,8 +690,7 @@ network/
   12_normalization_comparison.R  step 12  four normalisation options compared (report only)
   13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
   14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
-  15_joint_network_classes.R     step 15  metabolite classes on the joint network: 15a grouped, 15b coloured
-  16_t2d_lipid_classes.R         step 16  T2D-relevant lipid classes per arm (tables behind section 7b)
+  15_joint_network_classes.R     step 15  metabolite classes on the joint network (15a separate, 15b difference; grouped or coloured)
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)

@@ -12,15 +12,15 @@
 #   Nothing is recomputed: nodes, edges and weights are read from step 14. The metabolite class is the
 #   RefMet super class (step 1c). Proteins stay circles, metabolites triangles. Two options, each drawn
 #   in the style of 14a (endurance layer above resistance layer) and of 14b (edges = w_EE - w_RE):
-#     option 1, "group + name" (15a): a new layout in which metabolites of the same class are pulled
+#     option 1, "group + name" ("_grouped"): a new layout in which metabolites of the same class are pulled
 #       together (extra links between same-class metabolites, used for the layout ONLY, never drawn and
 #       never weighted by the data); each class gets a faint outline and its name above it.
-#     option 2, "colour + legend" (15b): the unchanged step 14 layout; each metabolite triangle is filled
+#     option 2, "colour + legend" ("_coloured"): the unchanged step 14 layout; each metabolite triangle is filled
 #       with its class colour (proteins keep their 14a / 14b fill), and the class legend sits on the
 #       right-hand side (the other legends stay at the bottom).
-#   Figures:
-#     15a_joint_classes_grouped_EE_vs_RE.png          15a_joint_classes_grouped_edge_difference.png
-#     15b_joint_classes_coloured_EE_vs_RE.png         15b_joint_classes_coloured_edge_difference.png
+#   Figures (as in step 14: "a" = the two arms drawn separately, "b" = their difference):
+#     15a_joint_classes_EE_vs_RE_grouped.png          15a_joint_classes_EE_vs_RE_coloured.png
+#     15b_joint_classes_edge_difference_grouped.png   15b_joint_classes_edge_difference_coloured.png
 #
 # HOW TO RUN
 #   After step 14:   Rscript network/15_joint_network_classes.R   (about 30 seconds)
@@ -235,13 +235,14 @@ draw_diff <- function(P, option, file, title) {
 }
 
 # ---- the four figures ---------------------------------------------------------------------------------
-# Option 1: grouped layout, class outlines and names.
-draw_layers(grp, 1, "15a_joint_classes_grouped_EE_vs_RE.png",
+# 15a: the two arms drawn separately (EE above RE). Option 1: grouped layout, class outlines and names.
+draw_layers(grp, 1, "15a_joint_classes_EE_vs_RE_grouped.png",
             "Joint protein-metabolite networks, metabolites grouped by RefMet super class: endurance vs resistance")
-draw_diff(grp, 1, "15a_joint_classes_grouped_edge_difference.png",
-          "Joint protein-metabolite network, metabolites grouped by RefMet super class: endurance minus resistance edge weights")
-# Option 2: step 14 layout, metabolites coloured by class, legend on the side.
-draw_layers(nodes, 2, "15b_joint_classes_coloured_EE_vs_RE.png",
+# (option 2: step 14 layout, metabolites coloured by class, class legend on the side)
+draw_layers(nodes, 2, "15a_joint_classes_EE_vs_RE_coloured.png",
             "Joint protein-metabolite networks, metabolites coloured by RefMet super class: endurance vs resistance")
-draw_diff(nodes, 2, "15b_joint_classes_coloured_edge_difference.png",
+# 15b: one network of the difference w_EE - w_RE. Option 1 (grouped), then option 2 (coloured).
+draw_diff(grp, 1, "15b_joint_classes_edge_difference_grouped.png",
+          "Joint protein-metabolite network, metabolites grouped by RefMet super class: endurance minus resistance edge weights")
+draw_diff(nodes, 2, "15b_joint_classes_edge_difference_coloured.png",
           "Joint protein-metabolite network, metabolites coloured by RefMet super class: endurance minus resistance edge weights")
