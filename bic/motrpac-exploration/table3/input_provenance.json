@@ -1,0 +1,37 @@
+{
+  "motrpac_commit": "535b4044e7417413de471104c619120337602b77",
+  "review_pdf": "/Users/acheron/Downloads/s41574-022-00641-2.pdf",
+  "review_pdf_sha256": "f5d9b07fc030d9e7b8d250ef1989d00645ef031840545a7ae7386f4234e65cbb",
+  "input_sha256": {
+    "BLOOD_PROT_CLINICAL_DA.rda": "39ee230ad55336977584536bc351982372d5f2e30ac83d4370371410c3a40eab",
+    "ADIPOSE_PROT_PH_DA.rda": "ac7233e74eb423ec4cb58b062ea135aec17a079c43fd916d22635925bfee7795",
+    "BLOOD_METAB_T_CLINICAL_DA.rda": "874861e814955d4f23a5e835d1b94b9433abd43d99fa58c4f835f1167e5e57fe",
+    "ADIPOSE_PROT_PR_DA.rda": "726a1f9d7efeb8173c4be15f4af8e8e3b88057cb9ee37eb00fef8e6b29933e54",
+    "ADIPOSE_TRNSCRPT_DA.rda": "e27627bf7954c666f27b2a0bebd0d291db3141776bbb9eaf49ac92d6e23f8f7b",
+    "METABOLOMICS_CVS.rda": "0877ad6784f792e8fcb2ad5d74880ffe441481cb6581a96629a05686a27c9971",
+    "HUMAN_FEATURE_TO_GENE.rda": "e346ebc8d0e2ab6e1f1790fee5b770683d0f9e3d81a6eed8c17eefe774eba7d2",
+    "MUSCLE_PROT_PR_DA.rda": "0e367db6dfb606ca0353881c763aa7302dcc17165382896a4dfcd22526bd65bc",
+    "BLOOD_TRNSCRPT_DA.rda": "240a00ecc6e41d5be8aca1322fb557fa253e9a3727b899092b219456e2878f3b",
+    "ADIPOSE_METAB_DA.rda": "650bd8ace338819dd07b700f5381bd6188ab5d801ddc7a6cf77303336695353a",
+    "MUSCLE_PROT_PH_DA.rda": "d7dc682f0c1f40e4328be39352a11907ca4ea2ef1aeb9dc4a80ab7eb6df6ffba",
+    "BLOOD_PROT_OL_DA.rda": "0744e323a0e929ab0e76f32ab2d4392b9afdd623b4196b65514f5ba2dfd6d1e1",
+    "MUSCLE_TRNSCRPT_DA.rda": "b18c90fa1b2dbc449e30044b2a6801fa0c62e9fe8bee1217429b049690890e33",
+    "MUSCLE_METAB_DA.rda": "8dba8b3bb9bbeff026501c82213142c58e01c1a4e9fed7b102112b25c6cd542d",
+    "BLOOD_METAB_DA.rda": "b9b3fe33b5419d3cf6f18d7470cd791185aa074540982c32209f1e28a814430a"
+  },
+  "counts": {
+    "present_no_source_FDR_hit": 14,
+    "absent_from_analyzed_tables": 11,
+    "response_detected": 2,
+    "identity_unresolved": 1
+  },
+  "circulating_family_tests": 230,
+  "source_fdr_candidates": [
+    "Fractalkine",
+    "Lactate"
+  ],
+  "secondary_family_only_candidates": [
+    "FGF21",
+    "IL-15"
+  ]
+}

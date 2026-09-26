@@ -1,0 +1,9 @@
+"source_object","tissue","assay","total_analyzed_features","mapped_CX3CL1_features","analyzed_CX3CL1_features","CX3CL1_contrast_rows"
+"BLOOD_PROT_OL_DA","blood","prot-ol",1417,1,1,33
+"BLOOD_TRNSCRPT_DA","blood","transcript-rna-seq",20526,1,0,0
+"MUSCLE_TRNSCRPT_DA","muscle","transcript-rna-seq",16509,1,1,21
+"ADIPOSE_TRNSCRPT_DA","adipose","transcript-rna-seq",20090,1,1,21
+"MUSCLE_PROT_PR_DA","muscle","prot-pr",6211,0,0,0
+"MUSCLE_PROT_PH_DA","muscle","prot-ph",18164,0,0,0
+"ADIPOSE_PROT_PR_DA","adipose","prot-pr",7056,0,0,0
+"ADIPOSE_PROT_PH_DA","adipose","prot-ph",8713,0,0,0

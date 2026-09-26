@@ -1,0 +1,728 @@
+MoTrPAC human-precovid-sed-adu data release notes –
+analysis
+Data collection type: analysis​
+Levels included: Levels 2–4 (analysis results)​
+Next anticipated release: 2026-06-01, to include instructions for individual level data access
+
+
+1. Overview & Quick Reference
+This document describes the human-precovid-sed-adu analysis data collection and focuses on Levels 2–4
+(see detailed description of data levels) analysis results derived from the corresponding human pre-suspension
+(before the Covid-19 pandemic) quantification and identification results. In brief, Level 2 (qc-norm) provides
+quality-controlled normalized data used as feature-by-sample matrices for downstream analysis; Level 3 (da)
+provides differential abundance (DA) results (models/contrasts with effect sizes and multiple-testing
+adjustments); and Level 4 provides downstream interpretation resources (e.g., enrichment and integrative
+outputs) when present. Key details are provided below:
+
+   -​   Data collection name / code: MoTrPAC pre-suspension (pre-COVID) human sedentary adults /
+        human-precovid-sed-adu (PreCAWG).
+   -​   Species / cohort / age: Homo sapiens / adult sedentary participants, pre-COVID / ~18–73 years.
+   -​   Current data collection version: v1.3
+   -​   Recommended version for new analyses: v1.3.
+   -​   Last release update: 2025-05-07 (known issues update in the consortium release readme).
+   -​   Data Levels included: Levels 2–4 (analysis results).
+   -​   Restrictions:
+           -​ Open access: Level 3 (da) and 4 (integrative)
+           -​ Data access restriction: Level 2 (qc-norm) and any associated phenotypic data. Individual level
+               data is not openly available at this time. Access can be obtained via data access committe
+               approval. Please inquire at motrpac-data.org for access.
+   -​   Dataset structures:
+           -​ Level 2 qc-norm matrices (plus sample/feature metadata) organized by ome and tissue;
+           -​ Level 3 differential abundance (DA) tables
+           -​ Level 4 enrichment / integrative outputs (e.g., CAMERA and clustering-based enrichment
+               results).
+           -​ A centralized feature map (HUMAN_FEATURE_TO_GENE) supports feature-level joins across
+               omics and downstream annotation.
+   -​   Scope:
+         Metric               Value
+
+         Tissues              3 overarching categories (adipose, blood, muscle) covering
+                              tissue codes t02, t03, t04, t05, t06, t07, t10, t11
+
+         Assays / platforms   Multiple ome/platform identifiers are supported by the package
+                              loader functions (including epigenomics); 40 qc-norm *_QC
+                              objects are distributed as packaged R data objects in
+      Metric              Value
+
+                          MotrpacHumanPreSuspensionData covering transcriptomics,
+                          proteomics, and metabolomics (targeted + untargeted).
+
+      Participants        175 unique pid values represented across packaged qc-norm
+                          objects with at least one multi-omic measurement
+
+      Samples             13,778 unique vialLabel values represented across packaged
+                          qc-norm objects
+
+
+-​   Time points (acute bout): pre_exercise, during_20_min, during_40_min, post_10_min,
+     post_15_30_45_min, post_3.5_4_hr, post_24_hr (not all omics/tissues include all time points;
+     see assay-specific metadata).
+
+-​   Key identifiers (see Glossary for details):
+      Identifier       Meaning
+
+      pid              Participant identifier (primary key for participant-level joins; used
+                       throughout clinical/phenotype tables).
+
+      vialLabel        Biospecimen (vial/sample) identifier used as sample IDs in Level 2
+                       matrices (matrix columns) and as a join key between sample-level
+                       metadata and clinical/phenotype tables.
+
+      tissue_code      Tissue code token (e.g., t06-muscle, t02-plasma) used in GCS
+                       file names; note that some workflows also use coarse tissue
+                       categories (muscle, blood, adipose).
+
+      assay / ome      Assay/platform identifier (e.g., transcript-rna-seq, prot-pr,
+                       metab-u-rpneg) used in file names, object names, and filtering.
+
+      feature_id       Feature identifier used in Level 3 DA tables for feature-level joins
+                       and downstream annotation (see HUMAN_FEATURE_TO_GENE;
+                       assay-dependent coverage).
+
+
+-​   Data locations:
+        -​ Data Portal: https://motrpac-data.org (after login, click “Pre-COVID Human Data Visualization”
+            to access internal pre-COVID human resources).
+        -​ Zenodo DOI: Not yet avilable
+        -​ R packages (recommended for convenient access and helper functions):
+                -​ MotrpacHumanPreSuspensionAnalysis (release pending).
+-​   Documentation and vignettes:
+        -​ Consortium release readme: general_reference_docs/Consortium Release_
+            human-precovid-sed-adu-v1.2 2025FEB28.md
+        -​ Analysis collection description:
+            general_reference_docs/Data-Collections_Analysis-Results.md
+          -​   Level definitions and conventions:
+               general_reference_docs/Data-Collection_Release-Guidelines.md
+          -​   Data-structure conventions (incl. PreCAWG naming):
+               general_reference_docs/Guidelines-MoTrPAC Data Structure.md
+
+
+2. Narrative Summary
+The human pre-COVID pre-suspension data include an adult sedentary cohort whose multi-omics data are
+permitted for analysis under DSMB constraints. The analysis collection focuses on the acute bout response by
+comparing timepoints relative to pre-exercise baseline and comparing changes in exercise groups (endurance
+[EE], resistance [RE]) to matched changes in controls (CON) (“difference in changes”). Below is a visual
+overview of the study and the available data. See publication for details.
+(A) Overview of the acute exercise bout. Baseline testing is completed before randomization. After randomization, a familiarization
+period for exercise is completed. Patients arrive in the morning, fasted, to complete their respective interventions. Created in
+https://BioRender.com.
+(B) Schematic of muscle, blood, and adipose biospecimen collection. No samples are collected during resistance exercise. Created in
+https://BioRender.com.
+(C) Number of samples measured in each omic category (on any assay) by tissue, exercise modality and timepoint. See
+Supplementary Figure S1 to see overlapping measurements for all participants. ATAC = Assay for Transposase-Accessible Chromatin
+The analysis collection transforms processed omics results into analysis-ready matrices and statistical
+results. As described in the quick reference, data objects are available for download from the Data Hub or can
+be accessed via R package (release pending) depending on restrictions. The data structure is the same for
+both access locations.
+
+   -​   Level 2 (qc-norm): Quality-controlled, normalized feature-by-sample matrices (columns are
+        vialLabel; feature identifiers are assay-dependent) with associated feature and sample metadata,
+        suitable for custom exploratory analyses and modeling.
+   -​   Level 3 (da): Differential abundance tables with standardized contrasts (within-group changes and
+        between-group delta-delta comparisons) including effect sizes, confidence intervals, and
+        multiple-testing adjusted p-values.
+   -​   Level 4 (when present): Downstream interpretation and integration outputs, including enrichment
+        results (e.g., CAMERA-based and clustering-based enrichment summaries) and reference resources
+        (e.g., HUMAN_FEATURE_TO_GENE, metabolomics CV filtering resources). These results are NOT
+        available for download from the Data Hub, and must be accessed via the R package.
+
+Analysis essentials, see publication for details
+Core Model: A linear mixed effects model was fit for each molecular feature using the dream function from the
+variancePartition R package. For count-based data (transcriptomics, ATAC-seq), voomWithDreamWeights was
+applied first.
+
+Primary Comparison: The main results were generated using a "difference-in-changes" model. This compares
+the change from a pre-exercise baseline to a later timepoint within an exercise group (resistance or endurance)
+against the corresponding change in the non-exercising control group. These contrasts are specified in the DA
+tables.
+
+Model Covariates: The final models included the following terms:
+
+   ●​ Fixed Effects: group (RE, EE, CON), timepoint (as a cell-means interaction with group), clinical site,
+      age, sex, and BMI.
+   ●​ Random Effect: participant id was included to account for repeated measures from the same individual.
+   ●​ Note: Race, ethnicity, and genetic ancestry were evaluated but not included as they did not improve
+      model fit (based on BIC).
+
+Model Selection:
+
+The dream model was selected after a large-scale simulation study showed it provided the best balance of
+high statistical power while maintaining the target Type 1 error rate (FDR ≈ 5%) compared to six other common
+methods.
+
+Additional Comparisons: Two other types of comparisons were made:
+
+   ●​ Group-Specific: Change from baseline within a single exercise group (e.g., RE post-exercise vs. RE
+      pre-exercise).
+   ●​ RE vs. EE: A direct comparison of the change from baseline in the resistance group versus the
+      endurance group.
+Data Filtering: For a feature to be included in an analysis, a minimum of 3 participants with paired pre- and
+post-exercise samples were required in each group being compared. Features not meeting this criterion were
+excluded from differential analysis.
+
+Significance Threshold: P-values for all comparisons were adjusted using the Benjamini-Hochberg method. A
+feature was considered statistically significant at a False Discovery Rate (FDR) of 0.05.
+
+
+For users new to MoTrPAC analysis results
+   -​   Start with Level 2 qc-norm when you want a cleaned, analysis-ready matrix for exploratory analysis,
+        visualization, and custom modeling.
+   -​   Use Level 3 da tables when you want standardized differential analysis results (effect sizes,
+        p-values/FDR) for predefined contrasts/tests.
+   -​   Use the packaged phenotype/clinical metadata (e.g., pheno in R package) to subset and annotate
+        samples (e.g., group assignment, sex, time point).
+
+
+For users familiar with other MoTrPAC analysis releases
+   -​   The release is tied to QC data freeze v1.3; see Section 4 for full version history, known issues, and
+        compatibility notes.
+   -​   This collection is a DSMB-constrained subset: only the adult sedentary cohort is permitted for
+        downstream analysis; other concurrently generated groups may exist internally for QC but are not part
+        of the official analysis release.
+
+
+2.1 Experimental factors
+   -​   Cohort: adult sedentary participants (pre-suspension / pre-COVID phase).
+   -​   Randomized group: ADUEndur (EE, endurance), ADUResist (RE, resistance), ADUControl (CON,
+        control).
+   -​   Timepoints (acute bout; see Section 1): pre_exercise, during-exercise draws, and multiple
+        post-exercise timepoints up to post_24_hr (assay/tissue dependent). See timepoints above.
+   -​   Tissues: analysis uses three overarching categories (blood, muscle, adipose) mapped from
+        MoTrPAC tissue codes (see OME_TISSUE_CODE and Section 1).
+
+
+2.2 Identifiers and joins
+   -​   pid is the participant-level identifier and is used for participant-level joins across clinical/phenotype
+        datasets and summaries.
+   -​   vialLabel is the biospecimen/sample identifier used as:
+           -​ column names in Level 2 qc-norm matrices (*_QC$qc_norm),
+           -​ the join key between sample-level metadata and the clinical/phenotype table pheno$data.
+   -​   feature_id is the feature identifier used for feature-level joins:
+           -​ qc-norm matrices use an assay-dependent feature identifier as rownames (see Section 5.2.1),
+           -​ DA tables include a feature_id column,
+           -​ the reference mapping HUMAN_FEATURE_TO_GENE is keyed by feature_id (and assay).
+
+Note on casing: the consortium release notes prefer snake_case (e.g., vial_label), but existing packaged
+objects may also use camelCase variants (e.g., vialLabel) depending on file provenance.
+2.3 Sample sizes
+As summarized in Section 1 (Scope & scale):
+
+   -​   175 unique participants (pid) are represented.
+   -​   13,778 unique samples (vialLabel)
+   -​   Participant group counts (unique pid, adult sedentary cohort, baseline visit): ADUResist = 73,
+        ADUEndur = 65, ADUControl = 37.
+   -​   Sex distribution for these 175 participants (from pheno$data$sex_psca): Female = 126, Male = 49.
+   -​   Ages for these 175 participants (from pheno$data$calculatedAge): min 18, median 41, max 73.
+
+
+3. Stats (Tissues, Assays, Platforms)
+This section summarizes which types of analysis products are expected per omics layer for
+human-precovid-sed-adu v1.2 based on the consortium release readme and packaged objects.
+
+
+ Omics layer        Level 2     Level 3      Level 4   Notes
+                   qc-norm        da      enrichment /
+                                           integrative
+
+ Epigenomics          Yes        Yes           Yes       Level 2 epigenomics is
+ (ATAC-seq,         (Cluod                               documented as analysis-hub files
+ methyl-cap)        storage                              on GCS (see consortium readme);
+                     only)                               there are no packaged qc-norm
+                                                         epigenomics objects in data
+                                                         packages
+
+ Transcriptomics      Yes        Yes           Yes       R packaged objects include
+ (RNA-seq)                                               *_TRNSCRPT_QC (Level 2) and
+                                                         *_TRNSCRPT_DA (Level 3);
+                                                         integrative/enrichment summaries
+                                                         include transcriptomics in
+                                                         CAMERA_RESULTS and FCM_ORA.
+
+ Proteomics           Yes        Yes           Yes       Packaged objects include
+ (Olink, global,                                         *_PROT_{OL,PR,PH}_QC and
+ phospho)                                                corresponding *_DA tables;
+                                                         enrichment results include
+                                                         proteomics in CAMERA_RESULTS /
+                                                         FCM_ORA (assay-dependent).
+
+ Metabolomics         Yes        Yes           Yes       Multiple metabolomics platforms
+ (targeted [T] +                                         are provided as
+ untargeted [U])                                         *_METAB_T_*_QC and
+                                                         *_METAB_U_*_QC plus
+                                                         consolidated *_METAB_DA;
+                                                         metabolomics CV resources
+ Omics layer        Level 2     Level 3        Level 4   Notes
+                   qc-norm        da        enrichment /
+                                             integrative
+
+                                                            support redundancy handling (see
+                                                            Section 4 known issues).
+
+ Integrative /        N/A         N/A            Yes        CAMERA_RESULTS, FCM_ORA,
+ enrichment                                                 FCM_CAMERA, FCM_CLUSTERS,
+ (cross-omics                                               and MOLECULAR_SIGNATURES
+ summaries)                                                 provide Level 4 interpretation
+                                                            resources.
+
+
+4. Version History & Known Issues
+Versioning matters: This collection is released as a sequence of internal QC data freezes (v1.0, v1.1, v1.2,
+v1.3). For reproducible analyses and consistent sample/feature handling, reference the QC freeze version
+(e.g., v1.3) and its known issues/limitations. Note that R package versions are not the same as QC freeze
+versions.
+
+
+ Version           Date              Affected            Key changes      Known issues       Recommendati
+                                     products                             / limitations      on
+
+ v1.3              2025-05-01        QC-normalized       Repaired         N per group        Prefer v1.2 for
+                                     data, QC            metabolomic      varies widely,     current internal
+                                     reports/metadat     outlier and      recommend          analysis; follow
+                                     a                   redundancy       checking           the guidance
+                                                         issues. See      summary stats      below for
+                                                         publication      for details        metabolomics
+                                                         methods for                         and naming
+                                                         details                             caveats.
+
+ v1.2              2024-12-20        QC-normalized       Data             See known          Use only when
+                                     data, QC            completed,       issues below; in   reproducing
+                                     reports/metadat     such that all    particular,        prior internal
+                                     a, clinical data    tissues/omes     metabolomics       analyses tied to
+                                     (internal release   represented      outlier handling   v1.2.
+                                     scope)                               and
+                                                                          removed-sampl
+                                                                          es table
+                                                                          handling are in
+                                                                          flux in v1.2.
+
+ v1.1              2024-04-01        QC-normalized                        Data               Use only when
+                                     data and                             incomplete,        reproducing
+                                     associated                           released for       prior internal
+                                     artifacts                            early access       analyses tied to
+                                                                                             v1.1.
+ Version            Date               Affected          Key changes        Known issues       Recommendati
+                                       products                             / limitations      on
+
+ v1.0               2024-02-05         QC-normalized                        Data               Use only when
+                                       data and                             incomplete,        reproducing
+                                       associated                           released for       prior internal
+                                       artifacts                            early access       analyses tied to
+                                                                                               v1.0.
+
+
+4.1 Known issues, limitations, and caveats (v1.2)
+The consortium release readme describes the following issues that are relevant for analysis use (Levels 2–4):
+
+   -​   Identifier/name casing inconsistencies: key identifiers may appear with mixed casing/styles across
+        files (e.g., vialLabel, vial_label, labelID, label_id); prefer snake_case where available but
+        expect legacy variants.
+   -​   Feature-level missingness / low N: feature-level missingness varies; caution is advised for adipose
+        proteomics and phosphoproteomics where some timepoint × group bins can have low effective N for
+        DA modeling.
+
+
+5. Data Access and Use
+
+5.1 Data Access
+   -​   Data Portal: https://motrpac-data.org (after login, click “Pre-COVID Human Data Visualization”).
+   -​   R packages (recommended for methods + convenient loading):
+           -​ MotrpacHumanPreSuspensionAnalysis (release pending, DA objects (Level 3) and Level 4
+              resources).
+   -​   Source code / pipelines:
+           -​ MotrpacHumanPreSuspension_packages/precovid-analyses/ (internal analysis code
+              repository mirror).
+           -​ MotrpacHumanPreSuspension_packages/motrpac-bic-norm-qc/ (QC/normalization
+              methods and reports repository mirror).
+   -​   Supplementary methods: see the publication for methods
+
+
+5.2 Data Use
+
+5.2.1 Object naming patterns (R packages and GCS)
+This collection is distributed via both versioned files on the Data Hub and curated R data objects.
+
+File naming via Data Hub (analysis-level products)
+
+PreCAWG documentation describes analysis filenames that include the study code, a tissue-code token, an
+assay token, a product token (qc-norm/da/metadata), and a version suffix, e.g.:
+
+human-precovid-sed-adu_[tissue-code]_[assay]_[qc-norm|da|metadata_*]_v<freeze>.tx
+t
+R data-object naming (packaged objects in MotrpacHumanPreSuspensionAnalysis)
+
+Most packaged analysis objects use a compact, uppercase naming convention:
+
+[TISSUE]_[ASSAY]_[QC|DA]
+
+Where:
+
+   -​    [TISSUE] is one of: ADIPOSE, BLOOD, MUSCLE (these are broad categories that map from MoTrPAC
+         tissue codes; see OME_TISSUE_CODE).
+   -​    [ASSAY] is typically one of:
+             -​ TRNSCRPT (RNA-seq),
+             -​ PROT_OL, PROT_PR, PROT_PH (proteomics),
+             -​ METAB_T_* and METAB_U_* (platform-specific metabolomics qc-norm),
+             -​ METAB (consolidated metabolomics DA tables).
+   -​    [QC|DA] indicates Level 2 qc-norm (*_QC) versus Level 3 DA (*_DA).
+
+5.2.2 Key objects / products (selected)
+Selected high-value analysis objects (use data(OBJECT_NAME) to load when installed; see help pages for
+object-specific details):
+
+
+ Omics type /          Object (pattern or   What it is           Dataset structure     Keys / join
+ purpose               example)                                  (high level)          strategy
+
+ Participant/sample    pheno                Curated              pheno$data is a       Join sample-level
+ metadata                                   phenotype/clinical   long table keyed by   omics by
+                                            data packaged as a   vialLabel and         vialLabel; join
+                                            motrdat object       pid with              participant-level
+                                            (data + dict)        visit/timepoint and   summaries by pid
+                                                                 clinical fields
+
+ Feature mapping       HUMAN_FEATURE_       Cross-omics          Table keyed by        Join DA results by
+                       TO_GENE              feature map for      (assay,               feature_id (and
+                                            human features       feature_id) with      assay when
+                                            tested in DA         gene/protein/metab    needed)
+                                                                 olite mappings
+
+ Level 2 qc-norm       MUSCLE_TRNSCRP       RNA-seq qc-norm      qc_norm matrix +      Sample join by
+ (transcriptomics)     T_QC                 matrix + metadata    sample_metadat        vialLabel;
+                                            (muscle category)    a+                    feature join by
+                                                                 feature_metada        feature_id
+                                                                 ta
+
+ Level 3 DA            MUSCLE_TRNSCRP       RNA-seq DA table     Long-format table     Feature join by
+ (transcriptomics)     T_DA                 (muscle category)    with effect sizes,    feature_id;
+                                                                 CIs, p/FDR for        annotate by
+Omics type /         Object (pattern or   What it is            Dataset structure    Keys / join
+purpose              example)                                   (high level)         strategy
+
+                                                                predefined           contrast_short,
+                                                                contrasts            Timepoint,
+                                                                                     randomGroupCod
+                                                                                     e
+
+Level 2 qc-norm      BLOOD_PROT_OL_       Olink proteomics      qc_norm matrix +     Sample join by
+(proteomics)         QC                   qc-norm matrix +      metadata             vialLabel;
+                                          metadata (blood                            feature join by
+                                          category)                                  feature_id
+                                                                                     (assay-dependent)
+
+Level 3 DA           BLOOD_PROT_OL_       Olink proteomics      Long-format DA       Feature join by
+(proteomics)         DA                   DA table (blood       table                feature_id
+                                          category)
+
+Level 2 qc-norm      BLOOD_METAB_U_       Platform-specific     qc_norm matrix +     Sample join by
+(metabolomics,       RPNEG_QC (and        metabolomics          metadata             vialLabel;
+platform-specific)   other                qc-norm matrix +                           metabolomics
+                     *_METAB_{T,U}_       metadata                                   feature handling
+                     *_*_QC)                                                         may use
+                                                                                     METABOLOMICS_C
+                                                                                     VS /
+                                                                                     HUMAN_FEATURE_
+                                                                                     TO_GENE
+
+Level 3 DA           BLOOD_METAB_DA       Consolidated          Long-format DA       Feature join by
+(metabolomics,                            metabolomics DA       table across         feature_id
+consolidated)                             table (blood          metabolomics         (RefMet-aware
+                                          category)                                  handling
+                                                                                     recommended; see
+                                                                                     motrpac-bic-no
+                                                                                     rm-qc and
+                                                                                     precovid-analy
+                                                                                     ses for
+                                                                                     implementation
+                                                                                     examples)
+
+Level 4 enrichment   CAMERA_RESULTS       Enrichment results    Long-format          Join to DA context
+(CAMERA)                                  organized by          enrichment results   by tissue, assay,
+                                          tissue/assay/contra   table                contrast_short
+                                          st
+
+Level 4 enrichment   FCM_ORA (plus        Cluster-based         Tables (ORA) plus    Join strategy
+(clustering ORA)     FCM_CAMERA,          enrichment and        list objects         varies; typically by
+                     FCM_CLUSTERS)        clustering results    (clusters)
+ Omics type /            Object (pattern or         What it is      Dataset structure        Keys / join
+ purpose                 example)                                   (high level)             strategy
+
+                                                                                             tissue, assay,
+                                                                                             cluster identifiers
+
+
+
+
+5.2.3 Data Object Structure and Definitions
+
+5.2.3.1 QC Norm objects
+Common qc-norm object structure for *_QC objects:
+
+   -​    *_QC$qc_norm: a data.frame with features as rownames and vialLabel values as column names
+         (row identifiers are assay-dependent).
+   -​    *_QC$sample_metadata: a data.frame keyed by vialLabel (may also include legacy variants
+         such as vial_label and label_id depending on provenance).
+   -​    *_QC$feature_metadata: a data.frame with assay-dependent feature descriptors (e.g., transcript
+         feature_id, proteomics target IDs, metabolite descriptors such as metabolite_name/mz/rt).
+
+
+5.2.3.2 DA objects
+Below is the data dictionary for a standard DA object
+
+                                                                                               Categorical
+column name          Alias (Field Name description) Data Type       Categorical Values         Definitions
+                                                                                             If the tissue being
+                                                                                             investigated came
+                                                                                             from a muscle,
+                                                                                             adipose, or blood
+                                                                                             tissue. These tissue
+                                                                                             categories
+                                                                                             encompass tissue
+                                                                                             subclasses - e.g.
+                                                                                             PBMCs will be
+                     name of the tissue (muscle,                                             categorized under
+tissue               adipose, blood) being tested       character   muscle | adipose | blood blood
+                                                                                                The assay that is
+                                                                                                undergoing
+                                                                                                hypothesis testing.
+                                                                                                All metabolomics
+                                                                                                platforms are listed
+                                                                    metab |                     under metab. See
+                     name of the assay (ie prot_pr,                 transcript-rna-seq |        the platform column
+assay                etc) being tested                  character   prot-ol | prot-ph | prot-pr for more details
+                                                                    metab-u-hilicpos |         For entries that are
+                     Specific metabolomic platform                  metab-u-ionpneg |          under the metab
+platform             that is being tested               factor      metab-u-lrpneg |           assay category, this
+                                                                  metab-u-lrppos |         column describes
+                                                                  metab-u-rpneg |          specifically which
+                                                                  metab-u-rppos |          metabolomic
+                                                                  metab-t-acoa |           platform the entry is
+                                                                  metab-t-amines |         from. NA for all
+                                                                  metab-t-ka | metab-t-nuc non-metabolite
+                                                                  | metab-t-oxylipneg |    platforms.
+                                                                  metab-t-tca |
+                                                                  metab-t-conv | <NA>
+                    A formal specification of the                                          Includes information
+                    model, ie: ~ 0 + group_timepoint                                       about how the linear
+                    + sex_psca + age + BMI +                                               model was
+full_model          (1|PID)                          character                             implemented
+                    A formal specification of the
+                    contrast, ie:                                                           Includes comparison
+                    (ADUResist_post_15_min -                                                of the fixed effects
+                    ADUResist_pre_exercise)                                                 from the 'full_model'
+                    -(ADUControl_post_15_min -                    See methods- 33           entry that are
+contrast            ADUControl_pre_exercise)          factor      possible comparisons      formally being tested
+                                                                                            Connects 1:1 with
+                                                                                            entries from
+                                                                                            contrast. Included for
+                                                                                            ease of use.
+                    A shorter version of the contrast             see methods - still 33    Potentially better for
+contrast_short      column                            factor      possible comparisons      figure panels.
+                                                                  exercise_with_controls |
+                                                                  exercise_no_controls | Helpful for filtering
+                    Annotates which group                         Endur_vs_Resist |        for comparisons of
+contrast_type       comparisons are being made.       factor      baseline | control_only  interest
+                                                                                        EE indicates the
+                                                                                        Endur group, RE
+                                                                                        indicates Resistance
+                    Annotates which specific                      EE-CON | RE-CON |     group, CON
+                    exercise groups are being                     EE-EE | RE-RE | EE-RE indicates the Control
+contrast_category   compared                          factor      | CON-CON             group
+                                                                                       EE indicates the
+                                                                                       Endur group, RE
+                                                                                       indicates Resistance
+                                                                                       group, CON
+                                                                                       indicates the Control
+                                                                                       group. Direct EE, RE
+                                                                                       comparisons are
+                For the first element of the                                           categorized under
+                contrast: the random group                        ADUControl|ADUEndur| ADUEndur in this
+randomGroupCode code, which indicates modality        character   ADUResist            case
+                                                                  pre_exercise |            Timepoint of
+                                                                  during_20_min |           comparison. For
+                    For the first element of the                  during_40_min |           comparisons relative
+                    contrast: Identifier of the                   post_10_min |             to pre-exercise, the
+Timepoint           biospecimen collection timepoint varchar      post_15_min |             exercise/post
+                                                                  post_30_min |           exercise timepoint is
+                                                                  post_45_min | post_4_hr highlighted.
+                                                                  | post_24_hr
+                                                                                           Name of the feature
+                                                                                           being tested. For
+                                                                                           example, in the
+                                                                                           transcript-rna-seq
+                                                                                           assay, this will
+                                                                                           correspond to an
+                                                                                           ensemble gene
+                                                                                           name. See the
+                                                                                           HUMAN_FEATURE_
+                                                                                           TO_GENE file in the
+                                                                                           R package or
+                                                                                           motrpac data hub for
+                                                                                           more information
+                                                                                           about how some
+                                                                                           gene-level features
+                  a unique identifier of the feature.                                      are mapped to
+feature_id        Will be ome specific                character                            genes.
+                  log Fold Change. Represents
+logFC             the effect size.                    Numeric
+                  Left bound of the logFC
+CI.L              Confidence interval                 Numeric
+                  Right bound of the logFC
+CI.R              Confidence interval                 Numeric
+degrees_of_freedo
+m                 Residual Degrees of freedom         Numeric
+logLik            Log Likelihood                      Numeric
+                  T-statistic; direct output of the
+t                 dream model                         Numeric
+                  Standardized Z-Score; direct
+z.std             output of the dream model.          Numeric
+                  Mean expression of the input. In
+                  the units of the relevant assay
+AveExpr           category.                        Numeric
+                  p-value; direct output of the
+p_value           dream model                         Numeric
+                  Benjamini Hotchberg adjustment
+adj_p_value       of the p-value column          Numeric
+
+
+
+5.2.4 Example R workflow (qc-norm + DA + pheno join)
+
+    None
+    library(MotrpacHumanPreSuspensionAnalysis)
+  # Sample metadata / phenotype (packaged as a motrdat object)
+  data(pheno)
+
+  # Example Level 2 qc-norm object and Level 3 DA table
+  data(MUSCLE_TRNSCRPT_QC)
+  data(MUSCLE_TRNSCRPT_DA)
+
+  # Optional: feature mapping (useful for annotation)
+  data(HUMAN_FEATURE_TO_GENE)
+
+  # 1) Extract a qc-norm matrix and its sample IDs (vialLabel)
+  expr <- MUSCLE_TRNSCRPT_QC$qc_norm
+  sample_ids <- colnames(expr)
+
+  # 2) Join sample IDs to phenotype table (pheno$data is keyed by vialLabel)
+  ph <- pheno$data
+  ph_sub <- ph[match(sample_ids, ph$vialLabel), c("pid", "randomGroupCode", "Timepoint",
+  "visitcode", "sex_psca", "calculatedAge")]
+  stopifnot(!any(is.na(ph_sub$pid)))
+
+  # 3) Inspect a DA contrast and annotate a few top hits
+  contrast_name <- "Endur.post_24_hr - Control.post_24_hr (delta-delta)"
+  da_sub <- subset(MUSCLE_TRNSCRPT_DA, contrast_short == contrast_name)
+  da_sub <- da_sub[order(da_sub$adj_p_value), ]
+
+  # Optional: add gene symbols (assay-dependent; for transcriptomics this is typical)
+  annot <- HUMAN_FEATURE_TO_GENE[HUMAN_FEATURE_TO_GENE$assay == "transcript-rna-seq",
+  c("feature_id", "gene_symbol")]
+  da_annot <- merge(da_sub, annot, by = "feature_id", all.x = TRUE)
+
+  head(da_annot[, c("feature_id", "gene_symbol", "logFC", "p_value", "adj_p_value")])
+
+
+
+
+6. Citations, Licensing, and Contact
+  -​   Citation / primary documentation: MoTrPAC Bioinformatics Center (BIC). Consortium Release:
+       human-precovid-sed-adu-v1.3
+  -​   Licensing / restrictions: Open data are distributed via CC BY 4.0 license. Individual data controlled by
+       data access restrictions are covered by relevant Data Access restrictions. Package source code for
+       MotrpacHumanPreSuspension and MotrpacHumanPreSuspensionData is distributed under MIT
+       (see each package’s LICENSE).
+  -​   Contact/support: motrpac-helpdesk@lists.stanford.edu
+Data Processing and Analysis Framework
+The BIC ingests and disseminates a wide range of data for users. Below is an outline of the general approach
+taken to molecular data. Similar structure exists for clinical/phenotypic data, though there are fewer levels of
+processing (See Clinical/Phenotypic data collections)
+
+
+
+Levels 0-1: Raw and Processed Data
+Raw data (Level 0) consists of unprocessed instrumental output that cannot be directly analyzed. Processing
+converts this raw data into quantifiable measurements (Level 1). Depending on the assay, this processing may
+occur at the data generation site or at the BIC
+
+Level 1 datasets represent the first layer of biologically interpretable information. These are direct
+outputs from standardized bioinformatics pipelines specific to each omics platform:
+
+   ●​ Transcriptomics: BAM files containing aligned sequencing reads are converted to gene expression
+      matrices, where values represent read counts for each gene in each sample
+   ●​ Proteomics: Raw mass spectrometry files are processed to identify peptides and proteins from
+      spectral signatures and quantify their abundance
+   ●​ Metabolomics: Instrumental data are processed to identify and quantify metabolite levels
+
+
+📃  Typical data object formats:
+   ●​ A structured feature-by-sample matrix where rows represent biological entities (genes, proteins,
+      metabolites) and columns represent individual samples. These datasets serve as quality-controlled
+      inputs for downstream analysis.
+   ●​ Metadata tables for features and samples. These vary by assay
+
+
+Level 2: Quality-Controlled Normalized Data
+Level 2 data are normalized, batch-corrected, and filtered to remove outliers. This level is analysis-specific
+because the additional steps require consideration of the experimental design and scientific question.
+
+Platform-specific normalization methods are applied:
+
+   ●​   Transcriptomics: TMM normalization to account for sequencing depth differences
+   ●​   Proteomics and Metabolomics: Median absolute deviation (MAD) scaling
+   ●​   Metabolomics: Missing value imputation is commonly applied
+   ●​   Proteomics: Missing values are typically not imputed
+
+
+📃  Typical data object formats:
+   ●​ A structured feature-by-sample matrix where rows represent biological entities (genes, proteins,
+      metabolites) and columns represent individual samples. These datasets serve as analysis specific,
+      individual level data inputs for downstream analysis.
+   ●​ Metadata tables for features and samples. These vary by assay.
+Level 3: Differential Abundance Analysis
+Differential analysis identifies variations in molecular abundance between experimental groups. This provides
+analyte-specific estimates of experimental effects. Statistical methods are selected based on experimental
+design and may include:
+
+   ●​   Contrasts to control measurements
+   ●​   Mixed models for repeated measures
+   ●​   Multiple comparison correction
+   ●​   Covariate adjustment
+
+
+📃  Typical data object formats:
+   ●​ A differential abundance (DA) table typically has one feature analyzed using one model per row.
+      Columns in this table fall into three general categories
+          ○​ Feature metadata (e.g. omic layer, tissue source)
+          ○​ Model metadata (e.g. mixed effects model, covariats, contrast of interest)
+          ○​ Summary statistics (e.g. beta coefficient, confidence intervals, p-value, adjusted p-value)
+
+
+Level 4: Multi-Omics Integration and Biological Interpretation
+Multi-omics integration methods vary based on research objectives and typically employ data science
+approaches including feature reduction, clustering, and network analysis.
+
+Multi-omics analysis leverages existing biological knowledge for enhanced interpretation:
+
+   ●​ Pathway enrichment analysis identifies biological processes modulated by the intervention using
+      Gene Set Enrichment Analysis (GSEA), over-representation analysis, and databases including Gene
+      Ontology, KEGG, and Reactome
+   ●​ Transcription factor analysis uses genomic motif analysis tools (e.g., HOMER) to identify regulatory
+      factors controlling observed expression changes
+   ●​ Gene regulatory network modeling applies specialized tools to model regulatory relationships from
+      multi-omics data
+
+Cross-species comparative analysis enables translation between animal models and human studies by:
+
+   ●​ Mapping orthologous genes and proteins between species
+   ●​ Identifying conserved molecular signatures and pathways
+   ●​ Generating translational hypotheses for human health applications
+
+
+📃  Typical data object formats:
+   ●​ Pathway enrichment results:
+         ○​ Pathway metadata, enrichment statistics
+   ●​ Transcription factor analysis
+         ○​ Transcription factor gene symbol, enrichment statistics
+   ●​ Gene regulatory network
+         ○​ Edge and node identifications and metrics
+

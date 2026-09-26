@@ -1,0 +1,1408 @@
+                                                                                                       REVIEWS
+                                    Exerkines in health, resilience
+                                    and disease
+                                    Lisa S. Chow 1 ✉, Robert E. Gerszten 2, Joan M. Taylor 3, Bente K. Pedersen 4,
+                                    Henriette van Praag 5, Scott Trappe 6, Mark A. Febbraio 7, Zorina S. Galis 8,
+                                    Yunling Gao8, Jacob M. Haus 9, Ian R. Lanza10, Carl J. Lavie11, Chih-Hao Lee 12,
+                                    Alejandro Lucia 13,14,15, Cedric Moro 16,17, Ambarish Pandey18, Jeremy M. Robbins 2,
+                                    Kristin I. Stanford 19, Alice E. Thackray 20, Saul Villeda 21, Matthew J. Watt22,
+                                    Ashley Xia 23, Juleen R. Zierath 24,25, Bret H. Goodpaster 26 ✉ and Michael P. Snyder27 ✉
+                                    Abstract | The health benefits of exercise are well-recognized and are observed across multiple
+                                    organ systems. These beneficial effects enhance overall resilience, healthspan and longevity.
+                                    The molecular mechanisms that underlie the beneficial effects of exercise, however, remain poorly
+                                    understood. Since the discovery in 2000 that muscle contraction releases IL-6, the number of
+                                    exercise-associated signalling molecules that have been identified has multiplied. Exerkines are
+                                    defined as signalling moieties released in response to acute and/or chronic exercise, which exert
+                                    their effects through endocrine, paracrine and/or autocrine pathways. A multitude of organs, cells
+                                    and tissues release these factors, including skeletal muscle (myokines), the heart (cardiokines),
+                                    liver (hepatokines), white adipose tissue (adipokines), brown adipose tissue (baptokines) and
+                                    neurons (neurokines). Exerkines have potential roles in improving cardiovascular, metabolic,
+                                    immune and neurological health. As such, exerkines have potential for the treatment of cardio­
+                                    vascular disease, type 2 diabetes mellitus and obesity, and possibly in the facilitation of healthy
+                                    ageing. This Review summarizes the importance and current state of exerkine research, prevailing
+                                    challenges and future directions.
+
+
+Resilience
+                                   Irrefutable evidence supports the importance of physi-         critical intervention to reduce the incidence and preva-
+Resilience is the ability of       cal activity, exercise and cardiorespiratory fitness in the    lence of common metabolic diseases. In the USA, official
+the body to resist, adapt to,      prevention and treatment of chronic diseases, such as          guidelines for physical activity were first published in 1995
+recover or grow in response        cardiovascular disease, obesity, type 2 diabetes mellitus,     and recommended that every US adult should accumu-
+to stressors.
+                                   cognitive decline and many cancers, while enhancing            late at least 30 min of moderate intensity physical activity
+High-intensity interval            the immune system, healthspan, longevity and resilience1       on most, preferably all, days of the week8. Subsequently,
+training                           (Fig. 1). Conversely, physical inactivity poses a major        these guidelines have evolved1. In 2020, the World Health
+High-intensity interval training   public health threat, as it is associated with increased       Organization stated that that all adults should aim for
+is a form of exercise training
+                                   mortality2 and a notable economic burden3. Moreover, the       150–300 min of moderate intensity physical activity per
+characterized by bursts of
+high-intensity activity followed
+                                   COVID-19 pandemic clearly reinforces the relevance of          week or 75–150 min of vigorous intensity physical activ-
+by less intense recovery           physical activity for health, due to the effects of COVID-     ity per week or an equivalent combination of moderate
+periods.                           19-related reductions in physical activity4 and increases in   intensity and vigorous intensity physical activity per
+                                   sedentary behaviour, especially due to COVID-19-related        week9. Despite these recommendations, objective data
+                                   quarantine4. Moreover, physical inactivity is associated       obtained with accelerometers of physical activity in the US
+                                   with increased risk of severe COVID-19 outcomes5.              population indicated poor adherence to recommended
+                                       Although the terms ‘exercise’ and ‘physical activity’      guidelines, with only 5% of US adults having more than
+                                   are commonly used interchangeably, exercise is typi-           30 min of moderate intensity physical activity per day10.
+✉e-mail: chow0007@
+                                   cally regarded as intentional physical activity, such as           In this Review, we focus on the potential role of
+umn.edu; bret.goodpaster@
+                                   aerobic training1, resistance training1 or high-intensity      exerkines in driving the established benefits of exercise,
+adventhealth.com;
+mpsnyder@stanford.edu              interval training6,7. By contrast, physical activity encom-    such as preventing and mitigating disease, promoting
+https://doi.org/10.1038/           passes exercise as well as usual occupational and/or           health and increasing resilience. The term exerkine was
+s41574-022-00641-2                 domestic activity1. Promoting physical activity remains a      coined in 2016 (ref.11), although the concept of humoral
+
+
+NaTuRe RevIewS | ENDoCRiNology                                                                                                   volume 18 | May 2022 | 273
+
+                                                                   0123456789();:
+Reviews
+
+ Key points                                                                                           hormones (myokines)15. Of the myokines, IL-6 has
+                                                                                                      been the most extensively studied since its discovery in
+ • Although the benefits of exercise in enhancing health and treating disease are                     2000 (ref.16). Subsequent exerkine work has broadened
+   well-acknowledged, the molecular mechanisms underlying exercise-associated                         to include exercise-related humoral factors arising from
+   benefits remain ill-defined and are actively being investigated.                                   the heart (cardiokines), liver (hepatokines), white adi-
+ • ‘Exerkines’ encompass a broad variety of signalling moieties released in response to               pose tissue (WAT; adipokines) and brown adipose tissue
+   acute and/or chronic exercise that exert their effects through endocrine, paracrine                (BAT; batokines) and the nervous system (neurokines),
+   and/or autocrine pathways.
+                                                                                                      with local autocrine effects (affecting the cell of origin)
+ • Exerkines can come in many forms, such as hormones, metabolites, proteins and                      and paracrine effects (affecting adjacent cells) (Table 1).
+   nucleic acids; interest is increasing in moving beyond singular changes of specific
+                                                                                                      Exerkines are increasingly recognized to include a broad
+   factors to profiling exerkine alterations using ‘omics’ platforms.
+                                                                                                      range of signalling moieties, including cytokines, nucleic
+ • There is burgeoning interest in the role of extracellular vesicles, which are
+                                                                                                      acids (microRNA17, mRNA and mitochondrial DNA),
+   membranous structures released from cells, in serving as important carriers
+   of molecular signals and drivers of inter-organ crosstalk related to exercise.
+                                                                                                      lipids and metabolites, which are frequently driven by
+                                                                                                      cell-specific extracellular vesicle secretion18.
+ • Multiple organ systems, including the cardiometabolic system, nervous system and
+   immune system, produce exerkines and are influenced by exerkines, which probably
+                                                                                                          Understanding the role of exerkines in the physio-
+   contributes to the pleiotropic and variable response to exercise.                                  logical and biological response to exercise is a princi-
+ • Emerging research on exerkines suggests multiple promising avenues for translational
+                                                                                                      pal objective of many investigations sponsored by the
+   research and therapeutic modulation to capture exercise-associated benefits;                       National Institutes of Health (NIH)19, given the demon-
+   enhanced rigour in experimental design will facilitate comparison between studies.                 strated benefits of exercise in enhancing and prolonging
+                                                                                                      human health across the lifespan. In 2020, the National
+                                                                                                      Heart, Lung, and Blood Institute and the National
+Exerkines
+                                    factors mediating the benefit of exercise has long been           Institute of Diabetes and Digestive and Kidney Diseases
+Exerkines encompass a broad         recognized. A prime example is lactic acid; its secretion         convened a virtual 2-day public workshop inviting
+variety of signalling moieties      from skeletal muscle was identified over 100 years ago12.         21 international experts to discuss “Exerkines in Health,
+that are released in response       In 1961, Goldstein speculated about the existence of a            Resilience, and Diseases”. The workshop executive sum-
+to acute and/or chronic
+exercise that exert their effects
+                                    non-insulin humoral factor that regulates the effect of           mary was published online20, laying the foundation for
+through endocrine, paracrine        exercise on skeletal muscle and liver glucose utilization13.      this article. In this Review, we summarize the importance
+and/or autocrine pathways.          For the purposes of this Review, we define an exerkine as         and current state of exerkine research, the prevailing
+                                    a signalling moiety released in response to acute exercise        challenges and future directions.
+Acute exercise
+                                    and/or chronic exercise , exerting its effects through
+Acute exercise is typically
+considered a single episode
+                                    endocrine, paracrine and/or autocrine pathways.                   Exercise response variability
+of exercise (often resistant or         As skeletal muscle comprises approximately one third          Potential role for exerkines
+aerobic exercise) that is           of body mass and has an important role in exercise14, the         The majority of exercise research has been limited to
+completed during one visit.         effects of physical activity (Fig. 1) were initially attributed   studies with genetically homogeneous animal models
+                                    to blood-borne factors, particularly muscle-secreted              and/or small numbers of human participants. Moreover,
+
+
+ Author addresses
+ 1
+  Division of Diabetes Endocrinology and                    of Medicine and Science, Rochester,                  20
+                                                                                                                   National Centre for Sport and Exercise
+ Metabolism, University of Minnesota,                       MN, USA.                                             Medicine, School of Sport, Exercise and Health
+ Minneapolis, MN, USA.                                      11
+                                                               Division of Cardiovascular Diseases, John         Sciences, Loughborough University,
+ 2
+  Division of Cardiovascular Medicine, Beth Israel          Ochsner Heart and Vascular Institute, Ochsner        Loughborough, UK.
+ Deaconess Medical Center, Boston, MA, USA.                 Clinical School-the University of Queensland         21
+                                                                                                                   Department of Anatomy, University of
+ 3
+  Department of Pathology, McAllister Heart                 School of Medicine, New Orleans, LA, USA.            California San Francisco, San Francisco,
+ Institute, University of North Carolina, Chapel            12
+                                                               Department of Molecular Metabolism, Harvard       CA, USA.
+ Hill, NC, USA.                                             T.H. Chan School of Public Health, Boston,           22
+                                                                                                                   Department of Anatomy and Physiology,
+ 4
+  Centre of Inflammation and Metabolism/                    MA, USA.                                             School of Biomedical Sciences, The University
+ Centre for PA Research (CIM/CFAS),                         13
+                                                               Faculty of Sport Sciences, Universidad Europea    of Melbourne, Victoria, Australia.
+ Rigshospitalet, University of Copenhagen,                  de Madrid, Madrid, Spain.                            23
+                                                                                                                   Division of Diabetes, Endocrinology, &
+ Copenhagen, Denmark.                                       14
+                                                               Research Institute Hospital 12 de Octubre         Metabolic Diseases, National Institute of
+ 5
+  Stiles-Nicholson Brain institute and Charles E.           (‘imas12’), Madrid, Spain.                           Diabetes and Digestive and Kidney Diseases,
+ Schmidt College of Medicine, Florida Atlantic              15
+                                                               CIBER en Fragilidad y Envejecimiento              National Institutes of Health, Bethesda,
+ University, Jupiter, FL, USA.                              Saludable (CIBERFES), Madrid, Spain.                 MD, USA.
+ 6
+  Human Performance Laboratory, Ball State                  16
+                                                               Institute of Metabolic and Cardiovascular         24
+                                                                                                                   Department of Molecular Medicine and
+ University, Muncie, IN, USA.                               Diseases, Team MetaDiab, Inserm UMR1297,             Surgery, Section for Integrative Physiology,
+ 7
+  Monash Institute of Pharmaceutical Sciences,              Toulouse, France.                                    Karolinska Institutet, Stockholm, Sweden.
+ Monash University, Parkville, Victoria, Australia.         17
+                                                               Toulouse III University-Paul Sabatier (UPS),      25
+                                                                                                                   Novo Nordisk Foundation Center for Basic
+ 8
+  Division of Cardiovascular Sciences, National             Toulouse, France.                                    Metabolic Research, Faculty of Health and
+ Heart, Lung, and Blood Institute, National                 18
+                                                               Department of Internal Medicine, UT               Medical Sciences, University of Copenhagen,
+ Institutes of Health, Bethesda, MD, USA.                   Southwestern Medical Center, Dallas, TX, USA.        Copenhagen, Denmark.
+ 9
+  School of Kinesiology, University of Michigan,            19
+                                                               Department of Physiology and Cell Biology,        26
+                                                                                                                   Translational Research Institute, AdventHealth,
+ Ann Arbor, MI, USA.                                        Dorothy M. Davis Heart and Lung Research             Orlando, FL, USA.
+ 10
+   Division of Endocrinology, Nutrition,                    Institute, The Ohio State University College         27
+                                                                                                                   Department of Genetics, Stanford School
+ and Metabolism, Mayo Clinic College                        of Medicine, Columbus, OH, USA.                      of Medicine, Stanford, CA, USA.
+
+
+274 | May 2022 | volume 18                                                                                                              www.nature.com/nrendo
+
+                                                                        0123456789();:
+                                                                                                                                        Reviews
+
+                                  a                                                                                     b
+
+
+
+                                           Immune system                                          Bone
+
+
+                                                                      Exercise                                                          Exercise
+
+
+
+                                           Nervous system                                         Gut
+                                                                                                                         • Cardiovascular          • Healthspan
+                                                                                                                           disease                 • Longevity
+                                                              Cardiometabolic tissues                                    • Cognitive               • Resilience
+                                                                                                                           decline
+                                                                                                                         • Obesity
+                                                                                                                         • Cancer
+                                                                                                                         • T2DM
+                                  Cardiovascular    Adipose         Endocrine           Liver            Skeletal
+                                     system          tissue          system                              muscle
+
+                                  Fig. 1 | The systemic effects of exercise. a | Organs and tissues that can serve as source of exerkines and that are directly
+                                  affected by exercise. b | Exercise results in profound health benefits, including reductions in the presence or severity of
+                                  certain diseases, as well as increases in healthspan, longevity and resilience. T2DM, type 2 diabetes mellitus.
+
+
+                                  the physiological response to a structured exercise               transducers that underlie the variable effects of exercise
+                                  training stimulus remains highly variable in humans               in humans and animals. For humans, MoTrPAC has
+                                  and animals owing to a multitude of external and inter-           several unique features: its size (2,280 estimated partic-
+                                  nal factors. In terms of external factors, the context of         ipants); its recruitment of sedentary participants who
+                                  exercise matters, as exercise timing relative to circadian        will undergo a 12-week programme of aerobic exer-
+                                  rhythms21, fed–fasting status22 or post-exercise dietary          cise, resistance exercise or no exercise (control), with a
+                                  composition23 might influence metabolic outcomes. This            comparison group of highly active endurance exercise
+                                  variability is well-detailed in a study published in 2022,        or resistance exercise participants; and its time course
+                                  which included an atlas describing the time-dependent             analysis of changes in tissue (muscle and adipose tissue)
+                                  effects of exercise across multiple tissues after a single        and plasma metabolites19. In animals (~800 studied), the
+                                  bout of treadmill exercise24. Addressing these exter-             unique feature of MoTrPAC will be its focus on detailed
+                                  nal factors will require careful consideration of the             biospecimen analysis across multiple time points and
+                                  exercise exposure, controlling the exercise exposure’s            organs, which cannot be easily replicated in humans, in
+                                  environmental context and serial sampling of blood                young (6 months) and old (18 months) male and female
+                                  and tissue prior, during and after exercise. This level           rats after an acute (single session) bout of treadmill
+                                  of rigor is needed to ‘reduce the noise’ and facilitate           exercise, or after chronic treadmill exercise (8 weeks)
+                                  interpretation of the temporal signatures of circulat-            versus non-exercised control rats19. Identification of an
+                                  ing and tissue-specific exerkines. In terms of internal           exerkine or a panel of exerkines, which capture the ben-
+                                  factors, genetics have a critical role in the response to         efits of exercise, would have potential implications for
+                                  exercise. The Health, Risk Factors, Exercise Training             improving the health of those unable to exercise, such as
+                                  and Genetics (HERITAGE) family study involved                     those with ageing-associated exercise intolerance.
+                                  20 weeks of supervised aerobic exercise training in
+                                  481 sedentary, healthy, white adults from 98 two-                 Influence of exercise exposure
+                                  generation families, and found that the maximal her-              Exerkines are secreted in response to acute exercise,
+                                  itability estimate for the aerobic capacity response was          which is usually a single episode of either aerobic or
+                                  roughly 47%25. Furthermore, chronic exercise training             resistance exercise. Chronic exercise is also associated
+                                  elicited a ‘non-response’ in terms of improved aerobic            with altered humoral factors, even in the resting state,
+                                  capacity in ~20% of individuals25. In addition, 7–15% of          suggesting that exerkine alterations can reflect the effects
+Chronic exercise
+Chronic exercise is typically
+                                  individuals demonstrated an ‘adverse response’ regarding          of chronic training27.
+described as multiple exercise    alterations in systolic blood pressure, as well as in fasting         The acute exerkine response is influenced by the
+episodes (often resistant or      levels of HDL cholesterol, triglycerides and insulin25,26.        type of exercise, duration of exercise, underlying fitness,
+aerobic exercise) performed           To drive the application of precision medicine to             fed–fasting status and sample timing after exercise. In a
+over the course of weeks
+                                  exercise, investigations into the mechanisms underly-             human model, the blood concentration of glucose typi-
+to months.
+                                  ing the response variability to exercise are sorely needed.       cally remains stable during acute exercise, with the liver
+MicroRNA                          The contribution of exerkines to the variation in exer-           releasing glucose for brain and skeletal muscle usage28.
+MicroRNAs are non-protein-        cise response remains under active research and will be           During exercise, skeletal muscle also uses lipid as fuel,
+coding RNA molecules that are     a key focus of the Molecular Transducers of Physical              which originates from the triglycerides stored in muscle
+regulated in a transcriptional
+or post-transcriptional fashion
+                                  Activity Consortium (MoTrPAC; NCT03960827). This                  and free fatty acids (FFAs) released from WAT29. The
+to affect mRNA transcription      NIH-supported research consortium is designed to dis-             classic exerkines released during acute exercise, as found
+and/or degradation.               cover and broadly characterize the range of molecular             in human and animal models, include IL-6, IL-8, IL-1
+
+
+NaTuRe RevIewS | ENDoCRiNology                                                                                                    volume 18 | May 2022 | 275
+
+                                                                   0123456789();:
+Reviews
+
+ Table 1 | Examples of paracrine and autocrine effects of exerkines                                receptor antagonist (IL-1RA) and IL-10. In a study in
+                                                                                                   humans in which blood samples were collected before
+ Exerkinea                      Source tissue                 Affected tissue                      and after a marathon, plasma levels of several cytokines
+ Autocrine effects   b
+                                                                                                   (IL-6, IL-1RA, IL-10 and tumour necrosis factor (TNF))
+ 12,13-diHOME                   –                             BAT91,169                            were higher than baseline levels when collected imme-
+                                                                                                   diately after exercise, peaking 1–2 h after exercise and
+ Apelin                         –                             Muscle94,96
+                                                                                                   remaining elevated for ~4 h after exercise30. Certainly, the
+ Adiponectin                    –                             WAT153                               type and intensity of exercise matters. As an example,
+ BDNF                           –                             Brain170, muscle171                  the exerkine response to high-intensity interval training
+ FGF21                          –                             WAT56,172                            depends on exercise intensity; higher exercise intensity
+                                                                                                   corresponds with higher plasma levels of IL-6, while
+ HSP72                          –                             Muscle107,173                        IL-10 levels remain unchanged compared with the lev-
+ IL-6                           –                             Muscle15,54,120                      els before exercise6. Supplementary Table 1 shows exam-
+ IL-7                           –                             Muscle102                            ples of singular exerkine alterations. Currently, exerkine
+                                                                                                   research is evolving from measuring singular exerkine
+ IL-15                          –                             Muscle174
+                                                                                                   changes to characterizing metabolic profiles31, for
+ Lactate                        –                             Muscle175                            which challenges in analysis and interpretation remain
+ LIF                            –                             Muscle103                            (Table 2).
+
+ Musclin (also known as         –                             Muscle43,176, bone62,177, brain178       Notably, the acute exerkine response does not
+ osteocrin)                                                                                        necessarily parallel the chronic exerkine response
+                                                                                                   (Supplementary Table 1). Typically, acute exercise
+ Myostatin                      –                             Muscle44
+                                                                                                   exposure is associated with responses focused on
+ Nitric oxide                   –                             Endothelium179                       the maintenance of metabolic homeostasis, with
+ Reactive oxygen species        –                             Muscle180                            acute inflammation balanced by anti-inflammatory
+ SPARC                          –                             Muscle63,181                         mediators30 and accommodating shifts in fuel utiliza-
+                                                                                                   tion. By contrast, chronic exercise exposure is associated
+ SDC4                           –                             Muscle104
+                                                                                                   with responses focused on long-term metabolic adap-
+ TGFβ1                          –                             Muscle182                            tations and decreased inflammation27. However, when
+ Paracrine effects                                                                                 investigating chronic exercise exposure, the caveats of
+                                                                                                   recent (24–72 hours prior to exercise) acute exercise or
+ Adiponectin                    Adipose tissue                Muscle58
+                                                                                                   dietary composition, underlying fitness, fed–fasting sta-
+ Angiopoietin 1                 Vascular smooth muscle        Vasculature47                        tus, circadian timing and training modality need to be
+ BAIBA                          Muscle                        WAT55, bone59                        considered. Moreover, the effects of exercise could also
+ BDNF                           Muscle                        Nerves53                             be influenced by alterations at the level of the exerkine
+                                                                                                   receptor, in addition to alterations in plasma levels of
+ Fractalkine                    Muscle                        Leukocytes66
+                                                                                                   exerkines. For example, in humans, chronic exercise
+ FGF21                          WAT                           BAT56                                training reduces plasma concentrations of IL-6; how-
+ IL-6                           Muscle                        WAT15,121                            ever, this effect could be partially mitigated by increased
+                                                                                                   skeletal muscle mRNA expression of IL-6 receptor32.
+ IL-7                           Muscle                        Bone60
+ IL-8                           Muscle                        Vasculature48                        Exerkines: technical considerations
+ IL-13                          Tissue-resident ILC2          Muscle136                            Discovery techniques
+ IL-15                          Muscle                        WAT57                                Exerkine research is increasingly focused on measuring
+                                                                                                   changes across a broad swathe of factors rather than sin-
+ LIF                            Nerves, immune cells          Muscle183,184
+                                                                                                   gular change. Specifically, interest is increasing in ‘omics’
+ Musclin                        Bone                          Cartilage62                          technology to capture exercise-related changes in lipids
+ Myostatin                      Muscle                        Bone61                               (lipidomics), metabolites (metabolomics), proteins (pro-
+ SPARC                          Muscle                        Extracellular matrix63
+                                                                                                   teomics), gene expression (transcriptomics) and DNA
+                                                                                                   alterations (epigenomics)31 (Table 2). A paper in 2020
+ SDC4                           Endothelium                   Muscle185                            studied humans across the spectrum of insulin sensitiv-
+ TGFβ1                          Muscle                        Extracellular matrix64               ity (n = 36, ranging from people with high insulin sensi-
+ TGFβ2                          Adipose tissue                Muscle, BAT42                        tivity to patients with diabetes mellitus) who performed
+                                                                                                   an acute bout of treadmill-based exercise to reach peak
+ VEGF                           Muscle                        Endothelium45,46
+                                                                                                   oxygen uptake. This exercise exposure altered >50% of
+ 12,13-diHOME, 12,13-dihydroxy-9Z-octadecenoic acid; BAIBA, β-aminoisobutyric acid;                measured molecules, spanning platforms based on lipi-
+ BAT, brown adipose tissue; BDNF, brain-derived neurotrophic factor; FGF21, fibroblast
+ growth factor 21; HSP72, heat shock protein 72; ILC2, type 2 innate lymphoid cells; LIF,          domics, metabolomics, proteomics, transcriptomics and
+ leukaemia inhibitory factor; SDC4, syndecan 4; SPARC, secreted protein acidic and rich            epigenomics31. Table 2 lists commonly used platforms for
+ in cysteine; TGFβ1, transforming growth factor-β1; TGFβ2, transforming growth factor-β2;
+ VEGF, vascular endothelial growth factor; WAT, white adipose tissue. aAlthough exerkine
+                                                                                                   exerkine analysis, including their relative advantages and
+ effects are commonly thought to be distant (endocrine) from the originating tissue,               disadvantages. Mass spectrometry is often used for tar-
+ exerkines also exert local effects within the originating tissue (autocrine) and neighbouring     geted and untargeted omics analysis, whereas immuno­
+ tissues (paracrine). More details and relevant references are provided in Supplementary
+ Table 1. bFor exerkines with autocrine effects, the source tissue is indicated as ‘–’, as the     assays are commonly used for analysis of proteins and
+ source tissue and affected tissue are the same.                                                   metabolites. Genetic analyses include RNA sequencing,
+
+
+276 | May 2022 | volume 18                                                                                                            www.nature.com/nrendo
+
+                                                                      0123456789();:
+                                                                                                                            Reviews
+
+                       Table 2 | Common platforms for exerkine measurement
+                       Platform            Commonly measured              Advantages                       Disadvantages                         Refs
+                                           exerkines
+                       Untargeted mass     Lipidomics; metabolomics; Profiles large numbers                Relative quantification rather           31
+
+                       spectrometry        proteomics                of molecules (>1,000 for              than absolute quantification;
+                                                                     metabolites and lipids;               bias towards abundant
+                                                                     over 5,000 proteins); fairly          molecules; throughput lower
+                                                                     inexpensive                           than targeted assays
+                       Targeted mass       Lipidomics; metabolomics; Accurate and absolute                 Fewer molecules than                     31
+
+                       spectrometry        proteomics                quantification; fast                  untargeted assays
+                       Immunoassays        Proteins (including        Accurate and absolute                Fewer molecules than                     31
+
+                                           cytokines) and metabolites quantification; measures             untargeted assays
+                                                                      low-abundance molecules
+                       RNA-seq             Transcripts; splicing          Comprehensive (>10,000           Does not reflect protein levels        31,33
+
+                                           isoforms                       genes); accurate absolute        or protein modification
+                                                                          quantification
+                       Methyl-seq          DNA methylation                Measures stable epigenome        Expensive                              31,33
+
+                                                                          changes
+                       ATAC-seq            Open chromatin                 Measures chromatin               Does not reflect RNA or                31,33
+
+                                                                          epigenome changes; easy          protein expression levels
+                                                                          to perform
+                       ATAC-seq, assay for transposase-accessible chromatin using sequencing; Methyl-seq, methylation sequencing; RNA-seq, RNA
+                       sequencing.
+
+
+                      methylation sequencing (Methyl-seq) and assay for               as extracellular vesicles can arise from ex vivo platelet
+                      transposase-accessible chromatin with high-throughput           activation36,37. A 2021 paper presented an optimized
+                      sequencing (ATAC-seq)33. Together, these platforms              size-exclusion chromatography method for proteomic
+                      provide a rich profile of the molecular and epigenomic          analysis of plasma-derived extracellular vesicles from
+                      changes that occur in response to acute and chronic             platelet-poor plasma; this technique has greater preci-
+                      exercise.                                                       sion than conventional extracellular vesicle techniques
+                                                                                      and demonstrates a distinct exosome protein cargo
+                      Extracellular vesicles                                          profile after acute exercise in humans37.
+                      In the exerkine field, interest is also intensifying in the
+                      role of extracellular vesicles as important carriers of         Autocrine, paracrine and/or endocrine effects
+                      molecular signals and drivers of inter-organ crosstalk          Initially, exerkine research focused on changes in plasma
+                      related to exercise18. Extracellular vesicles are membra-       levels of cytokines, especially before and after an acute
+                      nous structures that are released from almost all cell          exercise exposure30. The classic exerkines are cytokines,
+                      types, with cell-specific profiles. They vary in size, rang-    of which IL-6 has been the most extensively studied
+                      ing from 150 nm to 1,000 nm, and carry an assortment of         since its identification as a myokine in 2000 (ref.16).
+                      material, including proteins, nucleic acids and lipids18,34.    Subsequently, the field evolved into examining the
+                      The content of extracellular vesicles reflects the unique       endocrine effects of exerkines, where molecules secreted
+                      and varied composition of the cells from which they are         from the source tissue, traditionally viewed as skeletal
+                      released. As an example of extracellular vesicles acting as     muscle, affect distant tissues15. Especially within the past
+                      an exerkine in humans, acute exercise increases plasma          15 years, interest has been increasing in the local effects
+                      levels of various microRNAs after exercise, and chronic         of exerkines, either on the secreting tissue (autocrine)
+                      exercise increases various microRNAs in the resting             or the adjacent environment (paracrine)38 (Table 1),
+                      state17, supporting the possibility of microRNAs exert-         non-muscle exerkine sources39 (Supplementary Table 1)
+                      ing their endocrine effects via extracellular vesicle-based     and exerkine profiling rather than on singular exerkine
+                      transport11,34.                                                 alterations31 (Table 2).
+                          Extracellular vesicles can be routinely isolated and            A common perception among the general scientific
+                      profiled from cell culture media. Studying the molec-           community is the view of exerkines as a cytokine exert-
+                      ular cargo of plasma-derived extracellular vesicles,            ing its effects in an endocrine fashion, affecting tissues
+                      however, remains uniquely challenging. Critical to              distant from the originating tissue. Exerkines are not
+                      extracellular vesicle analysis is the careful consider-         merely cytokines, however, as hormones, neurotrans-
+                      ation of pre-analytical steps, including proper col-            mitters or metabolites associated with exercise, such
+                      lection and isolation. Isolation techniques include             as catecholamines40, lactate41 or FFAs29, can also serve as
+                      ultracentrifugation (using a differential density gra-          exerkines with endocrine signalling potential42.
+                      dient), ultrafiltration, size exclusion chromatography,             From an autocrine standpoint, exerkines affect their
+                      high-resolution mass spectrometry, capillary electro-           origin cells by coupling local energy balance to tissue
+                      phoresis, asymmetric-flow field-flow fractionation              growth and metabolic homeostasis (Table 1). For exam-
+                      and immunoaffinity capture35. Moreover, contamina-              ple, in skeletal muscle, myocytes secrete factors such as
+                      tion at the time of collection needs to be considered           lactate41, musclin43 and myostatin44 that couple exercise
+
+
+NaTuRe RevIewS | ENDoCRiNology                                                                                         volume 18 | May 2022 | 277
+
+                                                      0123456789();:
+Reviews
+
+                             to changes in mitochondrial biogenesis and myocyte                  Furthermore, the enhanced angiogenesis associated with
+                             substrate utilization.                                              certain exerkines could mitigate ischaemia. Notably,
+                                 Muscle and other highly metabolically active tissues            exercise might improve endothelial function. As the
+                             can also secrete exerkines that exert local (paracrine)             vascular endothelium lies at the interface between blood
+                             effects38. For example, muscle secretes vascular endothe-           and tissue, its wide-ranging distribution and strategic
+                             lial growth factor (VEGF)45,46, angiopoietin 1 (ref.47) and         positioning supports its potential role as an initiator and
+                             IL-8 (ref.48) to regulate tissue angiogenesis, modulate             recipient of exerkine-related effects. For example, inter-
+                             blood flow and increase nutrient availability to support            play between the endothelium and established exerkines,
+                             tissue growth27,49–52 (Table 1). Exercise-related paracrine         such as nitric oxide52 and VEGF27, has been shown to
+                             effects are also observed in the nervous system53, adipose          influence vascular tone, inflammation, regeneration and
+                             tissue42,54–58, bone59–61, cartilage62, extracellular matrix63,64   thrombosis, and has an important role in cardiovascular
+                             and the immune system65,66.                                         and overall resilience67.
+                                                                                                     Contracting skeletal muscle produces many mol-
+                             Tissue-specific exerkine relationships                              ecules that can enhance the cardiovascular system.
+                             The cardiovascular system                                           Studies in humans15,45,68–74 and animal models15,43,49,75,76
+                             Physical activity reduces the risk of cardiometabolic               have shown that the exerkines angiopoietin 1
+                             disease and mortality. Although exercise mitigates tra-             (refs 49,68,69) , fractalkine 70,71, fibroblast growth factor
+                             ditional cardiovascular risk factors, such as obesity and           21 (FGF21)72,73, IL-6 (ref.15), IL-8 (refs50,74), musclin43,
+                             dyslipidaemia, these benefits incompletely account for              myonectin75 and VEGF27,45,76 are generally increased
+                             the effects of exercise on cardiometabolic health. Studies          with acute exercise; however, the exerkine response to
+                             in both humans and animal models support a role for                 chronic training, as measured by assessing exerkines
+                             exerkines potentially enhancing cardiometabolic health              in plasma during the resting state, can be quite varia-
+                             (Fig. 2; Table 3; Supplementary Table 1). Exerkines could           ble and discrepant from the acute effects. As shown in
+                             also oppose multiple mechanisms associated with cardi-              Table 3 and Supplementary Table 1, examples include
+                             ovascular disease, such as persistent systemic inflamma-            angiopoietin68,69, FGF21 (refs73,77), fractalkine70, IL-6
+                             tion, dysregulated energy balance and fuel utilization.             (refs30,78) and IL-8 (refs50,74).
+
+
+
+
+                                                                       Exercise           Exerkines in the
+                                                                                        systemic circulation
+
+
+
+
+                                      Skeletal muscle              Endocrine                 Adipose tissue             Cardiovascular           Liver
+                                                                    system                                                 system
+                              • 12,13-diHOME      • IL-6          • BAIBA          • 12,13-diHOME      • HSP72        • 12,13-diHOME       • BAIBA
+                              • Adiponectin       • IL-7          • Fetuin-A       • Adiponectin       • IL-6         • Adiponectin        • Catecholamines
+                              • Apelin            • IL-15         • Follistatin    • Angiopoietin-     • IL-15        • Angiopoietin 1     • IL-6
+                              • Fetuin-A          • Myostatin     • Fractalkine      like protein 4    • Irisin       • Fractalkine        • Lactate
+                              • Follistatin       • SDC4          • IL-6           • BAIBA             • METRNL       • FGF21              • Myonectin
+                              • HSP72             • SPARC         • Irisin         • Catecholamines    • Myonectin    • IL-8
+                                                                                   • FGF21             • TGFβ2        • Myonectin
+                                                                                   • GDF15                            • Musclin
+                                                                                                                      • VEGF
+
+                             Fig. 2 | Examples of exerkines that affect the cardiometabolic system. Exerkines released after exercise into the sys-
+                             temic circulation (see Table 3 for tissue sources, detailed effects and relevant references), including proteins (blue lines),
+                             metabolites (yellow circles) and extracellular vesicles (green circles), affect the cardiometabolic system. The effects are
+                             wide-ranging and systemic. In the cardiovascular system, exerkines enhance vascularization and angiogenesis, as well as
+                             improve blood pressure, endothelial function and overall fitness, resulting in cardioprotection. In adipose tissue, exerkines
+                             increase fatty acid uptake, enhancing lipolysis, thermogenesis and glucose metabolism. In the liver, exerkines enhance glu-
+                             cose metabolism and fatty acid uptake. In skeletal muscle, exerkines enhance muscle formation, maintenance and repair,
+                             glucose uptake, lipid oxidation, mitochondrial biogenesis and muscle capillarization. In the pancreas, exerkines enhance
+                             cell viability and influence insulin secretion. Commonly described exerkines are noted. 12,13-diHOME, 12,13-dihydroxy-9Z-
+                             octadecenoic acid; BAIBA, β-aminoisobutyric acid; FGF21, fibroblast growth factor 21; GDF15, growth and differentiation
+                             factor 15; HSP72, heat shock protein 72; METRNL, meteorin-like; SDC4, syndecan 4; SPARC, secreted protein acidic and
+                             cysteine rich; TGFβ2, transforming growth factor-β2; VEGF, vascular endothelial growth factor.
+
+
+278 | May 2022 | volume 18                                                                                                          www.nature.com/nrendo
+
+                                                                  0123456789();:
+                                                                                                                                   Reviews
+
+Table 3 | Examples of exerkines that affect the cardiometabolic system
+Name                 Species Main tissue of        Main target        Effectb    Main biological action                 Response     Response     Refs
+                     or      origin                tissue                                                               to acute     to chronic
+                     modela                                                                                             exercise     trainingc
+                                                                                                                        boutc
+12,13-diHOME         H, A, C   BAT                 BAT, skeletal      A, E       Increases fatty acid uptake            ↑            ↑              91,93,
+
+                                                   muscle, heart                                                                                       169
+
+
+Adiponectin          H, A, C   WAT                 Many tissues,      A, P, E    Enhances glucose and lipid             ↑            ↑,↔           58,153,
+
+                                                   including liver,              utilization                                                           186
+
+                                                   muscle, heart
+Angiopoietin I       H, A, C   Skeletal muscle Vasculature            P          Enhances angiogenesis                  ↑,↔          ↑,↓            47,68,
+                                                                                                                                                        69
+
+
+Angiopoietin-like H, A         Liver,              WAT                E          Decreases lipoprotein lipase           ↑            ↑,↔            39,68,
+
+protein 4                                                                        activity and enhance WAT lipolysis                                     79
+
+                                                                                 to increase plasma FFAs and
+                                                                                 triglycerides
+Apelin               H, A, C   WAT, skeletal       Skeletal           A, E       Enhances skeletal muscle mass          ↑            ↑,↔            94–96
+
+                               muscle              muscle,                       and mitochondria
+BAIBA                H, A, C   Skeletal muscle WAT, Liver,            E, P       Enhances ‘browning’ of white           ↑            ↑             55,113,
+
+                                               β-cells                           adipocytes and β-oxidation in liver;                                  187
+
+                                                                                 attenuates insulin secretion from
+                                                                                 β-cells
+Catecholamines       H         Adrenal             Skeletal           E          Stimulates glycogenolysis;             ↑            ↔                  40
+
+                                                   muscle, WAT                   stimulates lipolysis of WAT
+Fetuin-A             H         Liver               Skeletal           E          Impedes β-cell function; increases     ↓,↔          ↓              39,72,
+
+                                                   muscle,                       insulin resistance                                                97,101,
+
+                                                   pancreas                                                                                            115
+
+
+Fractalkine          H, A, C   Skeletal muscle Leukocytes,            P, E       Increases inflammatory,                ↑            ↔              66,70,
+
+(also known as                                 endothelium,                      angiogenic, and chemotactic                                        71,114
+
+CX3CL1)                                        myocytes,                         factors; regulates β-cell secretion
+                                               β-cells
+FGF21                H, A      Many tissues,       Many tissues,      E, A, P    Augments fuel utilization (glucose,    ↑            ↔              56,72,
+
+                               especially liver;   including                     lipid); protects from apoptosis                                   73,106,
+
+                               also WAT            heart and WAT                                                                                  172,188
+
+
+Follistatin          H, A      Many tissues,       Skeletal           E          Decreases serum levels of              ↑            ↑              39,97,
+
+                               especially liver    muscle                        myostatin to enhance skeletal                                     98,100,
+
+                                                                                 muscle growth; might affect                                      116,189
+
+                                                                                 glucose homeostasis
+GDF15                H, A      Many sites          Many sites         E          Marker of stress response,             ↑            ↑              80,190
+
+                                                                                 promotes WAT lipolysis
+HSP72                H, A      Many tissues,       Many sites         A, E       Maintains cellular homeostasis;        ↑            ↑            107,173
+
+                               especially liver                                  protects cells from stress
+IL-6                 H, A, C   Primarily           Many sites         A, P, E    Multiple effects: including            ↑            ↓              15,16,
+
+                               skeletal muscle                                   enhancing WAT lipolysis; lipid                                   30,78,81,
+
+                                                                                 oxidation; glucose homeostasis;                                  119–121
+
+                                                                                 anti-inflammatory response;
+                                                                                 skeletal muscle growth
+IL-7                 H, A, C   Skeletal muscle Skeletal               A, P       Regulates skeletal muscle              ↑            ↔            102,191
+
+                                               muscle, bone                      development
+IL-8                 H, A, C   Skeletal muscle Endothelium            P          Regulates tissue angiogenesis and      ↑,↔          ↔              48,50,
+
+                                                                                 blood flow                                                             74
+
+
+IL-15                H, A, C   Many tissues,       Many tissues,      A, P, E    Regulates immune cell functioning      ↑,↔          ↔              57,99,
+
+                               especially          especially                    and might reduce WAT mass;                                            174
+
+                               immune cells        immune cells                  improves glucose homeostasis;
+                                                                                 promotes skeletal muscle growth
+Irisin (also known   H, A      Skeletal muscle WAT, bone,             E          Benefits primarily in animal           ↑            ↓,↔           84,117,
+
+as FNDC5)                                      β-cells, brain                    models: increases fatty acid                                          167
+
+                                                                                 uptake; beiging of WAT; improves
+                                                                                 insulin secretion
+Lactate              H         Skeletal muscle Many tissues,          A, E       Provides substrate for hepatic         ↑            ↔              41,175
+
+                                               including                         gluconeogenesis
+                                               central
+                                               nervous
+                                               system
+
+
+Nature Reviews | Endocrinology                                                                                                volume 18 | May 2022 | 279
+
+                                                                0123456789();:
+Reviews
+
+ Table 3 (cont.) | Examples of exerkines that affect the cardiometabolic system
+ Name                  Species Main tissue of          Main target        Effectb     Main biological action                    Response          Response       Refs
+                       or      origin                  tissue                                                                   to acute          to chronic
+                       modela                                                                                                   exercise          trainingc
+                                                                                                                                boutc
+ METRNL                H, A, C     Many tissues,       Immune cells       E           Increases energy expenditure;             ↑                 ↑              134,192,
+
+                                   including WAT                                      improves glucose tolerance                                                     193
+
+                                   and skeletal
+                                   muscle
+ Myonectin             H, A        Skeletal muscle Liver, WAT,            E           Promotes fatty acid uptake; might         ↑,↔               ↔                27,75,
+
+ (CTRP15)                                          heart                              be cardioprotective                                                         82,194
+
+
+ Musclin (also         H, A, C     Skeletal            Skeletal           A, P, E     Regulates mitochondrial                   ↑                 ↓                27,43,
+
+ known as                          muscle, bone,       muscle, heart,                 biogenesis and might exacerbate                                            176,195
+
+ osteocrin)                        brain               vasculature,                   insulin resistance
+                                                       cartilage, brain
+ Myostatin (also       H, A, C     Many tissues,       Many tissues,   A, P, E        Blunts skeletal muscle growth and         ↑,↔               ↔                44,73,
+
+ known as GDF8)                    especially          especially                     glucose uptake                                                              99,189
+
+                                   skeletal muscle     skeletal muscle
+                                   and WAT             and bone
+ SPARC                 H, A, C     Many tissues        Many tissues       A, P, E     Regulates cell function and tissue        ↑,↔               ↔               63,181
+
+                                                                                      remodelling
+ SDC4                  H           Many tissues        Immune             A, P, E     Involved in cell–extracellular            ↑                 ↑              104,185,
+
+                                                       system                         matrix crosstalk, inflammation and                                         196,197
+
+                                                                                      skeletal muscle growth
+ TGFβ1                 H, A, C     Many tissues        Many tissues       A, P, E     Chemotactic factor for immune             ↑                 ↑                64,65,
+
+                                                       especially                     cells; affects skeletal muscle                                             182,198,
+
+                                                       immune cells                   growth                                                                         199
+
+
+ TGFβ2                 H, A, C     Adipose tissue      Many tissues,      P, E        Promotes glucose and fatty acid           ↑                 ↑                   42
+
+                                                       especially                     metabolism; reduces inflammation
+                                                       muscle and
+                                                       immune cells
+ VEGF                  H, A, C     Many tissues,       Vascular           P, E        Promotes angiogenesis and                 ↑,↔               ↑                27,45,
+
+                                   especially          endothelium                    exercise-induced neurogenesis                                                   46
+
+                                   skeletal muscle
+ 12,13-diHOME, 12,13-dihydroxy-9Z-octadecenoic acid; BAIBA, β-aminoisobutyric acid; BAT, brown adipose tissue; CTRP15, complement C1q tumour necrosis
+ factor-related protein 15; CX3CL1, chemokine (C-X3-C motif) ligand 1; FFAs, free fatty acids; FGF21, fibroblast growth factor 21; FNDC5, fibronectin type III domain
+ containing 5; GDF8, growth and differentiation factor 8; GDF15, growth and differentiation factor 15; HSP72, heat shock protein 72; METRNL, meteorin-like;
+ SDC4, syndecan 4; SPARC, secreted protein acidic and cysteine rich; TGFβ1, transforming growth factor-β1; TGFβ2, transforming growth factor-β2; VEGF, vascular
+ endothelial growth factor; WAT, white adipose tissue. aRelevant species or models are human (H), animal (A) or cell (C). bEffects are autocrine (A), paracrine (P) or
+ endocrine (E). cArrows indicate: ↑, plasma levels increase; ↓, plasma levels decrease; ↔, plasma levels remain the same.
+
+
+                                 Adipose tissue                                                       obesity84. Transgenic mice that overexpress muscle per-
+                                 Exercise facilitates WAT lipolysis to provide FFA for                oxisome proliferator-activated receptor-γ coactivator
+                                 utilization as fuel29. Although this lipolysis was typi-             1-α (PGC1α) have higher circulating levels of irisin and
+                                 cally attributed to adrenaline release40, acute exercise             increased WAT browning than control mice84. Hence,
+                                 in humans also releases additional molecules79, such as              the initial excitement regarding irisin as an exerkine, as
+                                 growth and differentiation factor 15 (GDF15)80 and IL-6              exercise generally increases muscle PGC1α expression in
+                                 (ref.81), which also affect lipolysis (Table 3; Supplementary        both animal models85 and humans86.
+                                 Table 1). Lipolysis is not the only avenue by which                      As the irisin findings and exercise-induced brown-
+                                 exerkines can affect adipose tissue mass. For example, in            ing of WAT concepts were re-evaluated in humans, the
+                                 myonectin knockout mice, WAT lipolysis is unaffected;                initial excitement was subsequently tempered. Although
+                                 however, dietary lipid clearance is impaired compared                acute exercise in humans generally increases plasma
+                                 with lipid clearance in wild-type mice, resulting in                 levels of irisin87, the effect of chronic exercise training
+                                 increased WAT mass and decreased liver steatosis82.                  remains highly variable. A meta-analysis of several
+                                    A potential effect of exercise on WAT is ‘browning’,              randomized controlled trials even showed lower levels
+                                 where WAT increases mitochondrial content, meta-                     of irisin after training than before training88. Trained
+                                 bolic rate and heat production. WAT browning might                   athletes have lower BAT activity and no difference in
+                                 have metabolic importance, as individuals with PET–                  WAT browning markers compared with lean, seden-
+                                 CT-defined BAT had a decreased prevalence of cardi-                  tary men89; this observation is supported by a study
+                                 ometabolic disease, particularly if they had overweight              in humans of chronic exercise training, which did not
+                                 or obesity83. In a mouse model, fibronectin type III                 find any browning of WAT (as assessed by biopsy)90.
+                                 domain containing 5 is cleaved in the muscle cell and                Thus, whether exercise can brown WAT in humans,
+                                 secreted as irisin, which induces WAT browning to                    especially through an irisin-mediated pathway, remains
+                                 increase energy expenditure and consequently reduce                  controversial55,83,84,90.
+
+
+280 | May 2022 | volume 18                                                                                                                  www.nature.com/nrendo
+
+                                                                       0123456789();:
+                                                                                                                          Reviews
+
+                          Adipose tissue can also secrete exerkines. A prime          fetuin-A worsens peripheral insulin resistance by reduc-
+                      example is 12,13-dihydroxy-9Z-octadecenoic acid                 ing insulin signalling and glucose transporter type 4
+                      (12,13-diHOME), which is secreted from BAT and                  trafficking39. Although acute exercise in humans does
+                      increases skeletal muscle oxidative capacity91. In humans,      not alter plasma levels of fetuin-A97, chronic exercise
+                      circulating levels of 12,13-diHOME are inversely asso-          might decrease plasma levels of fetuin-A72,101. Additional
+                      ciated with adipose tissue mass, fasting blood levels of        exerkines involved in muscle growth and develop-
+                      insulin and blood levels of triacylglycerol92. A 2021 study     ment include the following: IL-7 (ref.102), IL-15 (ref.99),
+                      showed that BAT transplantation in mice increased               follistatin97, leukaemia inhibitory factor103, syndecan 4
+                      plasma levels of 12,13-diHOME and improved cardiac              (ref.104) and myostatin44,73.
+                      haemodynamics93. These findings suggest that a sus-
+                      tained increase in plasma levels of 12,13-diHOME pre-           The liver and the gut
+                      serves cardiac function and remodelling and increases           Exercise reduces hepatic steatosis independently of
+                      cardiac haemodynamics through a direct effect on the            weight loss105. The liver is recognized as a source for many
+                      cardiomyocyte. These findings were reinforced by obser-         circulating proteins, with ~2,500 liver-secreted proteins
+                      vations in humans, in whom the presence of cardio­              identified using modern liquid chromatography and mass
+                      vascular disease is associated with decreased plasma            spectroscopy technologies39. Not surprisingly, the liver is
+                      levels of 12,13-diHOME93.                                       the source of many acute exercise-responsive cytokines
+                          Interestingly, skeletal muscle can influence the adi-       (Supplementary Table 1). These exerkines affect glucose
+                      pose tissue response to exercise via lactate secretion. The     and/or lipid metabolism (for example, angiopoietin-like
+                      prototypical example is transforming growth factor-β2           protein 4 in humans and animal models39,79), brown-
+                      (TGFβ2)42. In a mouse model, specific lactate exposure          ing of WAT (FGF21 in a mouse model106), lipolysis
+                      in vitro and in vivo increased adipocyte expression             (FGF21 in humans and a mouse model77) and the main-
+                      of TGFβ2 (ref.42). Furthermore, the same study found            tenance of cellular homeostasis (heat shock protein 72
+                      that in a mouse model of chronic exercise, increased            in humans107).
+                      adipocyte levels of TGFβ2 expression and secretion                  Exercise also alters the gut microbiome108. Chronic
+                      were associated with improvements in glucose metab-             exercise in humans and animal models alters the com-
+                      olism, lipid oxidation and a possible reduction of adi-         position and functional capacity of the gut microbiota,
+                      pose tissue inflammation. Parallel findings were also           independently of diet; these exercise-dependent changes
+                      observed in humans undertaking chronic exercise,                in the microbiota might be independent of weight while
+                      albeit to a less pronounced degree than the animal model        being contingent on exercise intensity, modality and
+                      observations42. Nevertheless, these findings demonstrate        sustainment108. In humans, chronic exercise altered the
+                      the possibility of lactate mediating tissue-to-tissue           gut microbiome to increase availability of short chain
+                      communication during exercise.                                  fatty acids, particularly butyrate109. Once these partici-
+                                                                                      pants ceased training, exercise-induced changes in the
+                      Skeletal muscle                                                 microbiota were largely reversed when re-measured
+                      Exerkines originating from multiple tissues have                after a 6-week sedentary period109. The mechanisms by
+                      demonstrated the capacity to improve skeletal muscle            which exercise might alter the gut microbiome remain
+                      function and growth (Table 3; Supplementary Table 1).           numerous, including altering the gene expression of
+                      Apelin is an example of a myokine affecting muscle              intraepithelial lymphocytes for a more favourable inflam-
+                      function. In both humans and animal models, exercise            matory profile110, influencing blood flow in the gut111 or
+                      increases muscle mRNA levels of apelin94 and possibly           changing bile acid excretion112.
+                      serum levels of apelin95,96. In an animal model, skeletal
+                      muscle95,96 served as a source of apelin secretion, which       The endocrine system
+                      improved skeletal muscle function in the setting of age-        As exercise has established benefits in improving
+                      ing, supporting the potential of apelin as a therapeutic        dysglycaemia, this section focuses specifically on
+                      to combat age-related sarcopenia94–96. Specifically in          exerkines affecting glucose homeostasis ( Table 3 ;
+                      old mice, increased apelin exposure (by daily injection         Supplementary Table 1). In humans, circulating lev-
+                      or skeletal muscle overexpression) stimulated muscle            els of β-aminoisobutyric acid (BAIBA) increased
+                      mitochondrial biogenesis, muscle protein synthesis              with chronic training55 and inversely correlated with
+                      and enhancement of muscle stem cells to stimulate               insulin resistance55. In wild-type mice, BAIBA treat-
+                      muscle regeneration96. 12,13-diHOME is an example               ment reduced insulin resistance and suppressed
+                      of a batokine with muscle effects. In both humans and           inflammation55. In another study using C2C12 mouse
+                      mouse models, exercise facilitates BAT secretion of             myocytes and a wild-type mouse model (palmitate or
+                      12,13-diHOME, which enhances skeletal muscle FFA                high-fat diet exposure), BAIBA treatment attenuated
+                      uptake and oxidation91. The hepatokines follistatin             insulin resistance, reduced inflammation and increased
+                      and fetuin-A also affect muscle function. For exam-             fatty acid oxidation through AMP-activated protein
+                      ple, in both humans97–99 and mouse models100, acute             kinase (AMPK) and a AMPK–PPARδ-dependent
+                      exercise97,100 and chronic exercise98 increase liver-secreted   pathway in skeletal muscle113. Limited human data
+                      follistatin, which has been reported to antagonize the          show that an acute exercise bout increases plasma and
+                      effects of myostatin99. Decreased function of myosta-           muscle expression levels of fractalkine (encoded by
+                      tin enhances skeletal muscle growth and improves                CX3CL1)70, which is a chemokine that favourably regu-
+                      whole-body glycaemic control 44,99. Furthermore,                lates glucose-stimulated insulin secretion by enhancing
+
+
+Nature Reviews | Endocrinology                                                                                      volume 18 | May 2022 | 281
+
+                                                      0123456789();:
+Reviews
+
+                               β-cell function114. Chronic exercise in humans also              The immune system
+                               reduces circulating levels of fetulin-A72,101. Fetulin-A         The broad effects of exercise on immune function impli-
+                               has been shown to impair β-cell sensing by reducing              cate mobilization and altered function of cytokines and
+                               glucose-stimulated insulin secretion115.                         immune cells, such as neutrophils, leukocytes and natu-
+                                   In humans, both acute exercise 97 and chronic                ral killer cells (Fig. 3; Supplementary Table 1)30,122,123. The
+                               exercise98 increase circulating levels of follistatin. The       effects of chronic exercise on the immune system might
+                               extent to which follistatin might improve glycaemic              depend on intensity, with immune enhancement by
+                               measures remains controversial. After bariatric sur-             moderate exercise and possible impairment by strenu­
+                               gery, improvements in HbA1c have been observed in the            ous exercise124. As shown in humans, an acute bout of
+                               setting of reduced levels of follistatin116. Furthermore,        exercise might be initially pro-inflammatory, but sub-
+                               inactivating hepatic follistatin in a mouse model                sequently this effect is offset by an anti-inflammatory
+                               improved WAT sensitivity and reduced hepatic glu-                response 30,124. The exercise-induced acute increase
+                               cose production116. In vitro, irisin prevented excessive         in circulating levels of IL-6 increases plasma levels of
+                               lipogenesis of mouse islets under glucolipotoxic condi-          anti-inflammatory cytokines, such as IL-1RA and IL-10
+                               tions, resulting in improved insulin secretion, inhibition       (ref.125). IL-1RA inhibits IL-1β signal transduction126,
+                               of apoptosis and restored β-cell function-related gene           whereas IL-10 inhibits production of pro-inflammatory
+                               expression117.                                                   cytokines, such as TNF127. In healthy humans, one bout
+                                   The myokine IL-6 is also associated with favourable          of exercise or an IL-6 infusion blunted the increase
+                               alterations in glucose homeostasis. In humans, IL-6 infu-        in circulating levels of TNF induced by infusion of
+                               sion delays gastric emptying and lowers postprandial glu-        lipopolysaccharide128. Thus, an acute bout of exercise
+                               cose levels118. In rodents, increasing IL-6 by exercise or by    induces anti-inflammatory effects that might in part
+                               IL-6 injection increases the production of glucagon-like         be mediated by IL-6, possibly in conjunction with
+                               peptide 1 by intestinal L cells and pancreatic α-cells to        other known anti-inflammatory factors, such as adren-
+                               enhance glucose-stimulated insulin secretion. These              aline and cortisol122. As a pleiotropic factor, the effect
+                               benefits of IL-6 in enhancing insulin secretion were seen        of IL-6 on metabolism and inflammation remains
+                               across multiple rodent models of T2DM119. In healthy             context-dependent. Although IL-6 is transiently
+                               humans, IL-6 infusion to levels similar to those seen            increased after acute exercise, the baseline (or ‘resting’)
+                               with strenuous exercise enhances insulin-stimulated              circulating levels of IL-6 are lower in exercise-trained
+                               glucose-uptake but does not alter whole-body lipolysis           individuals than in untrained individuals78. Future stud-
+                               or lipid oxidation120. However, another study of IL-6 infu-      ies focusing on tissue and cell type-specific effects as well
+                               sion into humans found that IL-6 stimulates lipolysis and        as different exercise regimens will help delineate the
+                               lipid oxidation54,121. Further research into these seemingly     temporal and spatial requirement of IL-6 in mediating
+                               conflicting findings is warranted to establish the effect of     exercise benefits.
+                               exerkines on glucose metabolism.                                     An emerging frontier in exercise biology involves
+                                                                                                exerkine-induced immune effects in increasing resil-
+                                                                                                ience to cancer or as co-adjuvant to cancer therapy. The
+                                               Cytokines   Monocyte                             anticancer effects of exercise might not be limited to its
+                                                                                                effect on body weight. A meta-analysis pooled data from
+                                                                                                12 prospective cohorts with self-reported physical activ-
+                                                                                                ity and found that increased physical activity levels are
+                                                                                                associated with decreased risk of incident cancer across
+                                                     Acute eﬀects         Chronic eﬀects
+         Exercise         Exerkines in the                                                      multiple types; many of these associations remained
+                        systemic circulation         • ↑ TGFβ1            • ↓ IL-6
+                                                     • ↑ IL-6             • ↓ TNF               even after adjusting for BMI129. Acute exercise creates
+ Tissue eﬀects of exercise                           • ↑ TNF                                    a unique exerkine milieu that lasts several hours after
+                                                     • ↑ IL-10                                  exercise cessation, which provides a temporal window
+ • Increased lipid oxidation                         • ↑ IL-1RA
+ • Increased mitochondrial                                                                      for immune function stimulation31. For this reason, exer-
+   biogenesis                                                                                   cise could potentially serve as a co-adjuvant treatment
+ • Increased local injury
+                                                                                                for cancer therapy. In tumour-bearing mouse mod-
+Fig. 3 | Effects of exercise on the immune system. Exercise induces lipid oxidation,            els (across five tumour models), mice that undertook
+mitochondrial biogenesis and local injury, which stimulates exerkine release into the           voluntary wheel running had a reduction of more than
+circulation to influence the immune system. See Supplementary Table 1 for detailed              60% in tumour incidence and tumour growth compared
+effects and relevant references. These include proteins (blue lines), metabolites (yellow       with sedentary mice. Further analysis of these mouse
+circles) and extracellular vesicles (green circles), which have a multitude of effects on the   models showed that adrenaline and IL-6 induced nat-
+immune system (generically represented by a monocyte). Acutely, exercise increases              ural killer cell mobilization, redistribution and tumour
+cytokines such as circulating levels of transforming growth factor β1 (TGFβ1) and IL-6          infiltration to inhibit tumour growth123. Another mouse
+relative to the resting state. This change results in acute inflammation, characterized         model found that exercise metabolites such as lactate
+by increases in tumour necrosis factor (TNF) and IL-6. Once the acute exercise-induced
+                                                                                                and possibly tricarboxylic acid intermediates enhance
+effects have diminished, an increase in anti-inflammatory cytokines (such as IL-10 and
+IL-1 receptor antagonist (IL-1RA)) occurs in response to the acute inflammatory response.       the antitumour effector profile of CD8+ lymphocytes130.
+Chronic training is associated with a reduction in systemic and tissue inflammation, as         Of note, exercise is associated with enhanced secreted
+characterized by lower circulating levels of TNF and IL-6 in the resting state, relative to     protein acidic and rich in cysteine (SPARC) secretion
+sedentary individuals. Reduced insulin resistance and tumour growth has been attributed         in humans and animal models131; this matricellular
+to the effects of chronic training on decreasing systemic and/or tissue inflammation.           protein regulates cell function and tissue remodelling,
+
+
+282 | May 2022 | volume 18                                                                                                          www.nature.com/nrendo
+
+                                                                   0123456789();:
+                                                                                                                            Reviews
+
+                                                                                                • Apelin
+                                                                                                • Cathepsin B
+                                                                                                • FGF21
+                                                                                                • GDF15?
+                                                                           Skeletal muscle      • Irisin
+                                                                                                • IL-6
+                                                                                                • Lactate
+
+
+                                                           Adiponectin                                      ?
+
+                                                                                                  Exerkines crossing the
+                                                                                                  blood–brain barrier?
+                                        Adipose tissue
+                                                                           Exerkines in the                     Nervous system
+                        Exercise                                         systemic vasculature
+                                                                                                                • Increased production of BDNF
+                                                                                                                • Increased neurogenesis
+                                                                                                                • Improved cognition and mood
+                                                                                                                • Increased synaptic plasticity
+
+
+                                                                                Liver
+                                                                              • FGF21
+                                                                              • GPLD1
+
+                      Fig. 4 | Effects of exercise on the nervous system. Exercise stimulates the production of exerkines from tissues, such
+                      as skeletal muscle, adipose tissue or the liver, to affect the nervous system. See Supplementary Table 1 for detailed effects
+                      and relevant references. These exerkines are released into the circulation and include proteins (blue lines), metabolites
+                      (yellow circles) and extracellular vesicles (green circles), which have a multitude of purported effects on the nervous
+                      system. These effects include increasing production of brain-derived neurotrophic factor (BDNF), enhancing neurogenesis
+                      (even in adults), cognition, mood and synaptic plasticity. The extent to which exerkines cross the blood–brain barrier to
+                      exert their effects remains unknown, symbolized by the question mark. There is uncertainty with GDF15, as symbolized
+                      by the question mark, as pharmacological GDF15 inhibits appetite and reduces activity, whereas physiological induction
+                      of GDF15 by exercise does not200. Commonly described exerkines are noted. FGF21, fibroblast growth factors 21; GDF15,
+                      growth and differentiation factor 15; GPLD1, glycosylphosphatidylinositol-specific phospholipase D1.
+
+
+                      while inhibiting proliferation and promoting apoptosis            rodents137, suggesting that ILC2 to TH2 signalling might
+                      of a mouse colon cancer cell line132.                             partially mediate exercise-induced beiging of WAT. The
+                          Crosstalk exists between skeletal muscle and the              stimulants within skeletal muscle or WAT that activate
+                      immune system. Contemporary views towards skeletal                ILC2s during exercise remain to be identified.
+                      muscle now consider muscle as an immunoregulatory
+                      organ that especially affects lymphocyte and neutrophil           The nervous system
+                      trafficking and inflammation. During acute exercise,              Exercise is a promising non-pharmacological strategy
+                      immune cells are mobilized by muscle secretion of                 to maintain and improve brain function138. Figure 4 pre-
+                      exerkines such as fractalkine to enhance regeneration             sents an overview of the purported effects of exercise on
+                      (in humans)133 or meteorin-like (METRNL) to increase              the nervous system (Supplementary Table 1). Of note,
+                      beige adipose tissue thermogenesis (animal model)134.             evidence for the benefits of exercise on cognition remains
+                      As previously noted, one bout of exercise or an IL-6              variable, probably owing to the lack of randomized con-
+                      infusion in humans blunts the increase in circulating             trolled trials throughout the lifespan with standardized
+                      levels of TNF that are induced by lipopolysaccharide              exercise interventions and compar­able methods for
+                      infusion128.                                                      cognitive assessment139–142. The effects of exercise on the
+                          IL-13 is an important main T helper 2 (TH2) cell              brain are most apparent in the hippocampus, a part of
+                      cytokine that mediates the anti-inflammatory polariza-            the brain involved in learning and memory143. In older
+                      tion of resident macrophages in WAT135. IL-13 is also             adults (aged 55–80 years), participation in an aerobic
+                      an exerkine, increasing in the circulation after exercise         walking programme increased hippo­campal volume
+                      training in humans and mice136. Mice lacking IL-13 show           and improved memory144. Moreover, accumulating
+                      reduced running capacity and do not show certain ben-             evidence suggests that physical activity, as shown in
+                      eficial effects of exercise training, such as improvements        preclinical, observational and interventional studies
+                      in glucose tolerance and endurance running capacity136.           in humans, can prevent or delay the onset of neuro­
+                      Unlike IL-6, IL-13 is produced by type 2 innate lymphoid          degenerative conditions138. In humans, acute exercise
+                      cells (ILC2s) in skeletal muscle. As IL-13-deficient mice         increases plasma levels of brain-derived neurotrophic
+                      show defective muscle fatty acid utilization after acute          factor (BDNF)7, whereas chronic exercise training has
+                      exercise and fail to show increased muscle mitochondrial          been shown to not alter140, increase or even decrease
+                      biogenesis after chronic exercise, the ILC2 to IL-13 axis         plasma levels of BDNF140,145. In rodents, chronic exer-
+                      might have an important role in the metabolic adapta-             cise upregulates BDNF in the hippocampus, which is
+                      tion to exercise training136. Interestingly, ILC2 and TH2         essential for adult hippocampal neurogenesis and neural
+                      cell cytokines also control beige adipocyte recruitment in        plasticity146. Chronic exercise in rodents also enhances
+
+
+Nature Reviews | Endocrinology                                                                                         volume 18 | May 2022 | 283
+
+                                                      0123456789();:
+Reviews
+
+                             hippocampal synaptic plasticity, adult neurogenesis and       primarily synthesized in the liver. In both mice and
+                             neurotrophin levels, as well as memory function147. In        humans, chronic aerobic training increases muscle
+                             addition, voluntary wheel running in rodents increases        expression of kynurenine aminotransferase, which
+                             the number of new hippocampal neurons, enhances               facilitates conversion of kynurenine into kynurenic acid,
+                             morphological maturation, such as dendritic branching         a metabolite that is unable to cross the blood–brain
+                             and spine density, and alters the circuitry of adult-born     barrier. This shift in kynurenine metabolism is able to
+                             neurons147.                                                   protect the brain from stress-induced depression150.
+                                 There is increasing recognition that peripheral fac-          Exchanging plasma from exercising aged mice to sed-
+                             tors might trigger the effects of exercise on the brain.      entary aged mice enhances adult hippocampal neurogen-
+                             In the past 20 years, researchers have begun to test          esis and memory function148. Upon further investigation,
+                             the hypothesis that metabolites, peptides and proteins        plasma proteomic analysis led to the identification of a
+                             released from liver, adipocytes, blood cells (particu-        novel hepatokine, glycosylphosphatidylinositol-specific
+                             larly platelets) and muscle might influence the central       phospholipase D1 (GPLD1), which increases after exer-
+                             nervous system138,148,149. Since 2020, several studies        cise and correlates with improved cognitive function in
+                             have transferred plasma from exercised animals into           aged mice. These findings are supported in humans, as
+                             sedentary animals, with subsequent improvements in            concentrations of GPLD1 in blood were higher in active,
+                             cognitive function, supporting the presence of a trans-       healthy older adults (n = 20, >66 years old) than in their
+                             ferable factor in improving cognitive function148,149.        sedentary counterparts148. Investigations into the under-
+                             Evidence is now accumulating that factors released            lying mechanisms indicate that GPLD1 does not cross
+                             from non-neuronal tissue148–152 and delivered via the         the blood–brain barrier148. Hence, the benefit of GPLD1
+                             vasculature to the brain might have important roles           (ref.148) and other exerkines on brain structure and func-
+                             in synaptic plasticity, memory function and mood              tion might relate to its peripheral effects, such as the
+                             regulation150. Adiponectin is an adipocyte-secreted           complement signalling cascade149,158, or coagulation159.
+                             protein that seems to have neuroprotective effects151, in     Additional exercise studies are needed to better appreciate
+                             addition to its insulin-sensitizing, anti-inflammatory        the exercise–liver–brain axis.
+                             and anti-atherogenic effects151,153. In mice, adiponec-
+                             tin was demonstrated to pass through the blood–brain          Bone
+                             barrier and was associated with increased neurogenesis        Exercise, especially resistance exercise, increases bone
+                             and reduced depression-like behaviours151. Interestingly,     mineral desnity160. Multiple mechanisms exist, although
+                             discrepancies can exist between the plasma levels of adi-     mechanical loading is considered a major factor161.
+                             ponectin and levels in the cerebrospinal fluid. For exam-     Noted exercise-associated bone-derived factors affecting
+                             ple, in humans, acute exercise increases plasma levels of     bone formation include TGFβ1 (ref.162) and sclerostin163.
+                             adiponectin but decreases cerebrospinal fluid levels          Sclerostin inhibits bone formation163,164 and blood levels
+                             of adiponectin154. The mechanisms underlying the ben-         of sclerostin are lower in highly active humans than in
+                             eficial effects of exercise on brain structure and function   sedentary humans163. Emerging data demonstrate that
+                             remain an active area of investigation.                       crosstalk exists between bone and muscle, probably medi-
+                                                                                           ated by secretory factors165. Noted myokines affecting the
+                             Muscle–brain crosstalk. Myokines seem to have an impor-       bone include apelin166, myostatin61, irisin167, IL-6 (ref.168),
+                             tant role in hippocampal neurogenesis (animal model)          IL-7 (ref.60) and BAIBA59 (Supplementary Table 1).
+                             and neurotrophin levels (animal model), and enhanced
+                             cognition and mood (animal model and humans)                  Gaps and future opportunities
+                             (Supplementary Table 1). For instance, in mice, increas­      Gaps in exerkine science
+                             ing intrinsic irisin expression in neurons or increasing      Contentious questions remain that temper the enthu-
+                             plasma levels of irisin elevates hippocampal Bdnf             siasm regarding exerkines (Box 1). These controver-
+                             gene expression152. Irisin administration in a mouse          sies include the lack of consistency between the acute
+                             model of Alzheimer disease improves synaptic plas-            and chronic exercise response, discrepancies between
+                             ticity and memory function 155,156. In both animal            humans and animal models of exercise and interpre-
+                             models and humans, plasma levels of cathepsin B,              tation challenges due to variability in outcomes and
+                             a lysosomal thiol proteinase produced by muscle, is           sampling. These knowledge gaps set the stage for future
+                             positively associated with hippocampus-dependent              opportunities in exerkine research.
+                             memory 145,157. Studies in humans have shown that                 Despite the acceleration in exerkine-related research
+                             acute exercise does not clearly increase plasma levels of     since the identification of IL-6 as a myokine in 2000
+                             cathepsin B7, although chronic exercise does increase         (ref.16), much remains to be done in the scientific areas
+                             plasma levels of cathepsin B145,157. These same studies       of research, technology and therapeutic interventions
+                             also showed that acute exercise increases plasma levels       (Box 1). Specifically, a critical need exists to move beyond
+                             of BDNF7, whereas chronic exercise does not increase          the ‘skeletal muscle-centric’ view of exerkines and focus
+                             BDNF 140,145 suggesting that investigation of local           more on their roles in inter-organ communication, tis-
+                             neuronal effects remains warranted.                           sue regeneration, immune regulation, metabolic adap-
+                                                                                           tation, cardiovascular fitness, psychological health and
+                             Liver–brain crosstalk. The liver secretes factors that        overall health across the lifespan. The vasculature and
+                             are important for brain function. Kynurenine is a             endothelium are emerging as a probable central facil-
+                             metabolite of the amino acid L-tryptophan and is              itator, which enables systemic exerkines to exert their
+
+
+284 | May 2022 | volume 18                                                                                                     www.nature.com/nrendo
+
+                                                               0123456789();:
+                                                                                                                                     Reviews
+
+ Box 1 | Contentious questions regarding exerkines                                                phenotypes of the population will matter, as the response
+                                                                                                  in healthy participants can vary greatly from that in par-
+ Overenthusiasm about the potential of exerkines needs to be tempered, as                         ticipants with comorbidities. Further work in these areas
+ controversies remain.                                                                            will advance our understanding of ageing, health and
+ Inconsistency between the acute and chronic exerkine response                                    disease prevention.
+ As demonstrated in Supplementary Table 1, the acute exerkine response does not
+ necessarily parallel and could even contradict the chronic exercise response, as                 Opportunities for new technologies
+ exemplified by brain-derived neurotropic factor (BDNF), IL-6, irisin and musclin. Hence,         Technology gaps also remain in exerkine research. One
+ the question arises as to whether the discrepancy reflects the difference in mechanism           emerging area is the use of wearable technologies and
+ between acute versus chronic perturbation, or more pragmatically, remains unrelated
+                                                                                                  devices to capture quantitative and dynamic pheno-
+ to the observed exercise-induced changes.
+                                                                                                  types over long periods of time in healthy individuals
+ Inconsistency between studies in animals and humans                                              as well as in those with mild or severe diseases. For
+ As demonstrated in Supplementary Table 1, the exerkine response in animals does not              instance, wearable technology could provide valuable
+ necessarily parallel the exerkine response in humans, as exemplified by angiopoietin,
+                                                                                                  information regarding physical activity levels and exer-
+ BDNF, follistatin, IL-7, IL-8, IL-10, irisin, leukaemia inhibitory factor, myonectin, musclin,
+ myostatin and secreted protein acidic and rich in cysteine (SPARC). Hence, the question
+                                                                                                  cise capacity during and following COVID-19 illness
+ arises as to whether the excitement generated from discoveries in animal models will             and recovery, adding to the description of post-acute
+ translate to specific human populations or more pragmatically, whether animal findings           sequelae of SARS-CoV-2 infection, which is under
+ remain unrelated to observed changes in humans.                                                  active investigation. Currently, non-invasive and min-
+                                                                                                  imally invasive devices have enabled the monitoring
+ Variability of outcomes and sampling, which hinder interpretation
+ The literature is replete with studies showing variable, if not conflicting, benefits from       of many behavioural and physiological phenotypes,
+ exercise, commonly attributed to differences in selected populations, exercise type,             including heart rate and electrical activity in the heart
+ exercise intensity and exercise duration141,142,201. However, even when an exercise expo-        (ECG), body temperature, physical activity and seden-
+ sure is fixed, as exemplified by a clinical trial setting, the cardiovascular response can       tary behaviour, peripheral blood oxygen saturation and
+ be ostensibly disassociated from the metabolic response25,26,202. Hence, the question            blood concentrations of glucose. These devices enable
+ arises as to whether these discrepancies can be explained by differences in the                  the real-time monitoring of the effects of exercise in nat-
+ exerkine response. If alterations in exerkines might explain the observed findings, even         ural and controlled settings at an unprecedented level.
+ more questions arise regarding sampling relative to the timing of exercise exposure              Moreover, wearable technologies can be scaled to the
+ (during versus after), sampled tissue (soft tissue versus blood) and context (fasted or
+                                                                                                  analysis of over a million people and can enable ‘citizen
+ fed22, or circadian rhythm21,24) Hence, the question arises as to the translational rele-
+                                                                                                  science’ whereby individuals with devices can readily
+ vance of the exerkine literature to date, given the inconsistency of observed exercise
+ effects and highly variable sampling protocols.                                                  participate in studies. These measurements, when com-
+                                                                                                  bined with molecular measurements such as exerkines,
+                                                                                                  have the potential to greatly improve our understand-
+                                 specific effects within the various local environments,          ing of exercise adaptations in large cohorts with deep
+                                 as well as being a direct target and source of exerkines.        phenotyping across a broad age range.
+                                 Understanding the system-wide effects of exercise                   Although wearable devices are powerful, multiple
+                                 and the myriad of exercise-related improvements is               challenges remain in data interpretation and analysis.
+                                 essential for understanding resilience. Such knowledge           These challenges include device accuracy as well as
+                                 will provide new translational research opportunities            device standardization and a lack of readily available
+                                 to develop novel, targeted interventions that increase           high-resolution data from the manufacturers. In addi-
+                                 physiological reserve, maintain and/or enhance resili­           tion, many wearable devices do not characterize the
+                                 ency and thus promote healthy ageing, as well as                 environmental context associated with data capture.
+                                 interventions that prevent and treat comorbidities               For example, if a device does not sense any physical
+                                 and chronic disease.                                             activity, one explanation could be the lack of move-
+                                     Many more exerkines, and their sources, targets              ment by the wearer while another explanation could
+                                 and mechanisms, remain to be discovered. In 2016,                be device removal. A remaining challenge entails
+                                 the MoTrPAC project was launched to uncover novel                approval and regulation from entities such as the FDA
+                                 exerkines through deep omics profiling of biomate-               before widespread use of wearables as therapeutic
+                                 rial from humans and rodents before and after acute              interventions.
+                                 exercise as well as chronic exercise training. As poten-            In addition to wearables, the technology, analysis
+                                 tial candidate transducers are uncovered, follow-up              and approach for exerkine discovery needs to be fur-
+                                 mechanistic studies will be required to delineate their          ther developed. Deep omics profiling (transcriptome,
+                                 function. In addition to molecular discoveries, sub-             metabolome, proteome and lipidome) of human and
+                                 stantial work remains to decipher the dosage and type            animal-based exerkines is occurring in MoTrPAC;
+                                 of exercise needed to elicit positive health outcomes.           this effort is expected to reveal novel molecules and
+                                 Intervention studies are needed to investigate the effect        mechanisms involved in exercise by providing a more
+                                 of different types of exercise on resilience to various          comprehensive view of the multi-omics landscape of
+Exosomes                         conditions, with guidance available from the NIH in              exerkines to the research community. Extracellular
+Exosomes are a type of           designing resilience-based studies. To address these             vesicle analysis, especially of exosomes, will be a crit-
+extracellular vesicle released   knowledge gaps, detailed studies are needed to identify          ical component of MoTrPAC’s analysis owing to bur-
+by parent cells, which contain
+RNAs, proteins and lipids, to
+                                 and validate the exerkine responses after exercise (acute,       geoning interest in the role of extracellular vesicles as
+facilitate crosstalk between     chronic or intermittent) exposure, including a detailed          carriers of molecular signals and drivers of inter-organ
+tissues.                         post-exercise response. Certainly, the demographics and          crosstalk.
+
+
+Nature Reviews | Endocrinology                                                                                                  volume 18 | May 2022 | 285
+
+                                                                  0123456789();:
+Reviews
+
+                                     Data reporting and data sharing                                             non-response or adverse response to exercise. Although
+                                     To promote comparison between studies and enhance                           this ‘exercise in a pill’ is currently wishful thinking, it
+                                     translation, a crucial need exists for the establishment of                 remains a tantalizing goal for future research directions.
+                                     community-wide standards for data reporting and data
+                                     sharing. As an example, capturing physical activity and                     Conclusions
+                                     body composition (for example, adipose tissue mass)                         Although exercise exerts many beneficial effects across
+                                     in the electronic health record will facilitate electronic                  multiple organ systems, our understanding of the mech-
+                                     health record data mining to examine clinical outcomes                      anisms driving the benefits of exercise and the variabil-
+                                     outside a structured clinical study. Cross-study com-                       ity in these benefits remains rudimentary. Much of the
+                                     parisons of exercise studies will be facilitated by setting                 initial exerkine research has been focused on skeletal
+                                     standards for a minimum metadata set, for consistent                        muscle; however, contemporary research is now rap-
+                                     documentation and of covariates, such as time of day,                       idly expanding to include non-skeletal muscle-based
+                                     diet or exercise exposure. Advances in computational                        sources and targets for exerkines that contribute to
+                                     modelling will accelerate our understanding of the                          maintain­ing and restoring health. Exerkines are increas-
+                                     physiological process of exercise and exerkine effects.                     ingly recognized as critical mediators of exercise-related
+                                     Establishing a uniform knowledge base remains a critical                    changes and health benefits, particularly in their role in
+                                     next step in driving this process.                                          inter-organ and systemic communication and coordina-
+                                                                                                                 tion. Yet, much remains to be done. To improve transl­
+                                     Exerkines as therapeutics                                                   ation of results, the heterogeneity across studies needs to
+                                     The health benefits of exercise are well documented.                        be minimized by reducing exposure variability and using
+                                     However, not all individuals are able to benefit from                       standardized, consistent outcome measures. Large-scale,
+                                     exercise owing to physical limitations, such as paraple-                    structured studies will be key resources in providing a
+                                     gia, or imposed limitations, such as quarantining during                    structured environment to pursue future exerkine-related
+                                     the current COVID-19 pandemic. Moreover, in humans,                         questions. In summary, exerkines are a highly promising
+                                     metabolic non-response or even adverse responses to                         direction for future research initiatives, with high poten-
+                                     exercise have been described26. As the role of exerkines                    tial as biomarkers to predict outcomes, facilitate person-
+                                     and their biological effects are increasingly clarified,                    alized exercise programmes to improve health, reduce
+                                     exerkines could potentially be harnessed to mimic the                       disease and promote resilience across the lifespan.
+                                     benefits of exercise in individuals who are limited in
+                                     their exercise capacity or to counterbalance a metabolic                    Published online 18 March 2022
+
+1.  Piercy, K. L. et al. The physical activity guidelines for   12. Ransom, F. A contribution to the study of                 24. Sato, S. et al. Atlas of exercise metabolism reveals
+    Americans. J. Am. Med. Assoc. 320, 2020–2028 (2018).            muscle-enzymes. J. Physiol. 40, 1–16 (1910).                  time-dependent signatures of metabolic homeostasis.
+2.  Katzmarzyk, P. T., Church, T. S., Craig, C. L. &            13. Goldstein, M. S. Humoral nature of the hypoglycemic           Cell Metab. 34, 329–345.e8 (2022).
+    Bouchard, C. Sitting time and mortality from all                factor of muscular work. Diabetes 10, 232–234                 Using a mouse model, this paper presents a
+    causes, cardiovascular disease, and cancer. Med. Sci.           (1961).                                                       detailed atlas of the response to a single bout
+    Sports Exerc. 41, 998–1005 (2009).                          14. Janssen, I., Heymsfield, S. B., Wang, Z. & Ross, R.           of exercise at different times, highlighting the
+3.  Ding, D. et al. The economic burden of physical                 Skeletal muscle mass and distribution in 468 men and          influence of exercise timing on tissue changes
+    inactivity: a global analysis of major non-communicable         women aged 18–88 yr. J. Appl. Physiol. 89, 81–88              and exerkine secretion.
+    diseases. Lancet 388, 1311–1324 (2016).                         (2000).                                                   25. Bouchard, C. et al. Familial aggregation of V˙O2max
+4.  Trabelsi, K. et al. Globally altered sleep patterns         15. Pedersen, B. K. Muscle as a secretory organ.                  response to exercise training: results from the
+    and physical activity levels by confinement in 5056             Compr. Physiol. 3, 1337–1362 (2013).                          HERITAGE Family Study. J. Appl. Physiol. 87,
+    individuals: ECLB COVID-19 international online             16. Steensberg, A. et al. Production of interleukin-6 in          1003–1008 (1999).
+    survey. Biol. Sport. 38, 495–506 (2021).                        contracting human skeletal muscles can account for        26. Bouchard, C. et al. Adverse metabolic response to
+5.  Sallis, R. et al. Physical inactivity is associated with        the exercise-induced increase in plasma interleukin-6.        regular exercise: is it a rare or common occurrence?
+    a higher risk for severe COVID-19 outcomes: a study             J. Physiol. 529, 237–242 (2000).                              PLoS ONE 7, e37887 (2012).
+    in 48 440 adult patients. Br. J. Sports Med. 55,                A key paper demonstrating that IL-6 is secreted           27. Leuchtmann, A. B., Adak, V., Dilbaz, S. &
+    1099–1105 (2021).                                               by contracting muscle, identifying IL-6 as the first          Handschin, C. The role of the skeletal muscle
+6.  Cullen, T., Thomas, A. W., Webb, R. & Hughes, M. G.             ‘myokine’.                                                    secretome in mediating endurance and resistance
+    Interleukin-6 and associated cytokine responses to          17. Baggish, A. L. et al. Dynamic regulation of circulating       training adaptations. Front. Physiol. 12, 709807
+    an acute bout of high-intensity interval exercise: the          microRNA during acute exhaustive exercise and                 (2021).
+    effect of exercise intensity and volume. Appl. Physiol.         sustained aerobic exercise training. J. Physiol. 589,     28. Wahren, J., Felig, P., Ahlborg, G. & Jorfeldt, L. Glucose
+    Nutr. Metab. 41, 803–808 (2016).                                3983–3994 (2011).                                             metabolism during leg exercise in man. J. Clin. Invest.
+7.  Nicolini, C. et al. A single bout of high-intensity         18. Vechetti, I. J. Jr, Valentino, T., Mobley, C. B. &            50, 2715–2725 (1971).
+    interval exercise increases corticospinal excitability,         McCarthy, J. J. The role of extracellular vesicles in     29. Horowitz, J. F. & Klein, S. Lipid metabolism during
+    brain-derived neurotrophic factor, and uncarboxylated           skeletal muscle and systematic adaptation to exercise.        endurance exercise. Am. J. Clin. Nutr. 72, 558s–563s
+    osteolcalcin in sedentary, healthy males. Neuroscience          J. Physiol. 599, 845–861 (2021).                              (2000).
+    437, 242–255 (2020).                                        19. Sanford, J. A. et al. Molecular Transducers of Physical   30. Ostrowski, K., Rohde, T., Asp, S., Schjerling, P. &
+8.  Pate, R. R. et al. Physical activity and public health. A       Activity Consortium (MoTrPAC): mapping the dynamic            Pedersen, B. K. Pro- and anti-inflammatory cytokine
+    recommendation from the Centers for Disease Control             responses to exercise. Cell 181, 1464–1474 (2020).            balance in strenuous exercise in humans. J. Physiol.
+    and Prevention and the American College of Sports           20. National Heart, Lung, and Blood Institute. NHLBI and          515, 287–291 (1999).
+    Medicine. J. Am. Med. Assoc. 273, 402–407 (1995).               NIDDK Workshop: exerkines in health, resilience,              One of the earliest papers to examine the effect
+9.  Bull, F. C. et al. World Health Organization 2020               and diseases executive summary, https://www.nhlbi.nih.        of acute strenuous exercise, marathon running, on
+    guidelines on physical activity and sedentary                   gov/events/2020/nhlbi-and-niddk-workshop-exerkines-           plasma concentrations of pro-inflammatory and
+    behaviour. Br. J. Sports Med. 54, 1451–1462 (2020).             health-resilience-and-diseases-executive-summary              anti-inflammatory cytokines.
+10. Troiano, R. P. et al. Physical activity in the United           (2020).                                                   31. Contrepois, K. et al. Molecular choreography of acute
+    States measured by accelerometer. Med. Sci. Sports          21. Gabriel, B. M. & Zierath, J. R. Circadian rhythms and         exercise. Cell 181, 1112–1130.e16 (2020).
+    Exerc. 40, 181–188 (2008).                                      exercise–re-setting the clock in metabolic disease.       32. Keller, C. et al. Effect of exercise, training, and
+11. Safdar, A., Saleem, A. & Tarnopolsky, M. A.                     Nat. Rev. Endocrinol. 15, 197–206 (2019).                     glycogen availability on IL-6 receptor expression
+    The potential of endurance exercise-derived exosomes        22. Parr, E. B., Heilbronn, L. K. & Hawley, J. A. A time to       in human skeletal muscle. J. Appl. Physiol. 99,
+    to treat metabolic diseases. Nat. Rev. Endocrinol. 12,          eat and a time to exercise. Exerc. Sport. Sci. Rev. 48,       2075–2079 (2005).
+    504–517 (2016).                                                 4–10 (2020).                                              33. Reuter, J. A., Spacek, D. V. & Snyder, M. P.
+    This paper coined the concept of ‘exerkines’,               23. van Loon, L. J. et al. Influence of prolonged endurance       High-throughput sequencing technologies. Mol. Cell
+    molecules that are altered in response to acute                 cycling and recovery diet on intramuscular triglyceride       58, 586–597 (2015).
+    and chronic exercise, and mediate the systemic                  content in trained males. Am. J. Physiol. Endocrinol.     34. Safdar, A. & Tarnopolsky, M. A. Exosomes as
+    adaptations to exercise.                                        Metab. 285, E804–E811 (2003).                                 mediators of the systemic adaptations to endurance
+
+
+
+286 | May 2022 | volume 18                                                                                                                                 www.nature.com/nrendo
+
+                                                                               0123456789();:
+                                                                                                                                                                   Reviews
+
+      exercise. Cold Spring Harb. Perspect. Med. 8,                    AMP-activated protein kinase. Nat. Med. 8,                  83. Becher, T. et al. Brown adipose tissue is associated
+      a029827 (2018).                                                  1288–1295 (2002).                                                with cardiometabolic health. Nat. Med. 27, 58–65
+35.   Liangsupree, T., Multia, E. & Riekkola, M.-L. Modern       59.   Kitase, Y. et al. β-aminoisobutyric Acid, l-BAIBA, is a          (2021).
+      isolation and separation techniques for extracellular            muscle-derived osteocyte survival factor. Cell Rep. 22,     84. Boström, P. et al. A PGC1-α-dependent myokine that
+      vesicles. J. Chromatogr. A 1636, 461773 (2021).                  1531–1544 (2018).                                                drives brown-fat-like development of white fat and
+36.   Artoni, A. et al. Residual platelets are the main          60.   Weitzmann, M. N., Roggia, C., Toraldo, G.,                       thermogenesis. Nature 481, 463–468 (2012).
+      determinants of microparticles count in frozen-thawed            Weitzmann, L. & Pacifici, R. Increased production of             The first paper to describe irisin, a
+      plasma. Thrombosis Res. 130, 561–562 (2012).                     IL-7 uncouples bone formation from bone resorption               PGC1α-dependent myokine, that drives ‘browning’
+37.   Vanderboom, P. M. et al. A size-exclusion-based                  during estrogen deficiency. J. Clin. Invest. 110,                of WAT in an animal model; the extent to which
+      approach for purifying extracellular vesicles from               1643–1650 (2002).                                                these results might apply to humans remains under
+      human plasma. Cell Rep. Methods 1, 100055 (2021).          61.   Dankbar, B. et al. Myostatin is a direct regulator of            investigation.
+38.   Giudice, J. & Taylor, J. M. Muscle as a paracrine and            osteoclast differentiation and its inhibition reduces       85. Terada, S. et al. Effects of low-intensity prolonged
+      endocrine organ. Curr. Opin. Pharmacol. 34, 49–55                inflammatory joint destruction in mice. Nat. Med. 21,            exercise on PGC-1 mRNA expression in rat
+      (2017).                                                          1085–1090 (2015).                                                epitrochlearis muscle. Biochem. Biophys. Res.
+39.   Watt, M. J., Miotto, P. M., De Nardo, W. &                 62.   Watanabe-Takano, H. et al. Mechanical load regulates             Commun. 296, 350–354 (2002).
+      Montgomery, M. K. The liver as an endocrine organ–               bone growth via periosteal osteocrin. Cell Rep. 36,         86. Pilegaard, H., Saltin, B. & Neufer, P. D. Exercise
+      linking NAFLD and insulin resistance. Endocr. Rev. 40,           109380 (2021).                                                   induces transient transcriptional activation of the
+      1367–1393 (2019).                                          63.   Melouane, A., Yoshioka, M., Kanzaki, M. &                        PGC-1α gene in human skeletal muscle. J. Physiol.
+40.   Kjær, M., Secher, N. H. & Galbo, H. Physical stress              St-Amand, J. Sparc, an EPS-induced gene, modulates               546, 851–858 (2003).
+      and catecholamine release. Baillières Clin. Endocrinol.          the extracellular matrix and mitochondrial function         87. Fox, J. et al. Effect of an acute exercise bout on
+      Metab. 1, 279–298 (1987).                                        via ILK/AMPK pathways in C2C12 cells. Life Sci. 229,             immediate post-exercise irisin concentration in
+41.   Nalbandian, M. & Takeda, M. Lactate as a signaling               277–287 (2019).                                                  adults: a meta-analysis. Scand. J. Med. Sci. Sports
+      molecule that regulates exercise-induced adaptations.      64.   Heinemeier, K. M., Bjerrum, S. S., Schjerling, P.                28, 16–28 (2018).
+      Biology 5, 38 (2016).                                            & Kjaer, M. Expression of extracellular matrix              88. Qiu, S. et al. Chronic exercise training and circulating
+42.   Takahashi, H. et al. TGF-β2 is an exercise-induced               components and related growth factors in human                   irisin in adults: a meta-analysis. Sports Med. 45,
+      adipokine that regulates glucose and fatty acid                  tendon and muscle after acute exercise. Scand. J.                1577–1588 (2015).
+      metabolism. Nat. Metab. 1, 291–303 (2019).                       Med. Sci. Sports 23, e150–e161 (2013).                      89. Vosselman, M. J. et al. Low brown adipose tissue
+      This paper demonstrated that TGFβ2 is secreted             65.   Kim, J. & Lee, J. Role of transforming growth factor-β           activity in endurance-trained compared with lean
+      from adipose tissue in response to exercise and                  in muscle damage and regeneration: focused on                    sedentary men. Int. J. Obes. 39, 1696–1702 (2015).
+      improves glucose tolerance.                                      eccentric muscle contraction. J. Exerc. Rehabil. 13,        90. Tsiloulis, T. et al. No evidence of white adipocyte
+43.   Subbotina, E. et al. Musclin is an activity-stimulated           621–626 (2017).                                                  browning after endurance exercise training in obese
+      myokine that enhances physical endurance. Proc. Natl       66.   Imai, T. et al. Identification and molecular                     men. Int. J. Obes. 42, 721–727 (2017).
+      Acad. Sci. USA 112, 16042–16047 (2015).                          characterization of fractalkine receptor CX(3)CR1,          91. Stanford, K. I. et al. 12,13-diHOME: an
+44.   McPherron, A. C., Lawler, A. M. & Lee, S. J.                     which mediates both leukocyte migration and                      exercise-induced lipokine that increases skeletal
+      Regulation of skeletal muscle mass in mice by a                  adhesion. Cell 91, 521–530 (1997).                               muscle fatty acid uptake. Cell Metab. 27, 1357–1357
+      new TGF-p superfamily member. Nature 387, 83–90            67.   Gao, Y. & Galis, Z. S. Exploring the role of endothelial         (2018).
+      (1997).                                                          cell resilience in cardiovascular health and disease.            This paper demonstrated that levels of a lipokine
+      This is a key paper describing myostatin (GDF8),                 Arterioscler. Thromb. Vasc. Biol. 41, 179–185 (2020).            produced from brown adipose tissue increase with
+      which inhibits muscle growth.                              68.   Cullberg, K. B. et al. Effect of weight loss and exercise        acute and chronic training to affect white adipose
+45.   Jensen, L., Bangsbo, J. & Hellsten, Y. Effect of high            on angiogenic factors in the circulation and in adipose          tissue lipolysis.
+      intensity training on capillarization and presence               tissue in obese subjects. Obesity 21, 454–460 (2013).       92. Vasan, S. K. et al. The proposed systemic thermogenic
+      of angiogenic factors in human skeletal muscle.            69.   Gavin, T. P., Drew, J. L., Kubik, C. J., Pofahl, W. E. &         metabolites succinate and 12,13-diHOME are
+      J. Physiol. 557, 571–582 (2004).                                 Hickner, R. C. Acute resistance exercise increases               inversely associated with adiposity and related
+46.   Richardson, R. S. et al. Exercise adaptation attenuates          skeletal muscle angiogenic growth factor expression.             metabolic traits: evidence from a large human
+      VEGF gene expression in human skeletal muscle.                   Acta Physiol. 191, 139–146 (2007).                               cross-sectional study. Diabetologia 62, 2079–2087
+      Am. J. Physiol. Heart Circ. Physiol. 279, H772–H778        70.   Catoire, M., Mensink, M., Kalkhoven, E.,                         (2019).
+      (2000).                                                          Schrauwen, P. & Kersten, S. Identification of human         93. Pinckard, K. M. et al. A novel endocrine role for the
+47.   Kim, I. et al. Angiopoietin-1 regulates endothelial cell         exercise-induced myokines using secretome analysis.              BAT-released lipokine 12,13-diHOME to mediate
+      survival through the phosphatidylinositol 3′-kinase/             Physiol. Genomics 46, 256–267 (2014).                            cardiac function. Circulation 143, 145–159 (2021).
+      Akt signal transduction pathway. Circ. Res. 86, 24–29      71.   Wong, B. W. C., Wong, D. & McManus, B. M.                   94. Besse-Patin, A. et al. Effect of endurance training on
+      (2000).                                                          Characterization of fractalkine (CX3CL1) and                     skeletal muscle myokine expression in obese men:
+48.   Frydelund-Larsen, L. et al. Exercise induces                     CX3CR1 in human coronary arteries with native                    identification of apelin as a novel myokine. Int. J.
+      interleukin-8 receptor (CXCR2) expression in human               atherosclerosis, diabetes mellitus, and transplant               Obes. 38, 707–713 (2014).
+      skeletal muscle. Exp. Physiol. 92, 233–240 (2007).               vascular disease. Cardiovasc. Pathol. 11, 332–338           95. Kwak, S. E. et al. Effects of exercise-induced apelin on
+49.   Ding, Y. H. et al. Cerebral angiogenesis and expression          (2002).                                                          muscle function and cognitive function in aged mice.
+      of angiogenic factors in aging rats after exercise.        72.   Keihanian, A., Arazi, H. & Kargarfard, M. Effects of             Exp. Gerontol. 127, 110710 (2019).
+      Curr. Neurovasc Res. 3, 15–23 (2006).                            aerobic versus resistance training on serum fetuin-A,       96. Vinel, C. et al. The exerkine apelin reverses
+50.   Pedersen, B. K. Muscles and their myokines. J. Exp.              fetuin-B, and fibroblast growth factor-21 levels in male         age-associated sarcopenia. Nat. Med. 24,
+      Biol. 214, 337–346 (2011).                                       diabetic patients. Physiol. Int. 106, 70–80 (2019).              1360–1371 (2018).
+51.   McConell, G. K., Rattigan, S., Lee-Young, R. S.,           73.   He, Z. et al. Myokine response to high-intensity            97. Sargeant, J. A. et al. The influence of adiposity
+      Wadley, G. D. & Merry, T. L. Skeletal muscle nitric              interval vs. resistance exercise: an individual                  and acute exercise on circulating hepatokines
+      oxide signaling and exercise: a focus on glucose                 approach. Front. Physiol. 9, 1735 (2018).                        in normal-weight and overweight/obese men.
+      metabolism. Am. J. Physiol. Endocrinol. Metab. 303,        74.   Nieman, D. C. et al. Cytokine changes after a                    Appl. Physiol. Nutr. Metab. 43, 482–490 (2018).
+      E301–E307 (2012).                                                marathon race. J. Appl. Physiol. 91, 109–114 (2001).        98. Seo, M. W. et al. Effects of 16 weeks of resistance
+52.   Tejero, J., Shiva, S. & Gladwin, M. T. Sources of          75.   Otaka, N. et al. Myonectin is an exercise-induced                training on muscle quality and muscle growth factors
+      vascular nitric oxide and reactive oxygen species and            myokine that protects the heart from ischemia-                   in older adult women with sarcopenia: a randomized
+      their regulation. Physiol. Rev. 99, 311–379 (2019).              reperfusion injury. Circ. Res. 123, 1326–1338                    controlled trial. Int. J. Env. Res. Public Health 18,
+53.   Koliatsos, V. E., Clatterbuck, R. E., Winslow, J. W.,            (2018).                                                          6762 (2021).
+      Cayouette, M. H. & Price, D. L. Evidence that              76.   Fabel, K. et al. VEGF is necessary for exercise-induced     99. Domin, R. et al. Effect of various exercise regimens on
+      brain-derived neurotrophic factor is a trophic                   adult hippocampal neurogenesis. Eur. J. Neurosci. 18,            selected exercise-induced cytokines in healthy people.
+      factor for motor neurons in vivo. Neuron 10,                     2803–2812 (2003).                                                Int. J. Env. Res. Public Health 18, 1261 (2021).
+      359–367 (1993).                                            77.   Kim, K. H. et al. Acute exercise induces FGF21              100. Peppler, W. T. et al. Regulation of hepatic follistatin
+54.   Knudsen, J. G. et al. Skeletal muscle IL-6 regulates             expression in mice and in healthy humans. PLoS ONE               expression at rest and during exercise in mice.
+      muscle substrate utilization and adipose tissue                  8, e63517 (2013).                                                Med. Sci. Sports Exerc. 51, 1116–1125 (2019).
+      metabolism during recovery from an acute bout of           78.   Pedersen, B. K. & Febbraio, M. A. Muscles, exercise         101. Malin, S. K., del Rincon, J. P., Huang, H. & Kirwan, J. P.
+      exercise. PLoS ONE 12, e0189301 (2017).                          and obesity: skeletal muscle as a secretory organ.               Exercise-induced lowering of fetuin-A may increase
+55.   Roberts, L. D. et al. β-Aminoisobutyric acid induces             Nat. Rev. Endocrinol. 8, 457–465 (2012).                         hepatic insulin sensitivity. Med. Sci. Sports Exerc. 46,
+      browning of white fat and hepatic β-oxidation and is       79.   Catoire, M. et al. Fatty acid-inducible ANGPTL4                  2085–2090 (2014).
+      inversely correlated with cardiometabolic risk factors.          governs lipid metabolic response to exercise.               102. Haugen, F. et al. IL-7 is expressed and secreted by
+      Cell Metab. 19, 96–108 (2014).                                   Proc. Natl Acad. Sci. USA 111, E1043–E1052                       human skeletal muscle cells. Am. J. Physiol. Cell
+      Using a mouse model, this paper demonstrated                     (2014).                                                          Physiol. 298, C807–C816 (2010).
+      that a myokine, BAIBA, can ‘brown’ WAT to improve          80.   Laurens, C. et al. Growth and differentiation factor 15     103. Broholm, C. et al. LIF is a contraction-induced myokine
+      glucose homeostasis.                                             is secreted by skeletal muscle during exercise and               stimulating human myocyte proliferation. J. Appl.
+56.   Fisher, F. M. et al. FGF21 regulates PGC-1α and                  promotes lipolysis in humans. JCI Insight 5, e131870             Physiol. 111, 251–259 (2011).
+      browning of white adipose tissues in adaptive                    (2020).                                                     104. Rønning, S. B. et al. Syndecan-4 regulates muscle
+      thermogenesis. Genes Dev. 26, 271–281 (2012).              81.   Wedell-Neergaard, A.-S. et al. Exercise-induced                  differentiation and is internalized from the plasma
+57.   Nielsen, A. R. et al. Association between                        changes in visceral adipose tissue mass are regulated            membrane during myogenesis. PLoS One 10,
+      interleukin-15 and obesity: interleukin-15 as a                  by IL-6 signaling: a randomized controlled trial.                e0129288 (2015).
+      potential regulator of fat mass. J. Clin. Endocrinol.            Cell Metab. 29, 844–855.e3 (2019).                          105. Takahashi, H., Kotani, K., Tanaka, K., Egucih, Y. &
+      Metab. 93, 4486–4493 (2008).                               82.   Little, H. C. et al. Myonectin deletion promotes                 Anzai, K. Therapeutic approaches to nonalcoholic
+58.   Yamauchi, T. et al. Adiponectin stimulates glucose               adipose fat storage and reduces liver steatosis.                 fatty liver disease: exercise intervention and related
+      utilization and fatty-acid oxidation by activating               FASEB J. 33, 8666–8687 (2019).                                   mechanisms. Front. Endocrinol. 9, 588 (2018).
+
+
+
+Nature Reviews | Endocrinology                                                                                                                              volume 18 | May 2022 | 287
+
+                                                                              0123456789();:
+Reviews
+
+106. Keipert, S. et al. Skeletal muscle mitochondrial             129. Moore, S. C. et al. Association of leisure-time physical     152. Wrann, C. D. et al. Exercise induces hippocampal
+     uncoupling drives endocrine cross-talk through the                activity with risk of 26 types of cancer in 1.44 million          BDNF through a PGC-1α/FNDC5 pathway. Cell Metab.
+     induction of FGF21 as a myokine. Am. J. Physiol.                  adults. JAMA Intern. Med. 176, 816–825 (2016).                    18, 649–659 (2013).
+     Endocrinol. Metab. 306, E469–E482 (2014).                    130. Rundqvist, H. et al. Cytotoxic T-cells mediate               153. Fu, Y. C., Luo, N. L., Klein, R. L. & Garvey, W. T.
+107. Febbraio, M. A. et al. Exercise induces                           exercise-induced reductions in tumor growth. eLife 9,             Adiponectin promotes adipocyte differentiation,
+     hepatosplanchnic release of heat shock protein 72                 e59996 (2020).                                                    insulin sensitivity, and lipid accumulation. J. Lipid Res.
+     in humans. J. Physiol. 544, 957–962 (2002).                  131. Matsuo, K. et al. A mechanism underlying preventive               46, 1369–1379 (2005).
+     Using sophisticated arterial-venous sampling                      effect of high-intensity training on colon cancer.           154. Schön, M. et al. Effects of running on adiponectin,
+     techniques, this paper demonstrated that the                      Med. Sci. Sports Exerc. 49, 1805–1816 (2017).                     insulin and cytokines in cerebrospinal fluid in healthy
+     splanchnic tissue bed, rather than the muscle,               132. Aoi, W. et al. A novel myokine, secreted protein                  young individuals. Sci. Rep. 9, 1959 (2019).
+     releases HSP72 during acute exercise in humans.                   acidic and rich in cysteine (SPARC), suppresses colon        155. Lourenco, M. V. et al. Exercise-linked FNDC5/irisin
+108. Mailing, L. J., Allen, J. M., Buford, T. W., Fields, C. J.        tumorigenesis via regular exercise. Gut 62, 882–889               rescues synaptic plasticity and memory defects in
+     & Woods, J. A. Exercise and the gut microbiome:                   (2013).                                                           Alzheimer’s models. Nat. Med. 25, 165–175 (2019).
+     a review of the evidence, potential mechanisms, and          133. Strömberg, A. et al. CX3CL1–a macrophage                     156. Islam, M. R. et al. Exercise hormone irisin is a
+     implications for human health. Exerc. Sport. Sci. Rev.            chemoattractant induced by a single bout of exercise              critical regulator of cognitive function. Nat. Metab. 3,
+     47, 75–85 (2019).                                                 in human skeletal muscle. Am. J. Physiol. Regul.                  1058–1070 (2021).
+109. Allen, J. M. et al. Exercise alters gut microbiota                Integr. Comp. Physiol. 310, R297–R304 (2016).                157. Moon, H. Y. et al. Running-induced systemic
+     composition and function in lean and obese humans.           134. Rao, R. R. et al. Meteorin-like is a hormone that                 cathepsin B secretion is associated with memory
+     Med. Sci. Sports Exerc. 50, 747–757 (2018).                       regulates immune-adipose interactions to increase                 function. Cell Metab. 24, 332–340 (2016).
+110. Packer, N. & Hoffman-Goetz, L. Exercise training                  beige fat thermogenesis. Cell 157, 1279–1291                 158. Naito, A. T. et al. Complement C1q activates canonical
+     reduces inflammatory mediators in the intestinal                  (2014).                                                           Wnt signaling and promotes aging-related phenotypes.
+     tract of healthy older adult mice. Can. J. Aging 31,         135. Kang, K. et al. Adipocyte-derived Th2 cytokines and               Cell 149, 1298–1313 (2012).
+     161–171 (2012).                                                   myeloid PPARδ regulate macrophage polarization               159. Baker, S. K. et al. Blood-derived plasminogen drives
+111. van Wijck, K. et al. Exercise-induced splanchnic                  and insulin sensitivity. Cell Metab. 7, 485–495 (2008).           brain inflammation and plaque deposition in a mouse
+     hypoperfusion results in gut dysfunction in healthy          136. Knudsen, N. H. et al. Interleukin-13 drives metabolic             model of Alzheimer’s disease. Proc. Natl Acad. Sci.
+     men. PLoS ONE 6, e22366 (2011).                                   conditioning of muscle to endurance exercise. Science             USA 115, E9687–E9696 (2018).
+112. Meissner, M. et al. Voluntary wheel running increases             368, eaat3987 (2020).                                        160. Heinonen, A. et al. Bone mineral density of female
+     bile acid as well as cholesterol excretion and                    This paper showed that type 2 innate lymphoid                     athletes in different sports. Bone Min. 23, 1–14
+     decreases atherosclerosis in hypercholesterolemic                 cells (ILC2s) in skeletal muscle secrete IL-13                    (1993).
+     mice. Atherosclerosis 218, 323–329 (2011).                        to affect the metabolic adaptation to exercise               161. Bergmann, P. et al. Loading and skeletal development
+113. Jung, T. W. et al. BAIBA attenuates insulin resistance            training.                                                         and maintenance. J. Osteoporos. 2011, 786752
+     and inflammation induced by palmitate or a high fat          137. Brestoff, J. R. et al. Group 2 innate lymphoid cells              (2010).
+     diet via an AMPK–PPARδ-dependent pathway in mice.                 promote beiging of white adipose tissue and limit            162. Janssens, K., ten Dijke, P., Janssens, S. & Van Hul, W.
+     Diabetologia 58, 2096–2105 (2015).                                obesity. Nature 519, 242–246 (2015).                              Transforming growth factor-β1 to the bone. Endocr. Rev.
+114. Lee, Y. S. et al. The fractalkine/CX3CR1 system              138. Valenzuela, P. L. et al. Exercise benefits on Alzheimer’s         26, 743–774 (2005).
+     regulates β cell function and insulin secretion. Cell             disease: state-of-the-science. Ageing Res. Rev. 62,          163. Amrein, K. et al. Sclerostin and its association with
+     153, 413–425 (2013).                                              101108 (2020).                                                    physical activity, age, gender, body composition,
+115. Gerst, F. et al. Metabolic crosstalk between fatty           139. Etnier, J. L., Shih, C.-H. & Piepmeier, A. T. in                  and bone mineral content in healthy adults. J. Clin.
+     pancreas and fatty liver: effects on local inflammation           Exercise-Cognition Interaction (ed. McMorris, T.)                 Endocrinol. Metab. 97, 148–154 (2012).
+     and insulin secretion. Diabetologia 60, 2240–2251                 29–42 (Academic Press, 2016).                                164. Silverman, S. L. Sclerostin. J. Osteoporos. 2010,
+     (2017).                                                      140. Voss, M. W. et al. Exercise and hippocampal memory                941419 (2010).
+116. Tao, R. et al. Inactivating hepatic follistatin                   systems. Trends Cogn. Sci. 23, 318–333 (2019).               165. Li, G. et al. Muscle-bone crosstalk and potential
+     alleviates hyperglycemia. Nat. Med. 24, 1058–1069            141. Etnier, J. L. et al. The influence of physical fitness and        therapies for sarco-osteoporosis. J. Cell Biochem.
+     (2018).                                                           exercise upon cognitive functioning: a meta-analysis.             120, 14262–14273 (2019).
+117. Zhang, D., Xie, T. & Leung, P. S. Irisin ameliorates              J. Sport. Exerc. Psychol. 19, 249–277 (1997).                166. Luo, J., Liu, W., Feng, F. & Chen, L. Apelin/APJ system:
+     glucolipotoxicity-associated β-cell dysfunction and          142. Colcombe, S. & Kramer, A. F. Fitness effects on the               a novel therapeutic target for locomotor system
+     apoptosis via AMPK signaling and anti-inflammatory                cognitive function of older adults: a meta-analytic               diseases. Eur. J. Pharmacol. 906, 174286 (2021).
+     actions. Cell Physiol. Biochem. 51, 924–937 (2018).               study. Psychol. Sci. 14, 125–130 (2003).                     167. Kim, H. et al. Irisin mediates effects on bone and fat
+118. Lang Lehrskov, L. et al. Interleukin-6 delays gastric        143. Neylan, T. C. Memory and the medial temporal lobe.                via αV integrin receptors. Cell 175, 1756–1768.e17
+     emptying in humans with direct effects on glycemic                J. Neuropsychiatry Clin. Neurosci. 12, 103 (2000).                (2018).
+     control. Cell Metab. 27, 1201–1211.e3 (2018).                144. Erickson, K. I. et al. Exercise training increases size of   168. Harmer, D., Falank, C. & Reagan, M. R. Interleukin-6
+119. Ellingsgaard, H. et al. Interleukin-6 enhances                    hippocampus and improves memory. Proc. Natl Acad.                 interweaves the bone marrow microenvironment,
+     insulin secretion by increasing glucagon-like peptide-1           Sci. USA 108, 3017–3022 (2011).                                   bone loss, and multiple myeloma. Front. Endocrinol.
+     secretion from L cells and alpha cells. Nat. Med. 17,             This was a randomized controlled trial in older                   9, 788 (2019).
+     1481–1489 (2011).                                                 adults that showed that chronic exercise training            169. Lynes, M. D. et al. The cold-induced lipokine
+120. Carey, A. L. et al. Interleukin-6 increases                       increases hippocampal size and improves memory                    12,13-diHOME promotes fatty acid transport into
+     insulin-stimulated glucose disposal in humans and                 function.                                                         brown adipose tissue. Nat. Med. 23, 631–637
+     glucose uptake and fatty acid oxidation in vitro             145. Gaitán, J. M. et al. Effects of aerobic exercise training         (2017).
+     via AMP-activated protein kinase. Diabetes 55,                    on systemic biomarkers and cognition in late                 170. Neeper, S. A., Gómez-Pinilla, F., Choi, J. & Cotman, C.
+     2688–2697 (2006).                                                 middle-aged adults at risk for Alzheimer’s disease.               Exercise and brain neurotrophins. Nature 373, 109
+121. van Hall, G. et al. Interleukin-6 stimulates lipolysis and        Front. Endocrinol. 12, 660181 (2021).                             (1995).
+     fat oxidation in humans. J. Clin. Endocrinol. Metab.         146. Liu, P. Z. & Nusslock, R. Exercise-mediated                  171. Matthews, V. B. et al. Brain-derived neurotrophic
+     88, 3005–3010 (2003).                                             neurogenesis in the hippocampus via BDNF.                         factor is produced by skeletal muscle cells in
+122. Benatti, F. B. & Pedersen, B. K. Exercise as an                   Front. Neurosci. 12, 52 (2018).                                   response to contraction and enhances fat oxidation
+     anti-inflammatory therapy for rheumatic diseases–            147. Vivar, C. & van Praag, H. Running changes the brain:              via activation of AMP-activated protein kinase.
+     myokine regulation. Nat. Rev. Rheumatol. 11, 86–97                the long and the short of it. Physiology 32, 410–424              Diabetologia 52, 1409–1418 (2009).
+     (2015).                                                           (2017).                                                      172. Lin, Z. et al. Adiponectin mediates the metabolic
+123. Pedersen, L. et al. Voluntary running suppresses             148. Horowitz, A. M. et al. Blood factors transfer beneficial          effects of FGF21 on glucose homeostasis and
+     tumor growth through epinephrine- and IL-6-                       effects of exercise on neurogenesis and cognition to              insulin sensitivity in mice. Cell Metab. 17, 779–789
+     dependent NK cell mobilization and redistribution.                the aged brain. Science 369, 167–173 (2020).                      (2013).
+     Cell Metab. 23, 554–562 (2016).                                   This paper demonstrated that transfer of plasma              173. Chung, J. et al. HSP72 protects against obesity-
+124. Pedersen, B. K. & Toft, A. D. Effects of exercise on              from exercised aged mice to sedentary aged mice                   induced insulin resistance. Proc. Natl Acad. Sci. USA
+     lymphocytes and cytokines. Br. J. Sports Med. 34,                 can confer benefits on the ageing brain, including                105, 1739–1744 (2008).
+     246–251 (2000).                                                   improvements in cognitive function.                          174. Fujimoto, T. et al. Overexpression of interleukin-15
+125. Steensberg, A., Fischer, C. P., Keller, C., Møller, K. &     149. De Miguel, Z. et al. Exercise plasma boosts memory                exhibits improved glucose tolerance and promotes
+     Pedersen, B. K. IL-6 enhances plasma IL-1ra, IL-10,               and dampens brain inflammation via clusterin. Nature              GLUT4 translocation via AMP-activated protein kinase
+     and cortisol in humans. Am. J. Physiol. Endocrinol.               600, 494–499 (2021).                                              pathway in skeletal muscle. Biochem. Biophys. Res.
+     Metab. 285, E433–E437 (2003).                                     This paper demonstrated that plasma transfer                      Commun. 509, 994–1000 (2019).
+126. Dinarello, C. A. The interleukin-1 family: 10 years               from exercised young mice to sedentary young mice            175. Willkomm, L. et al. Lactate regulates myogenesis
+     of discovery. FASEB J. 8, 1314–1325 (1994).                       reduces brain inflammation and improves cognitive                 in C2C12 myoblasts in vitro. Stem Cell Res. 12,
+127. de Waal Malefyt, R., Abrams, J., Bennett, B.,                     function, supporting the potential of transferable                742–753 (2014).
+     Figdor, C. G. & de Vries, J. E. Interleukin 10 (IL-10)            anti-inflammatory exerkines in improving brain               176. Shimomura, M. et al. Decreased muscle-derived
+     inhibits cytokine synthesis by human monocytes: an                function.                                                         musclin by chronic resistance exercise is associated
+     autoregulatory role of IL-10 produced by monocytes.          150. Agudelo, L. Z. et al. Skeletal muscle PGC-1α1                     with improved insulin resistance in rats with type 2
+     J. Exp. Med. 174, 1209–1220 (1991).                               modulates kynurenine metabolism and mediates                      diabetes. Physiol. Rep. 9, e14823 (2021).
+128. Starkie, R., Ostrowski, S. R., Jauffred, S., Febbraio, M.         resilience to stress-induced depression. Cell 159,           177. Thomas, G. et al. Osteocrin, a novel bone-specific
+     & Pedersen, B. K. Exercise and IL-6 infusion inhibit              33–45 (2014).                                                     secreted protein that modulates the osteoblast
+     endotoxin-induced TNF-α production in humans.                151. Yau, S. Y. et al. Physical exercise-induced hippocampal           phenotype. J. Biol. Chem. 278, 50563–50571
+     FASEB J. 17, 884–886 (2003).                                      neurogenesis and antidepressant effects are                       (2003).
+     An important paper demonstrating that increasing                  mediated by the adipocyte hormone adiponectin.               178. Ataman, B. et al. Evolution of osteocrin as an
+     IL-6 either by exercise or by infusion blunts the                 Proc. Natl Acad. Sci. USA 111, 15810–15815                        activity-regulated factor in the primate brain. Nature
+     inflammatory effect of TNF.                                       (2014).                                                           539, 242–247 (2016).
+
+
+
+288 | May 2022 | volume 18                                                                                                                                        www.nature.com/nrendo
+
+                                                                                  0123456789();:
+                                                                                                                                                                  Reviews
+
+179. Palmer, R. M. J., Ferrige, A. G. & Moncada, S. Nitric            of age. J. Clin. Endocrinol. Metab. 100, 1654–1663          (DIABKINES, MP0021755 and Enterosys); B.K.P.:
+     oxide release accounts for the biological activity of            (2015).                                                     TrygFonden for the Centre for PA Research (CFAS); A.P.: Texas
+     endothelium-derived relaxing factor. Nature 327,            193. Bae, J. Y. Aerobic exercise increases meteorin-like         Health Resources Clinical Scholarship, Gilead Sciences
+     524–526 (1987).                                                  protein in muscle and adipose tissue of chronic             Research Scholar Program, NIH National Institute of Aging
+     This paper described the vasodilatory role of nitric             high-fat diet-induced obese mice. Biomed. Res. Int.         GEMSSTAR grant (1R03AG067960-01), and Applied
+     oxide.                                                           2018, 6283932 (2018).                                       Therapeutics; J.M.R.: NIH grant HL150327-01A1; H.v.P.:
+180. Davies, K. J. A., Quintanilha, A. T., Brooks, G. A. &       194. Pourranjbar, M., Arabnejad, N., Naderipour, K. &            NIH National Institute on Aging (NIA)/NIH IRP and the FDOH
+     Packer, L. Free radicals and tissue damage produced              Rafie, F. Effects of aerobic exercises on serum levels      Ed and Ethel Moore Alzheimer’s Disease Research program;
+     by exercise. Biochem. Biophys. Res. Commun. 107,                 of myonectin and insulin resistance in obese and            K.I.S.: NIH grants R01-HL138738 and R01-AG060542;
+     1198–1205 (1982).                                                overweight women. J. Med. Life 11, 381–386 (2018).          A.E.T.: National Institute for Health Research (NIHR)
+181. Aoi, W. et al. Secreted protein acidic and rich in          195. Nishizawa, H. et al. Musclin, a novel skeletal              Leicester Biomedical Research Centre; J.M.T.: NIH grant
+     cysteine (SPARC) improves glucose tolerance via                  muscle-derived secretory factor. J. Biol. Chem. 279,        1R01HL142879; S.T.: NIH grants U01AR071133;
+     AMP-activated protein kinase activation. FASEB J. 33,            19391–19395 (2004).                                         J.R.Z.: Swedish Research Council for Sport Science (P2018-
+     10551–10562 (2019).                                         196. Hjorth, M. et al. The effect of acute and long-term         0097), Swedish Research Council (Vetenskapsrådet) (2015-
+182. Li, Y. et al. Transforming growth factor-β1 induces              physical activity on extracellular matrix and serglycin     00165), and Novo Nordisk Foundation Center for Basic
+     the differentiation of myogenic cells into fibrotic cells        in human skeletal muscle. Physiol. Rep. 3, e12473           Metabolic Research at the University of Copenhagen
+     in injured skeletal muscle: a key event in muscle                (2015).                                                     (NNF18CC0034900); M.P.S.: NIH grants U24DK112348
+     fibrogenesis. Am. J. Pathol. 164, 1007–1019 (2004).         197. Gopal, S. Syndecans in Inflammation at a glance.            and U54DK102556. The views expressed in this manuscript
+183. Hunt, L. C., Upadhyay, A., Jazayeri, J. A., Tudor, E. M.         Front. Immunol. 11, 227 (2020).                             are those of the authors and do not necessarily represent the
+     & White, J. D. An anti-inflammatory role for leukemia       198. Breen, E. C. et al. Angiogenic growth factor mRNA           views of the National Heart, Lung, and Blood Institute;
+     inhibitory factor receptor signaling in regenerating             responses in muscle to a single bout of exercise.           the National Institutes of Health; or the U.S. Department of
+     skeletal muscle. Histochem. Cell Biol. 139, 13–34                J. Appl. Physiol. 81, 355–361 (1996).                       Health and Human Services.
+     (2013).                                                          This paper demonstrated that a single bout of
+184. Ito, Y. et al. Differential temporal expression                  exercise can increase VEGF1 and TGFβ1 expression            Author contributions
+     of mRNAs for ciliary neurotrophic factor (CNTF),                 in muscle to promote the angiogenic response to             The authors contributed equally to all aspects of the article.
+     leukemia inhibitory factor (LIF), interleukin-6 (IL-6),          exercise.
+     and their receptors (CNTFRα, LIFRβ, IL-6Rα and              199. Smith, J. K., Dykes, R., Douglas, J. E., Krishnaswamy, G.   Competing interests
+     gp130) in injured peripheral nerves. Brain Res. 793,             & Berk, S. Long-term exercise and atherogenic               L.S.C. has received a Dexcom investigator initiated grant
+     321–327 (1998).                                                  activity of blood mononuclear cells in persons at           (product only). C.J.L. is a consultant for PAIhealth on their
+185. Lee, S., Kolset, S. O., Birkeland, K. I., Drevon, C. A.          risk of developing ischemic heart disease. JAMA 281,        Personalized Activity Intelligence applications. A.P. is on the
+     & Reine, T. M. Acute exercise increases syndecan-1               1722–1727 (1999).                                           advisory board of Roche Diagnostics. M.P.S. is a cofounder
+     and -4 serum concentrations. Glycoconj. J. 36,              200. Klein, A. B. et al. Pharmacological but not                 and scientific advisory board member of Personalis,
+     113–125 (2019).                                                  physiological GDF15 suppresses feeding and the              SensOmics, Qbio, January, Filtricine, Protos, NiMo, Mirvie,
+186. Bouassida, A. et al. Review on leptin and                        motivation to exercise. Nat. Commun. 12, 1041               and an advisor for Genapsys. The other authors declare no
+     adiponectin responses and adaptations to acute                   (2021).                                                     competing interests.
+     and chronic exercise. Br. J. Sports Med. 44, 620–630        201. Boulé, N. G., Haddad, E., Kenny, G. P., Wells, G. A. &
+     (2010).                                                          Sigal, R. J. Effects of exercise on glycemic control and    Peer review information
+187. Barlow, J. P. et al. Beta-aminoisobutyric acid is                body mass in type 2 diabetes mellitus: a meta-analysis      Nature Reviews Endocrinology thanks P. Atherton who
+     released by contracting human skeletal muscle                    of controlled clinical trials. JAMA 286, 1218–1227          co-reviewed the manuscript with D. Wilkinson, M. Fukui and
+     and lowers insulin release from INS-1 832/3 cells                (2001).                                                     E. Ziemann for their contribution to the peer review of this
+     by mediating mitochondrial energy metabolism.               202. Pandey, A. et al. Metabolic effects of exercise training    work.
+     Metab. Open 7, 100053 (2020).                                    among fitness-nonresponsive patients with type 2
+188. Lin, W., Zhang, T., Zhou, Y., Zheng, J. & Lin, Z.                diabetes: the HART-D study. Diabetes Care 38,               Publisher’s note
+     Advances in biological functions and clinical                    1494–1501 (2015).                                           Springer Nature remains neutral with regard to jurisdictional
+     studies of FGF21. Diabetes Metab. Syndr. Obes. 14,                                                                           claims in published maps and institutional affiliations.
+     3281–3290 (2021).                                           Acknowledgements
+189. Lee, S. J. & McPherron, A. C. Regulation of myostatin       The authors thank A. Honkala (Stanford University) and           Supplementary information
+     activity and muscle growth. Proc. Natl Acad. Sci. USA       N. C. Oldenburg (University of Minnesota) for their assistance   The online version contains supplementary material available
+     98, 9306–9311 (2001).                                       with the manuscript. The workshop that set the foundation        at https://doi.org/10.1038/s41574-022-00641-2.
+190. Kleinert, M. et al. Exercise increases circulating          for this Review article was supported by the National Heart,
+     GDF15 in humans. Mol. Metab. 9, 187–191                     Lung, and Blood Institute (NHLBI) and the National Institute
+                                                                                                                                   Related links
+     (2018).                                                     of Diabetes and Digestive and Kidney Diseases, National
+                                                                                                                                   Molecular Transducers of Physical Activity Consortium:
+191. Andersson, H. et al. Differences in the inflammatory        Institutes of Health (NIH). The listed authors acknowledge the
+                                                                                                                                   https://www.motrpac.org/
+     plasma cytokine response following two elite female         support of the following grants. L.S.C.: NIH grant
+                                                                                                                                   Resilience: https://ods.od.nih.gov/Research/resilience.
+     soccer games separated by a 72-h recovery. Scand. J.        R01DK098203; B.H.G.: NIH grant U01AR071133; A.L.:
+                                                                                                                                   aspx#defining
+     Med. Sci. Sports 20, 740–747 (2010).                        Spanish Ministry of Economy and Competitiveness and
+192. Irving, B. A. et al. Combined training enhances skeletal    Fondos FEDER (PI18/00139); C.M.: European Federation of
+     muscle mitochondrial oxidative capacity independent         the Study of Diabetes/MSD, Occitanie Region/FEDER funds          © Springer Nature Limited 2022
+
+
+
+
+Nature Reviews | Endocrinology                                                                                                                             volume 18 | May 2022 | 289
+
+                                                                             0123456789();:
+

@@ -1,0 +1,4 @@
+"assay","feature_id","gene_symbol","entrez_gene","ensembl_gene","uniprot"
+"prot-ol","OID21368","CCN1","3491","ENSG00000142871","O00622"
+"prot-pr","O00622","CCN1","3491","ENSG00000142871","O00622"
+"transcript-rna-seq","ENSG00000142871.18","CCN1","3491","ENSG00000142871",NA

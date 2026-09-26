@@ -1,0 +1,136 @@
+{
+  "generated_utc": "2026-09-26T18:49:50.893855+00:00",
+  "gene": "CCN1",
+  "aliases_searched": [
+    "CCN1",
+    "CYR61"
+  ],
+  "study": "Acute Exercise in Human Sedentary Adults",
+  "dataset_id": "human-precovid-sed-adu",
+  "collection": "c2.0",
+  "package_version": "2.0.8",
+  "package_date": "2026-09-23",
+  "commit": "535b4044e7417413de471104c619120337602b77",
+  "analysis_type": "Reanalysis of published human differential-model summary statistics; no participant-level refit",
+  "alpha": 0.05,
+  "primary_rule": "Source BH-adjusted p < 0.05 in each tissue/assay/platform/contrast",
+  "BH_family_columns": [
+    "tissue",
+    "assay",
+    "platform",
+    "contrast"
+  ],
+  "BH_family_count": 44,
+  "BH_feature_contrast_rows": 426296,
+  "BH_max_abs_difference": 3.3673064336881e-13,
+  "Holm_control_CCN1_tests": 30,
+  "Holm_direct_CCN1_tests": 14,
+  "CCN1_source_contrasts": 105,
+  "inputs": {
+    "HUMAN_FEATURE_TO_GENE.rda": {
+      "sha256": "e346ebc8d0e2ab6e1f1790fee5b770683d0f9e3d81a6eed8c17eefe774eba7d2",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/HUMAN_FEATURE_TO_GENE.rda"
+    },
+    "BLOOD_PROT_OL_DA.rda": {
+      "sha256": "0744e323a0e929ab0e76f32ab2d4392b9afdd623b4196b65514f5ba2dfd6d1e1",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/BLOOD_PROT_OL_DA.rda"
+    },
+    "BLOOD_TRNSCRPT_DA.rda": {
+      "sha256": "240a00ecc6e41d5be8aca1322fb557fa253e9a3727b899092b219456e2878f3b",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/BLOOD_TRNSCRPT_DA.rda"
+    },
+    "MUSCLE_TRNSCRPT_DA.rda": {
+      "sha256": "b18c90fa1b2dbc449e30044b2a6801fa0c62e9fe8bee1217429b049690890e33",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/MUSCLE_TRNSCRPT_DA.rda"
+    },
+    "ADIPOSE_TRNSCRPT_DA.rda": {
+      "sha256": "e27627bf7954c666f27b2a0bebd0d291db3141776bbb9eaf49ac92d6e23f8f7b",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/ADIPOSE_TRNSCRPT_DA.rda"
+    },
+    "MUSCLE_PROT_PR_DA.rda": {
+      "sha256": "0e367db6dfb606ca0353881c763aa7302dcc17165382896a4dfcd22526bd65bc",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/MUSCLE_PROT_PR_DA.rda"
+    },
+    "MUSCLE_PROT_PH_DA.rda": {
+      "sha256": "d7dc682f0c1f40e4328be39352a11907ca4ea2ef1aeb9dc4a80ab7eb6df6ffba",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/MUSCLE_PROT_PH_DA.rda"
+    },
+    "ADIPOSE_PROT_PR_DA.rda": {
+      "sha256": "726a1f9d7efeb8173c4be15f4af8e8e3b88057cb9ee37eb00fef8e6b29933e54",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/ADIPOSE_PROT_PR_DA.rda"
+    },
+    "ADIPOSE_PROT_PH_DA.rda": {
+      "sha256": "ac7233e74eb423ec4cb58b062ea135aec17a079c43fd916d22635925bfee7795",
+      "url": "https://raw.githubusercontent.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/535b4044e7417413de471104c619120337602b77/data/ADIPOSE_PROT_PH_DA.rda"
+    }
+  },
+  "source_models": [
+    {
+      "source_object": "ADIPOSE_TRNSCRPT_DA",
+      "full_model": "~ 0 + group_timepoint +  Batch + BMI + calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid)"
+    },
+    {
+      "source_object": "ADIPOSE_PROT_PR_DA",
+      "full_model": "~ 0 + group_timepoint +  BMI + calculatedAge + Sex + (1 | pid)"
+    },
+    {
+      "source_object": "MUSCLE_TRNSCRPT_DA",
+      "full_model": "~ 0 + group_timepoint +  Batch + BMI + calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid)"
+    },
+    {
+      "source_object": "MUSCLE_PROT_PR_DA",
+      "full_model": "~ 0 + group_timepoint +  BMI + calculatedAge + Sex + (1 | pid)"
+    },
+    {
+      "source_object": "BLOOD_PROT_OL_DA",
+      "full_model": "~ 0 + group_timepoint +  BMI + calculatedAge + Sex + (1 | pid)"
+    }
+  ],
+  "software": {
+    "python": "3.9.15",
+    "numpy": "1.26.4",
+    "pandas": "2.2.3",
+    "matplotlib": "3.8.4",
+    "nbformat": "5.7.0",
+    "nbclient": "0.5.13",
+    "R": "Rscript (R) version 4.5.1 (2025-06-13)"
+  },
+  "literature_reviewed": [
+    "https://www.ncbi.nlm.nih.gov/gene/3491",
+    "https://pubmed.ncbi.nlm.nih.gov/20526329/",
+    "https://pubmed.ncbi.nlm.nih.gov/29924476/",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC10273100/",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC11097549/",
+    "https://pubmed.ncbi.nlm.nih.gov/17699553/",
+    "https://pmc.ncbi.nlm.nih.gov/articles/PMC13184684/"
+  ],
+  "scripts": {
+    "analysis/extract_ccn1.R": "b4dcbfea58d5c3ad1277a2d6916c7de71e343d7198801d1ae00147332aa377e6",
+    "analysis/build_ccn1_notebook.py": "670220c02dc328240ea821b3417f46670c5568cc2e80d4fb7c832fb6f936d32b",
+    "analysis/run_notebook.py": "fdd818234bf3e3b959219d975aa9a05eaf42ef5a5ec56ee8d2e613625f613fea"
+  },
+  "outputs": {
+    "FINDINGS.md": "e6240da097bda6b85a32cc94164284a3f6bcbb812c47397abd7ad952a0378e97",
+    "assay_background.csv.gz": "514c6c802ab30876e35947ecc0319a89ea44d2bc21a1a6705d4a73fee422e0c3",
+    "bh_audit.csv": "55d1447fc84a991ea139bb7efc5e2295760baa0fac0db30ec5c0d58f31074fc3",
+    "ccn1_assay_coverage.csv": "cfa23f773cec446bfd6da320b659ebad0a55ee3df478e339ec6045ff4acfbfd4",
+    "ccn1_direct_EE_RE.csv": "ad290de102af3c375529ff1006bcd10d09db5f764effd2670df7ca48655e7df8",
+    "ccn1_direct_EE_RE.png": "4b6fcbea19c466d824ea386c90f6657dcfdeb961de737e98a383ffd772ddd36c",
+    "ccn1_direct_EE_RE.svg": "80a9dedd4ee8dc4d56ab26549cb7f45320fdf2c4dd0f5b875e7002a6560f55e4",
+    "ccn1_feature_mapping.csv": "b1f0d98af721c02e3b6680fd86036b0c80f839aa6c6e4089b3a655d9c57868e6",
+    "ccn1_other_mapping_not_analyzed.csv": "3a8b2f280baca0c31abfb0cf499b18a43a2e9debe001ec5eb31d2268b75e3241",
+    "ccn1_plasma_primary.csv": "ac719d8e1c63c575472cdfa1e36ff7f5e380b2cd9238a7e5e716e22cd8c95a73",
+    "ccn1_plasma_timecourse.png": "aa10a361222feee4d7cb2ad1544b1315bf995b68446ca41ab598be0a93cce949",
+    "ccn1_plasma_timecourse.svg": "aa42874043dd5dea7bd6ca5a95ef76eb06845c351575763dd18b00682f0a15aa",
+    "ccn1_primary_all_layers.csv": "b7c80ab530e039e27557df284064391fada41e2ac3c682054706c78826e751c5",
+    "ccn1_rna_primary.csv": "4df3134154b2af9fe19ce6705aaca4bd7bc2efa552dfafb8d3118581636bb2be",
+    "ccn1_rna_timecourse.png": "1b518805f0915c0818bee7b05e549801f5323219653d678032d9dd9ab3fd71cf",
+    "ccn1_rna_timecourse.svg": "875508f8cc838694c1b12a709e8201dedd16a7fd3574d55323b6d8056c1a4b9f",
+    "ccn1_source_contrasts.csv": "55793cd53ec9ab822df5c4fe8bb2bd365b5d286650119358c0015807c9563826",
+    "ccn1_tissue_protein_primary.csv": "58d167c5b19d901cc8fa93fbdd0cd82288720e0789546f3806bd2d3299f9b8ac",
+    "ccn1_tissue_protein_timecourse.png": "609ffb8746e6d64a82fe48bf521a286296ceacbaac3882f55ff03e073f147e6a",
+    "ccn1_tissue_protein_timecourse.svg": "060f81fa4b3a0e156b635a0fa55aa1330a3aec06d87f23f9dff2bdee9ef5b2f1",
+    "ccn1_volcano_context.png": "2f7ab8af86b56bb0ff2425ee866147afcfb048535a1db0871d5ace23f5f9181b",
+    "ccn1_volcano_context.svg": "32a6cfa1dc106be8ee1e9a6384a8faf31d4aec276982ad554bde1d1c9800f5a6"
+  }
+}

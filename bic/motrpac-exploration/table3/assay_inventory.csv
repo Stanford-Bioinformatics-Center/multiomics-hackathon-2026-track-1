@@ -1,0 +1,14 @@
+"object","tissue","assay","tested_features","rows"
+"BLOOD_TRNSCRPT_DA","blood","transcript-rna-seq",20526,287364
+"BLOOD_PROT_OL_DA","blood","prot-ol",1417,19838
+"BLOOD_METAB_DA","blood","metab",1143,16002
+"BLOOD_METAB_T_CLINICAL_DA","blood","metab",6,84
+"BLOOD_PROT_CLINICAL_DA","blood","prot-clinical",3,42
+"MUSCLE_TRNSCRPT_DA","muscle","transcript-rna-seq",16509,148581
+"MUSCLE_PROT_PR_DA","muscle","prot-pr",6211,55899
+"MUSCLE_PROT_PH_DA","muscle","prot-ph",18164,163476
+"MUSCLE_METAB_DA","muscle","metab",891,8019
+"ADIPOSE_TRNSCRPT_DA","adipose","transcript-rna-seq",20090,180810
+"ADIPOSE_PROT_PR_DA","adipose","prot-pr",7056,21168
+"ADIPOSE_PROT_PH_DA","adipose","prot-ph",8713,26139
+"ADIPOSE_METAB_DA","adipose","metab",667,6003
