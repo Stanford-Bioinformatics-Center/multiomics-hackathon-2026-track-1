@@ -154,6 +154,7 @@ VEC <- rbind(vec_tab("01_nodes_EE.csv", "01_nodes_RE.csv", "gene_symbol"), vec_t
 NSTAT <- fread(file.path(OUT, "17_node_cell_stats.csv"))
 PHS <- fread(file.path(OUT, "17_phospho_site_stats.csv"))
 MODS <- fread(file.path(OUT, "17_modules.csv")); CAM <- fread(file.path(OUT, "17_module_camera.csv"))
+MNAME <- fread(file.path(OUT, "17_module_names.csv")); MORA <- fread(file.path(OUT, "17_module_ora.csv"))
 KIN <- fread(file.path(OUT, "17_kinase_edges.csv")); ANN <- fread(file.path(OUT, "17_glygen_protein_annotation.csv"))
 for (f in c("17_node_cell_stats.csv", "17_phospho_site_stats.csv", "17_modules.csv", "17_module_camera.csv", "17_kinase_edges.csv"))
   if (!file.exists(file.path(OUT, f))) stop("run network/17_filter_stats.R first (", f, " missing)")
@@ -186,7 +187,9 @@ page_data <- function(P, net, types) {
   # modules of this network with their CAMERA-PR results: [{id, members, cam: {"tissue|ome|arm|time": [z, dir, fdr, n]}}]
   md <- MODS[network == net & node %in% nodes]; cm <- CAM[network == net]
   mods <- unname(lapply(split(md, md$module), function(x) { cc <- cm[module == x$module[1]]
-    list(id = x$module[1], members = I(x$node), n_prot = sum(x$node_type == "protein"), n_met = sum(x$node_type == "metabolite"),
+    top <- MORA[module == x$module[1] & adj_p_value < 0.05 & database != "CELLMARKER"][order(adj_p_value)][seq_len(min(.N, 5))]
+    list(id = x$module[1], name = MNAME[module == x$module[1], name], members = I(x$node), n_prot = sum(x$node_type == "protein"), n_met = sum(x$node_type == "metabolite"),
+         ora = unname(lapply(seq_len(nrow(top)), function(i) list(top$set_label[i], signif(top$adj_p_value[i], 2), top$overlap_n[i], gsub(";", ", ", top$overlap[i])))),
          cam = setNames(lapply(seq_len(nrow(cc)), function(i) list(signif(cc$z[i], 3), cc$direction[i], signif(cc$fdr[i], 3), cc$n_members_tested[i])),
                         paste(cc$tissue, cc$ome, cc$arm, cc$time, sep = "|"))) }))
   # GlyGen annotations: protein -> {field: count}
@@ -213,7 +216,10 @@ function(el, x, cfg) {
   D.omes.forEach(function (o) { st.omes[o] = 1; }); D.types.forEach(function (t) { st.typeOn[t] = true; });
   var DASH = { solid: false, neg: [5, 5], mm: [10, 5], mp: [2, 4], kin: [3, 3] };
   var TYPE_COL = {"protein - protein": "#8C8C8C", "metabolite - metabolite": "#1B7837", "metabolite - protein": "#8C510A"};
-  var RESP = ["#6A3D9A", "#FFFFFF", "#E66100"], DIFF = ["#2166AC", "#F2F2F2", "#B2182B"], SEQ = ["#F7FCF5", "#74C476", "#00441B"];
+  var RESP = ["#6A3D9A", "#FFFFFF", "#E66100"], DIFF = ["#2166AC", "#F2F2F2", "#B2182B"];
+  // discrete bins for GlyGen counts: [from, to, label, colour] (ColorBrewer Greens)
+  var BINS = [[0, 0, "0", "#FFFFFF"], [1, 1, "1", "#E5F5E0"], [2, 4, "2–4", "#C7E9C0"], [5, 9, "5–9", "#A1D99B"], [10, 24, "10–24", "#74C476"],
+              [25, 99, "25–99", "#31A354"], [100, 1e12, "100 or more", "#006D2C"]];
   var ARMLAB = {EE: "endurance vs control", RE: "resistance vs control", ER: "endurance minus resistance"};
   // ---------- small helpers ----------
   function hex(c) { return [parseInt(c.substr(1, 2), 16), parseInt(c.substr(3, 2), 16), parseInt(c.substr(5, 2), 16)]; }
@@ -286,6 +292,7 @@ function(el, x, cfg) {
        "<span class='hk-sep'></span><button class='hk-reset'>Reset</button></div>";
   bar.innerHTML = h;
   var legend = document.createElement("div"); legend.className = "hk-legend";
+  var legendBox = document.createElement("div"); legendBox.className = "hk-legbox"; el.style.position = "relative"; el.appendChild(legendBox);
   var panel = document.createElement("div"); panel.className = "hk-panel";
   var help = document.createElement("div"); help.className = "hk-help";
   help.innerHTML = "Filters recompute node colours, significance outlines and edge weights (dot products over the selected dimensions only) · click a node to highlight it and its neighbours, empty space to clear · hover for values" + (S.classes.length ? " · double-click a collapsed class to open it" : "");
@@ -335,15 +342,19 @@ function(el, x, cfg) {
     var vlim = q95(vals), vmax = Math.max.apply(null, vals.concat([1]));
     var smax = Math.max.apply(null, Object.keys(strength).map(function (k) { return strength[k]; }).concat([1e-9]));
     var keep = null; if (st.focus) { keep = {}; st.focus.forEach(function (i) { keep[i] = true; net.getConnectedNodes(i).forEach(function (j) { keep[j] = true; }); }); }
-    var thr = st.thr, fset = {}; if (st.focus) st.focus.forEach(function (i) { fset[i] = true; });
+    var thr = st.thr, fset = {}, tally = {}; if (st.focus) st.focus.forEach(function (i) { fset[i] = true; });
     // 3. node styles + tooltips
     nodes.update(nAll.map(function (n) {
       var v = val[n.id], col = "#E6E6E6", border = "#555555", bw = 0.8, sc = sigCells(n.id), sig = sc.filter(function (r) { return r[4] < thr; });
       if (st.colour === "response") { if (v !== null) col = div3(v, vlim, st.arm === "ER" ? DIFF : RESP); if (sig.length) { border = "#000000"; bw = 3; } }
       else if (st.colour === "phospho") { if (v === null) col = "#E6E6E6"; else { var up = v.filter(function (r) { return r[4] < thr && r[2] > 0; }).length, dn = v.filter(function (r) { return r[4] < thr && r[2] < 0; }).length;
           col = up && dn ? "#8C510A" : up ? "#E66100" : dn ? "#5E3C99" : "#FFFFFF"; if (up || dn) { border = "#000000"; bw = 2; } } }
-      else { if (v === null || v === undefined) col = "#E6E6E6"; else { var bin = D.annFields.filter(function (f) { return "ann:" + f.col === st.colour; })[0].binary;
-          col = bin ? (v > 0 ? "#1B9E77" : "#FFFFFF") : (v > 0 ? seq3(Math.log1p(v) / Math.log1p(vmax), SEQ) : "#FFFFFF"); } }
+      else { var fld = D.annFields.filter(function (f) { return "ann:" + f.col === st.colour; })[0];
+        if (v === null || v === undefined) { col = "#E6E6E6"; tally["no record"] = (tally["no record"] || 0) + 1; }
+        else if (fld.binary) { col = v > 0 ? "#1B9E77" : "#FFFFFF"; var lb = v > 0 ? "yes" : "no"; tally[lb] = (tally[lb] || 0) + 1; }
+        else { var bn = BINS.filter(function (b) { return v >= b[0] && v <= b[1]; })[0]; col = bn[3]; tally[bn[2]] = (tally[bn[2]] || 0) + 1; } }
+      if (st.colour === "phospho") { var pl = v === null ? "not measured" : col === "#E66100" ? "up" : col === "#5E3C99" ? "down" : col === "#8C510A" ? "up and down" : "measured, none respond"; tally[pl] = (tally[pl] || 0) + 1; }
+      if (st.colour === "response") { var rl = v === null ? "no data in selection" : sig.length ? "significant" : "not significant"; tally[rl] = (tally[rl] || 0) + 1; }
       var onF = !keep || keep[n.id], size = 6 + 16 * Math.sqrt((strength[n.id] || 0) / smax);
       // tooltip
       var t = "<b>" + esc(n.id) + "</b> (" + (n.shape === "triangle" ? "metabolite · " + esc(n.group) : "protein") + ")<br><i>" + ARMLAB[st.arm] + ", selection</i>: mean normalised response " + f3(response(n.id));
@@ -371,20 +382,35 @@ function(el, x, cfg) {
       return { id: e.id, hidden: !st.kinase, width: any ? 3 : 1.6, color: { color: any ? "#D7301F" : "#111111", highlight: "#D7301F" },
                title: "<b>" + esc(k.kinase) + " → " + esc(k.substrate) + "</b> (kinase → substrate, GlyGen: " + esc(k.source) + ")<br>sites: " + esc(k.sites) +
                       "<br>MoTrPAC at these sites (" + ARMLAB[st.arm] + "): " + (rtxt.length ? "<br>" + rtxt.join("<br>") : "not measured") + (any ? "<br><b>a substrate site responds (red edge)</b>" : "") }; }));
-    // 5. legend
-    var L = "<b>" + ARMLAB[st.arm] + "</b> · " + on(st.omes).map(function (o) { return OMES[o]; }).join(", ") + " · " + on(st.tis).join(", ") + " · " + on(st.times).join(", ") + " &nbsp;|&nbsp; ";
-    if (st.colour === "response") L += "node fill = mean normalised response " + grad(st.arm === "ER" ? DIFF : RESP) + " ±" + f3(vlim) + " · <b>black outline</b> = adj. p &lt; " + thr + " in a selected cell";
-    else if (st.colour === "phospho") L += "node fill = MoTrPAC phosphosites responding in selection (adj. p &lt; " + thr + "): <span class='hk-sw2' style='background:#E66100'></span>up <span class='hk-sw2' style='background:#5E3C99'></span>down <span class='hk-sw2' style='background:#8C510A'></span>both <span class='hk-sw2' style='background:#FFFFFF'></span>measured, none <span class='hk-sw2' style='background:#E6E6E6'></span>not measured";
-    else { var fl = D.annFields.filter(function (f) { return "ann:" + f.col === st.colour; })[0]; L += "node fill = " + esc(fl.label) + (fl.binary ? ": <span class='hk-sw2' style='background:#1B9E77'></span>yes <span class='hk-sw2' style='background:#FFFFFF'></span>no" : " " + grad(SEQ) + " 0 … " + vmax + " (log scale; white = 0; grey = no record / metabolite)"); }
-    L += " &nbsp;|&nbsp; node size = strength over shown edges · edges: " + (st.arm === "ER" ? "colour = w_EE − w_RE " + grad(DIFF) + " ±" + f3(lim) : "colour = type, dashed = negative") + ", width = |w| (limit ±" + f3(lim) + ")" + (st.kinase ? " · <b>arrows</b> = kinase → substrate (red = a substrate site responds)" : "");
-    legend.innerHTML = L;
+    // 5. legend: rebuilt for whatever is shown (node colour mode, outline, edges, sizes, arrows), with counts
+    var sw = function (c, lab, n, shape) { return "<div class='hk-row'><span class='hk-swatch' style='background:" + c + (shape === "ring" ? ";border:3px solid #000;background:#FFF" : "") + "'></span>" + lab + (n !== undefined ? " <span class='hk-n'>(" + n + ")</span>" : "") + "</div>"; };
+    var bar3 = function (pal, lo, mid, hi, loLab, hiLab) { return "<div class='hk-bar3' style='background:linear-gradient(90deg," + pal.join(",") + ")'></div><div class='hk-ticks'><span>" + lo + "</span><span>" + mid + "</span><span>" + hi + "</span></div><div class='hk-ticks hk-sub'><span>" + loLab + "</span><span>" + hiLab + "</span></div>"; };
+    var G = "<div class='hk-lt'>Nodes</div>";
+    if (st.colour === "response") {
+      G += "<div class='hk-ls'>fill = mean normalised response (" + ARMLAB[st.arm] + ", selection)</div>" + (st.arm === "ER" ? bar3(DIFF, "−" + f3(vlim), "0", "+" + f3(vlim), "higher in resistance", "higher in endurance") : bar3(RESP, "−" + f3(vlim), "0", "+" + f3(vlim), "down vs control", "up vs control")) +
+           sw("#FFF", "black outline: adj. p &lt; " + thr + " in a selected cell", tally["significant"] || 0, "ring") + sw("#E6E6E6", "grey: no data in the selection", tally["no data in selection"] || 0);
+    } else if (st.colour === "phospho") {
+      G += "<div class='hk-ls'>fill = MoTrPAC phosphosites responding (adj. p &lt; " + thr + ", " + ARMLAB[st.arm] + ", selected muscle / adipose times)</div>" +
+           [["#E66100", "up"], ["#5E3C99", "down"], ["#8C510A", "up and down"], ["#FFFFFF", "measured, none respond"], ["#E6E6E6", "not measured"]].map(function (x) { return sw(x[0], x[1], tally[x[1]] || 0); }).join("");
+    } else { var fl = D.annFields.filter(function (f) { return "ann:" + f.col === st.colour; })[0];
+      G += "<div class='hk-ls'>fill = " + esc(fl.label) + " (per protein)</div>" + (fl.binary ? sw("#1B9E77", "yes", tally["yes"] || 0) + sw("#FFFFFF", "no", tally["no"] || 0)
+           : BINS.map(function (b) { return sw(b[3], b[2], tally[b[2]] || 0); }).join("")) + sw("#E6E6E6", "no record (incl. metabolites)", tally["no record"] || 0);
+    }
+    G += "<div class='hk-ls'>circle = protein, triangle = metabolite; size = strength (sum |w|) over the shown edges</div>";
+    G += "<div class='hk-lt'>Edges</div>" + (st.arm === "ER" ? "<div class='hk-ls'>colour = w_EE − w_RE; width = |difference|</div>" + bar3(["#2166AC", "#D9D9D9", "#B2182B"], "−" + f3(lim), "0", "+" + f3(lim), "higher in resistance", "higher in endurance") + "<div class='hk-ls'>solid = protein–protein, long dash = metabolite–metabolite, dotted = metabolite–protein</div>"
+         : "<div class='hk-ls'>width = |w| (up to " + f3(lim) + "); dashed = negative weight</div>" + D.types.map(function (t) { return "<div class='hk-row'><span class='hk-line' style='background:" + TYPE_COL[t] + "'></span>" + t + "</div>"; }).join(""));
+    if (st.kinase) G += "<div class='hk-row'><span class='hk-line' style='background:#111'></span>→ kinase → substrate (GlyGen)</div><div class='hk-row'><span class='hk-line' style='background:#D7301F'></span>→ a substrate site responds in the selection</div>";
+    legendBox.innerHTML = G;
+    legend.innerHTML = "<b>Selection</b>: " + ARMLAB[st.arm] + " · " + on(st.omes).map(function (o) { return OMES[o]; }).join(", ") + " · " + on(st.tis).join(", ") + " · " + on(st.times).join(", ") + " · adj. p &lt; " + thr;
     // 6. modules: significance for the selection, and the selected module's table
     var ms = q(".hk-mod"), cur = ms.value;
     ms.innerHTML = "<option value=''>none</option>" + D.mods.map(function (m) { var best = modCells(m).reduce(function (b, r) { return (!b || r[5] < b[5]) ? r : b; }, null);
-      return "<option value='" + m.id + "'" + (m.id === cur ? " selected" : "") + ">" + m.id + " (" + m.n_prot + " prot, " + m.n_met + " met)" + (best && best[5] < thr ? " ★ FDR " + f3(best[5]) : "") + "</option>"; }).join("");
+      return "<option value='" + m.id + "'" + (m.id === cur ? " selected" : "") + ">" + esc(m.name) + " (" + m.n_prot + " prot, " + m.n_met + " met)" + (best && best[5] < thr ? " ★ FDR " + f3(best[5]) : "") + "</option>"; }).join("");
     var M = D.mods.filter(function (m) { return m.id === cur; })[0];
     if (M) { var rows = modCells(M);
-      panel.innerHTML = "<b>" + M.id + "</b>: " + M.members.length + " nodes · CAMERA-PR (MoTrPAC run_cameraPR; competitive, within each ome) for " + ARMLAB[st.arm] + " in the selection:" +
+      panel.innerHTML = "<b>" + esc(M.name) + "</b> (" + M.id + "): " + M.members.length + " nodes<br><u>Pathways over-represented among its members</u> (ORA vs our 471 genes / 450 metabolites, BH adj. p): " +
+        (M.ora.length ? "<ul class='hk-ul'>" + M.ora.map(function (o) { return "<li>" + esc(o[0]) + " — adj. p " + f3(o[1]) + ", " + o[2] + " members (" + esc(o[3]) + ")</li>"; }).join("") + "</ul>" : " none significant.<br>") +
+        "<u>Exercise response of the module</u> — CAMERA-PR (MoTrPAC run_cameraPR; competitive, within each ome) for " + ARMLAB[st.arm] + " in the selection:" +
         (rows.length ? "<table><tr><th>tissue</th><th>ome</th><th>time</th><th>members tested</th><th>direction</th><th>z</th><th>FDR</th></tr>" + rows.map(function (r) { return "<tr" + (r[5] < thr ? " class='hk-sig'" : "") + "><td>" + r[0] + "</td><td>" + OMES[r[1]] + "</td><td>" + r[2] + "</td><td>" + r[6] + "</td><td>" + r[4] + "</td><td>" + f3(r[3]) + "</td><td>" + f3(r[5]) + "</td></tr>"; }).join("") + "</table>" : " no tested cell (fewer than 5 members measured in the selected omes / tissues).");
     } else panel.innerHTML = "";
     bar.querySelectorAll(".hk-arm").forEach(function (b) { b.checked = b.value === st.arm; });
@@ -430,6 +456,12 @@ CSS <- tags$style(HTML("
   .hk-panel td, .hk-panel th { border: 1px solid #DDD; padding: 2px 8px; text-align: left; } .hk-panel tr.hk-sig td { font-weight: bold; background: #FFF4D6; }
   .hk-grad { display: inline-block; width: 80px; height: 9px; vertical-align: middle; border: 1px solid #999; margin: 0 4px; }
   .hk-sw2 { display: inline-block; width: 11px; height: 11px; vertical-align: middle; border: 1px solid #777; margin: 0 3px 0 6px; border-radius: 6px; }
+  .hk-legbox { position: absolute; top: 58px; right: 8px; width: 265px; max-height: 640px; overflow-y: auto; background: rgba(255,255,255,0.94); border: 1px solid #BBB; border-radius: 4px; padding: 6px 9px; font-size: 11px; z-index: 5; }
+  .hk-lt { font-weight: bold; font-size: 12px; margin-top: 4px; } .hk-ls { color: #444; margin: 2px 0; } .hk-row { margin: 1px 0; } .hk-n { color: #777; }
+  .hk-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid #777; border-radius: 7px; vertical-align: middle; margin-right: 6px; box-sizing: border-box; }
+  .hk-line { display: inline-block; width: 22px; height: 3px; vertical-align: middle; margin-right: 6px; }
+  .hk-bar3 { height: 10px; border: 1px solid #999; margin-top: 3px; } .hk-ticks { display: flex; justify-content: space-between; font-size: 10px; color: #333; } .hk-sub { color: #777; }
+  .hk-ul { margin: 2px 0 4px 18px; padding: 0; }
   div.vis-tooltip { font-family: Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.4; max-width: 460px; white-space: normal; }
 "))
 

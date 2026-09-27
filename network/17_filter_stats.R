@@ -23,6 +23,9 @@
 #      metabolites (tested in metabolomics); a part is tested if at least 5 members, and at least 70% of them
 #      (MoTrPAC's default), are measured in that ome; competitive test against all features of that ome and
 #      tissue; FDR across the modules of one network within each cell.
+#   5. Module names: ORA (hypergeometric, MoTrPAC run_ORA) of each module's genes against our 471 genes and of its
+#      metabolites against our 450 metabolites; a module is named after its most significant pathway (adj. p < 0.05;
+#      Reactome, KEGG, WikiPathways, PID, BioCarta, GO BP, MitoCarta) and, if significant, its RefMet class.
 #   4. Annotation layers: MoTrPAC phosphosites of our proteins (logFC / adj. p per tissue x arm x time, with
 #      GlyGen knowledge per site: known site, kinase, O-GlcNAc crosstalk), GlyGen kinase -> substrate edges between
 #      our proteins, and GlyGen per-protein annotation counts (needs network/inventory and step 16).
@@ -47,6 +50,9 @@
 #   17_module_camera.csv     network, module, tissue, ome, arm, time, n_members_tested, direction, z, p, fdr
 #   17_phospho_site_stats.csv   protein, feature_id, site, tissue, arm, time, logFC, adj_p, known_in_glygen, kinases, crosstalk
 #   17_kinase_edges.csv          kinase, substrate, sites, n_sites, source (GlyGen kinase annotations; both among the 471)
+#   17_module_ora.csv        module x gene set: ORA against our universe (471 genes / 450 metabolites), overlap
+#                            members, p, BH adj. p (MoTrPAC run_ORA; pathway, GO, MitoCarta, CellMarker, RefMet sets)
+#   17_module_names.csv      one readable name per module (most significant pathway / metabolite class, or hubs)
 #   17_glygen_protein_annotation.csv   one row per protein: GlyGen counts (phosphosites, glycosylation, mutations,
 #                                disease, pathways, ...) and crosstalk residues
 #
@@ -109,6 +115,7 @@ M <- rbindlist(lapply(TISSUES, function(t) {
 S <- rbind(G[, .(node, node_type, tissue, ome, arm, time, logFC, adj_p)], M[, .(node, node_type, tissue, ome, arm, time, logFC, adj_p)])
 # Safety check: the EE / RE logFCs equal the step 1 / 1b raw values used for the embeddings.
 chk <- function(file, id) { r <- fread(file.path(OUT, file)); d <- setdiff(names(r), c("entrez_gene", "gene_symbol", "metabolite"))
+  for (k in d) set(r, j = k, value = as.numeric(r[[k]]))   # always-empty columns are read as logical
   melt(r[, c(id, d), with = FALSE], id.vars = id, variable.name = "dim", value.name = "raw", na.rm = TRUE) }
 rawE <- rbind(chk("01_nodes_EE_raw_logFC.csv", "gene_symbol")[, node := gene_symbol][, gene_symbol := NULL],
               chk("01b_metab_nodes_EE_raw_logFC.csv", "metabolite")[, node := metabolite][, metabolite := NULL])
@@ -207,3 +214,70 @@ ANN <- P[, .(protein = gene_symbol,
 ANN <- merge(ANN, xt[, .(crosstalk_residues = .N), by = .(protein)], by = "protein", all.x = TRUE)[is.na(crosstalk_residues), crosstalk_residues := 0L]
 fwrite(ANN, file.path(OUT, "17_glygen_protein_annotation.csv"))
 message(sprintf("GlyGen annotations: %d proteins x %d fields", nrow(ANN), ncol(ANN) - 1))
+
+# ---- 5. module names: over-representation of pathways among each module's members ---------------------------
+# Modules are gene / metabolite LISTS drawn from our 471-gene / 450-metabolite universe, so the right test is
+# over-representation (hypergeometric ORA; GSEA needs a ranking), against THAT universe (not the genome), with
+# MoTrPAC's run_ORA() and gene-set collections. MoTrPAC's 70% set-coverage rule is meant for genome-wide
+# backgrounds and would remove almost every set here, so it is off (overlap_cutoff = 0); sets need >= 5 members
+# in the universe (min_size) and >= 2 module members to name a module. BH within each collection and module.
+ALPHA_ORA <- 0.05
+PATHWAY_DB <- c("REACTOME", "KEGG_MEDICUS", "WP", "PID", "BIOCARTA", "GOBP", "MITOCARTA")   # used for names
+ORA_DB <- c(PATHWAY_DB, "GOCC", "GOMF", "CELLMARKER")                                     # also reported
+universe_genes <- genes$gene_symbol
+universe_mets <- unique(M$node)
+ora_one <- function(members, background, db) {
+  members <- intersect(members, background); if (length(members) < 3) return(NULL)
+  r <- tryCatch(as.data.table(MotrpacHumanPreSuspensionAnalysis::run_ORA(input = members, background = background, database = db,
+                                                                          min_size = MIN_SIZE, overlap_cutoff = 0)), error = function(e) NULL)
+  if (is.null(r) || !nrow(r)) return(NULL)
+  r[set_size_in_input >= 2]
+}
+ORA <- rbindlist(lapply(split(MOD, MOD$module), function(m) {
+  g <- ora_one(m[node_type == "protein", node], universe_genes, ORA_DB)
+  k <- ora_one(m[node_type == "metabolite", node], universe_mets, "REFMET")
+  r <- rbindlist(list(g, k), fill = TRUE); if (!nrow(r)) return(NULL)
+  r[, `:=`(network = m$network[1], module = m$module[1])]
+}), fill = TRUE)
+# the module members found in each set (for tooltips / checking)
+idx <- MotrpacHumanPreSuspensionAnalysis::MOLECULAR_SIGNATURES
+idx <- unlist(unname(idx[c(ORA_DB, "REFMET")]), recursive = FALSE)
+ORA[, overlap := mapply(function(s, mo) paste(sort(intersect(idx[[s]], MOD[module == mo, node])), collapse = ";"), as.character(set), module)]
+# readable set names: drop the collection prefix, sentence case, keep acronyms / gene symbols, add the source
+DB_LABEL <- c(REACTOME = "Reactome", KEGG_MEDICUS = "KEGG", WP = "WikiPathways", PID = "PID", BIOCARTA = "BioCarta", GOBP = "GO BP",
+              GOCC = "GO CC", GOMF = "GO MF", MITOCARTA = "MitoCarta", CELLMARKER = "CellMarker", REFMET = "RefMet")
+STOP <- c("of", "by", "to", "the", "in", "and", "via", "for", "on", "a", "an", "or", "with", "from", "into", "at", "as")
+pretty_set <- function(set, db) {
+  x <- sub("^(REACTOME|KEGG_MEDICUS|WP|PID|BIOCARTA|GOBP|GOCC|GOMF|MITOCARTA|CELLMARKER|REFMET)_", "", set)
+  if (db == "REFMET") return(if (x == "Cer") "Ceramides" else x)
+  w <- strsplit(x, "_")[[1]]
+  keep <- grepl("[0-9]", w) | (nchar(w) <= 4 & !tolower(w) %in% STOP & !grepl("[AEIOU]", substr(w, 2, nchar(w)))) | w %in% c("ADME", "MHC", "NAD", "TNF", "ALPHA", "RNA", "DNA", "II", "III", "IV", "ER", "ATP", "GTP")
+  w <- ifelse(keep, w, tolower(w)); w[w == "ALPHA"] <- "alpha"
+  out <- paste(w, collapse = " "); paste0(toupper(substr(out, 1, 1)), substring(out, 2))
+}
+ORA[, set_label := mapply(pretty_set, as.character(set), as.character(database))]
+ORA[, set_label := paste0(set_label, " [", DB_LABEL[as.character(database)], "]")]
+ORA <- ORA[, .(network, module, database = as.character(database), set = as.character(set), set_label,
+               set_size_in_universe = set_size, module_members_tested = input_size, overlap_n = set_size_in_input, overlap,
+               p_value, adj_p_value)][order(module, adj_p_value, p_value)]
+fwrite(ORA, file.path(OUT, "17_module_ora.csv"))
+# a readable name per module: its most significant pathway (Reactome, KEGG, WikiPathways, PID, BioCarta, GO BP,
+# MitoCarta) if adj. p < 0.05, plus the metabolite class when a metabolite part is significant; otherwise
+# "no significant pathway" with the module's best-connected members as a handle
+deg <- rbindlist(lapply(names(nets), function(n) { g <- graph_from_data_frame(nets[[n]], directed = FALSE); data.table(network = n, node = V(g)$name, degree = degree(g)) }))
+hubs <- deg[MOD, on = c("network", "node")][order(-degree)][, .(hubs = paste(head(node, 3), collapse = ", ")), by = module]
+nm <- MOD[, .(n = .N, n_prot = sum(node_type == "protein"), n_met = sum(node_type == "metabolite")), by = .(network, module)]
+best_path <- ORA[database %in% PATHWAY_DB & adj_p_value < ALPHA_ORA][order(adj_p_value, p_value)][, .SD[1], by = module]
+best_met <- ORA[database == "REFMET" & adj_p_value < ALPHA_ORA][order(adj_p_value, p_value)][, .SD[1], by = module]
+nm <- best_path[, .(module, path_name = set_label, path_db = database, path_fdr = adj_p_value, path_overlap = overlap_n)][nm, on = "module"]
+nm <- best_met[, .(module, met_name = set_label, met_fdr = adj_p_value)][nm, on = "module"]
+nm <- hubs[nm, on = "module"]
+nm[, n_sig_sets := sapply(module, function(mo) ORA[module == mo & database %in% c(PATHWAY_DB, "REFMET") & adj_p_value < ALPHA_ORA, .N])]
+nm[, label := fcase(!is.na(path_name) & !is.na(met_name), paste0(path_name, " + ", met_name),
+                    !is.na(path_name), path_name, !is.na(met_name), met_name, default = paste0("no significant pathway (", hubs, ")"))]
+nm[, name := paste0(sub("^.*_", "", module), " · ", label)]
+setcolorder(nm, c("network", "module", "name", "label", "n", "n_prot", "n_met", "path_name", "path_db", "path_fdr", "path_overlap", "met_name", "met_fdr", "n_sig_sets", "hubs"))
+fwrite(nm[order(network, module)], file.path(OUT, "17_module_names.csv"))
+message(sprintf("module ORA: %d module x set rows; modules named by a significant pathway / class: %d of %d",
+                nrow(ORA), sum(!grepl("^no significant", nm$label)), nrow(nm)))
+print(nm[order(network, module), .(module, name)])
