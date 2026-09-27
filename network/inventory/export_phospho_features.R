@@ -69,7 +69,7 @@ gp <- file.path(INV, "glygen_phosphosites.csv")
 if (file.exists(gp)) {
   # match key per GlyGen site: canonical accession (isoform suffix removed) + position + FIRST LETTER of GlyGen's
   # three-letter residue (Ser -> S, Thr -> T, but Tyr also -> T, so tyrosine sites can never match)
-  g <- fread(gp); gk <- paste(sub("-.*$", "", g$glygen_ac), g$position, substr(g$residue, 1, 1))
+  g <- fread(gp); gk <- paste(sub("-.*$", "", g$glygen_ac), g$position, unname(c(Ser = "S", Thr = "T", Tyr = "Y")[g$residue]))   # three-letter code -> one letter (Tyr -> Y, not T)
   # only single-site features on our 471 proteins can be checked; everything else is NA (unknown)
   X[, known_in_glygen := fifelse(n_sites == 1 & in_471, paste(uniprot, positions, residues) %in% gk, NA)]
 } else X[, known_in_glygen := NA]

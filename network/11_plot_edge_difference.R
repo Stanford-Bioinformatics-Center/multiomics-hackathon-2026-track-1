@@ -33,7 +33,7 @@
 #     (sum of |w_EE| minus sum of |w_RE| over the node's edges), labels for the 10 genes with the largest
 #     strength difference / every metabolite. Genes: squares. Metabolites: shape = RefMet super class, and
 #     each connected group is labelled with its super-class name (each group is a single class).
-#   - Only nodes with at least one edge are drawn (286 genes, 44 metabolites).
+#   - Only nodes with at least one edge are drawn (286 genes, 40 metabolites).
 #   Titles are descriptive only; interpretation belongs in the report text.
 #
 # HOW TO RUN

@@ -242,7 +242,7 @@ if (EDGE_SOURCE == "mnet") {
 # our genes, and how many genes and links there are.
 summ <- data.table(
   metric = c("rhea_release", "rhea_release_date", "metabolites", "metabolites_with_chebi",
-             "metabolites_found_in_rhea", "metabolites_linked_to_our_genes", "genes", "genes_linked_to_our_metabolites",
+             if (EDGE_SOURCE == "mnet") "metabolites_matched_to_mnet_nodes" else "metabolites_found_in_rhea", "metabolites_linked_to_our_genes", "genes", "genes_linked_to_our_metabolites",
              "metabolite_gene_links"),
   value = c(rhea_release, rhea_date, nrow(ids), uniqueN(mchebi$metabolite),
             uniqueN(m_rx$metabolite), uniqueN(link$metabolite), 471, uniqueN(link$entrez_gene), nrow(link)))

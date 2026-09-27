@@ -10,7 +10,9 @@
 #
 # WHAT THIS SCRIPT DOES (plain language)
 #   Figure 15b is redrawn unchanged (same class-grouped layout, class bubbles, edge colours and widths =
-#   w_EE - w_RE, node sizes, metabolite triangles) and only the protein circles are recoloured:
+#   w_EE - w_RE, node sizes, metabolite triangles); protein circles stay grey and the annotations are drawn as
+#   TAGS on stalks jutting out of each protein (the categories below are saved per protein in
+#   16_protein_annotation.csv and summarised by the tags):
 #     16a, MoTrPAC phosphoproteomics (measured; muscle 0.5 / 4 / 24 h and adipose 4 h; both arms):
 #         not measured · measured, no site responds · a site responds after endurance only · after
 #         resistance only · after both ("responds" = adj. p < 0.05 in that arm's exercise-vs-control
@@ -20,7 +22,7 @@
 #         no glycosylation record · glycosylated, site unknown (protein-level evidence) · N-linked sites
 #         only · O-linked sites only (incl. O-GlcNAc) · both N- and O-linked sites. Labels: the proteins
 #         with the most glycosylation sites, with site and glycan-structure counts.
-#     16c, both together + site-level crosstalk: fill = the 16a phospho category, ring = glycosylated or not
+#     16c, both together + site-level crosstalk: the 16a phospho tags and the 16b glycosylation tags together
 #         (any type, site known or protein-level; the types are in 16b), and a diamond on proteins where a measured phosphosite is the SAME residue as a known
 #         O-glycosylation (mostly O-GlcNAc) site (same canonical protein, position, residue; multi-site
 #         features contribute each residue); gold diamond = such a residue responds to exercise.
@@ -51,7 +53,7 @@
 #                                         glycosylation category and counts
 #
 # EXPECTED OUTPUT (2026-09-26) AND VALIDATION
-#   304 proteins and 60 metabolites drawn (as 15b). The script stops if the layout, nodes or edges differ
+#   297 proteins and 56 metabolites drawn (as 15b). The script stops if the layout, nodes or edges differ
 #   from steps 14 / 15, or if a protein has no annotation row.
 #
 # KNOWN LIMITS
@@ -154,7 +156,8 @@ GL_LEV <- c("no glycosylation record", "glycosylated, site unknown (protein-leve
             "O-linked sites only (incl. O-GlcNAc)", "N- and O-linked sites")
 GL_COL <- setNames(c("grey85", "#E6F5D0", "#1B9E77", "#D95F02", "#7570B3"), GL_LEV)
 # each protein's glycosylation category, from its N-linked, O-linked and protein-level counts
-A[, gl_cat := fcase(gly_N > 0 & gly_O > 0, GL_LEV[5], gly_N > 0, GL_LEV[3], gly_O > 0, GL_LEV[4], gly_protein_level > 0, GL_LEV[2], default = GL_LEV[1])]
+# (O-linked = mucin-type O-linked OR O-GlcNAc: mnet counts O-GlcNAc sites separately from n_O_linked)
+A[, gl_cat := fcase(gly_N > 0 & (gly_O + gly_OG) > 0, GL_LEV[5], gly_N > 0, GL_LEV[3], (gly_O + gly_OG) > 0, GL_LEV[4], gly_protein_level > 0, GL_LEV[2], default = GL_LEV[1])]
 # attach to the drawn proteins and save
 # (joined by gene symbol; metabolite nodes get empty annotation columns)
 N <- A[, !"entrez_gene"][N, on = c(gene_symbol = "node")]; setnames(N, "gene_symbol", "node")

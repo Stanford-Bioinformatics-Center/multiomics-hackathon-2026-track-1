@@ -37,8 +37,8 @@
 #   $HACK_OUT/15_class_layout.csv  node, node_type, class, x, y of the grouped layout
 #
 # EXPECTED OUTPUT (2026-09-26) AND VALIDATION
-#   364 nodes (60 metabolites in 10 super classes: organic acids 19, nucleic acids 16, fatty acyls 11,
-#   sphingolipids 6, carbohydrates 2, glycerophospholipids 2, four classes with 1), 764 edges, as in step
+#   353 nodes (56 metabolites in 9 super classes: organic acids 20, nucleic acids 16, fatty acyls 12,
+#   carbohydrates 2, glycerophospholipids 2, four classes with 1), 704 edges (mnet), as in step
 #   14. The script stops if an edge end is not a node or a metabolite has no class. 99_validate_outputs.R
 #   checks the grouped layout covers exactly the step 14 nodes.
 #

@@ -149,7 +149,7 @@ tex <- c(
   "\\begin{document}",
   "\\section*{Descriptive statistics of log fold changes}",
   paste0("Stanford Multi-omics Hackathon 2026, Track 1 --- endurance vs resistance networks. Generated ",
-         format(Sys.Date(), "%Y-%m-%d"), "."),
+         format(as.Date(as.POSIXct(as.numeric(Sys.getenv("SOURCE_DATE_EPOCH", "1790380800")), origin = "1970-01-01", tz = "UTC")), "%Y-%m-%d"), "."),   # fixed build date (SOURCE_DATE_EPOCH), not today
   "",
   paste("Values are the unnormalised log$_2$ fold changes of the network features: the delta-delta contrast",
         "(exercise arm's change from pre-exercise minus the control group's change) at 0.5, 4 and 24\\,h after",

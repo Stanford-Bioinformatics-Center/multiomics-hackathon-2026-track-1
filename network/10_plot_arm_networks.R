@@ -198,6 +198,7 @@ ge <- fread(file.path(OUT, "01_nodes_EE.csv")); gr <- fread(file.path(OUT, "01_n
 # Each gene's mean response across its dimensions, per arm (missing columns skipped).
 # (ge[, -(1:2)] drops the two identifier columns, entrez_gene and gene_symbol. The EE and RE files are
 #  assumed to list the genes in the same row order, which is how step 1 writes them.)
+stopifnot(identical(ge$gene_symbol, gr$gene_symbol))   # same genes, same order, in both arms
 gn <- data.table(node = ge$gene_symbol,
                  resp_EE = rowMeans(as.matrix(ge[, -(1:2)]), na.rm = TRUE),
                  resp_RE = rowMeans(as.matrix(gr[, -(1:2)]), na.rm = TRUE))
@@ -222,6 +223,7 @@ me <- fread(file.path(OUT, "01b_metab_nodes_EE.csv")); mr <- fread(file.path(OUT
 # Each metabolite's mean response, per arm.
 # (me[, -1] drops the metabolite-name column; same row-order assumption as for genes; these tables have
 #  no missing values, so no na.rm is needed)
+stopifnot(identical(me$metabolite, mr$metabolite))     # same metabolites, same order, in both arms
 mn <- data.table(node = me$metabolite, resp_EE = rowMeans(as.matrix(me[, -1])), resp_RE = rowMeans(as.matrix(mr[, -1])))
 # Shape key: the RefMet super class (from step 1c).
 ids <- fread(file.path(OUT, "01c_metabolite_ids.csv"))

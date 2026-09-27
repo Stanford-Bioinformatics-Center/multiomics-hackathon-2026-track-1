@@ -10,10 +10,11 @@
 #
 # WHAT THIS SCRIPT DOES (plain language)
 #   Modules: option B's modules (18_disease_modules.csv, approach "B"; Louvain on the whole joint network, seed fixed,
-#   >= 5 members; disease not used). Exercise direction of each member feature (option C's repfdr states,
-#   18c_feature_states.csv; muscle RNA / protein / metabolite features selected at adj. p < 0.05 in any cell): per
-#   arm, "up" or "down" if its states at 0.5 / 4 / 24 h are non-null and agree in sign; features that go both ways
-#   in an arm, or are null throughout, are left out. Disease connection (as the paper and option C): for each
+#   >= 5 members; disease not used). Exercise direction of each member feature (muscle RNA / protein / metabolite
+#   features selected at adj. p < 0.05 in any cell, from 18c_feature_states.csv): per arm, "up" or "down" if its
+#   z-scores at 0.5 / 4 / 24 h all share one sign; otherwise left out. (18c saves the per-time z-scores, not the
+#   repfdr states, so this is a looser rule than option C's non-null states; a gene with both an RNA and a protein
+#   feature is counted once per feature.) Disease connection (as the paper and option C): for each
 #   module, arm and disease set, the module's directional features whose gene is disease-significant (p < 0.05; all
 #   listed genes for the significant-only sets Chae, Yuan) are concordant (same direction) or discordant ("exercise
 #   opposes disease"); binomial sign test vs 0.5; BH within each disease set. The overall concordance of all

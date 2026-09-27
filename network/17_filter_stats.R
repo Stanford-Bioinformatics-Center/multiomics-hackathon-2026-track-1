@@ -51,7 +51,7 @@
 #   17_modules.csv           network (joint / gene / metabolite), module, node, node_type
 #   17_module_modules.gmt    the modules as gene sets (input to run_cameraPR)
 #   17_module_camera.csv     network, module, tissue, ome, arm, time, n_members_tested, direction, z, p, fdr
-#   17_phospho_site_stats.csv   protein, feature_id, site, tissue, arm, time, logFC, adj_p, known_in_glygen, kinases, crosstalk
+#   17_phospho_site_stats.csv   protein, feature_id, site, tissue, arm, time, logFC, adj_p, known_site_mnet, kinases, crosstalk
 #   17_module_ora.csv        module x gene set: ORA against our universe (471 genes / 450 metabolites), overlap
 #                            members, p, BH adj. p (MoTrPAC run_ORA; pathway, GO, MitoCarta, CellMarker, RefMet sets)
 #   17_module_names.csv      one readable name per module (most significant pathway / metabolite class, or hubs)
@@ -137,14 +137,15 @@ S <- rbind(G[, .(node, node_type, tissue, ome, arm, time, logFC, adj_p)], M[, .(
 chk <- function(file, id) { r <- fread(file.path(OUT, file)); d <- setdiff(names(r), c("entrez_gene", "gene_symbol", "metabolite"))
   for (k in d) set(r, j = k, value = as.numeric(r[[k]]))   # always-empty columns are read as logical
   melt(r[, c(id, d), with = FALSE], id.vars = id, variable.name = "dim", value.name = "raw", na.rm = TRUE) }
-# the step 1 / 1b ENDURANCE values of genes and metabolites, with one common node column
-rawE <- rbind(chk("01_nodes_EE_raw_logFC.csv", "gene_symbol")[, node := gene_symbol][, gene_symbol := NULL],
-              chk("01b_metab_nodes_EE_raw_logFC.csv", "metabolite")[, node := metabolite][, metabolite := NULL])
-rawE[, dim := as.character(dim)]
-# match this script's EE values to them by node and dimension name (e.g. "muscle_rna_4h")
-cmp <- S[arm == "EE", .(node, dim = paste(tissue, ome, time, sep = "_"), logFC)][rawE, on = c("node", "dim"), nomatch = 0]
-# stop unless some rows matched and all matched values agree (only the EE arm is compared here)
-stopifnot(nrow(cmp) > 0, isTRUE(all.equal(cmp$logFC, cmp$raw)))
+# the step 1 / 1b values of genes and metabolites for one arm, with one common node column
+rawA <- function(arm) rbind(chk(sprintf("01_nodes_%s_raw_logFC.csv", arm), "gene_symbol")[, node := gene_symbol][, gene_symbol := NULL],
+                            chk(sprintf("01b_metab_nodes_%s_raw_logFC.csv", arm), "metabolite")[, node := metabolite][, metabolite := NULL])[, `:=`(dim = as.character(dim), arm = arm)]
+# both arms
+rawEE <- rbind(rawA("EE"), rawA("RE"))
+# match this script's values to them by node, arm and dimension name (e.g. "muscle_rna_4h")
+cmp <- S[arm %in% c("EE", "RE"), .(node, arm, dim = paste(tissue, ome, time, sep = "_"), logFC)][rawEE, on = c("node", "arm", "dim"), nomatch = 0]
+# stop unless both arms matched and every matched value agrees
+stopifnot(nrow(cmp) > 0, setequal(unique(cmp$arm), c("EE", "RE")), isTRUE(all.equal(cmp$logFC, cmp$raw)))
 # save and report
 fwrite(S, file.path(OUT, "17_node_cell_stats.csv"))
 message(sprintf("node statistics: %d rows (%d nodes)", nrow(S), uniqueN(S$node)))
@@ -269,8 +270,8 @@ fx[kinases == "NA", kinases := ""]
 PH <- fx[PH, on = "feature_id"]
 # features without a mapped site: not known, no crosstalk, no kinases
 PH[is.na(known), `:=`(known = FALSE, crosstalk = FALSE, kinases = "")]
-# save (note: the column known_in_glygen holds "site listed in mnet phosphosites", i.e. UniProt / OmniPath)
-fwrite(PH[, .(protein = gene_symbol, feature_id, site, tissue, arm, time, logFC, adj_p, known_in_glygen = known, kinases, crosstalk)],
+# save (known_site_mnet = the site is listed in mnet phosphosites, i.e. UniProt / OmniPath)
+fwrite(PH[, .(protein = gene_symbol, feature_id, site, tissue, arm, time, logFC, adj_p, known_site_mnet = known, kinases, crosstalk)],
        file.path(OUT, "17_phospho_site_stats.csv"))
 # report
 message(sprintf("phospho sites: %d features on %d proteins (%d mapped to mnet sites; %d crosstalk)", uniqueN(PH$feature_id), uniqueN(PH$gene_symbol),

@@ -121,6 +121,9 @@ ours <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[assay %in% c("prot-pr", "pro
 # The same STRING file as step 2 (override with STRING_PARQUET).
 STRING_PARQUET <- Sys.getenv("STRING_PARQUET", unset = path.expand(
   "~/Downloads/Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet"))
+# This report compares metabolite-rule variants on the LEGACY inputs; without that file (e.g. a fresh clone) it is
+# skipped cleanly, so the one-command pipeline still runs end to end (nothing downstream reads its outputs).
+if (!file.exists(STRING_PARQUET)) { message("step 8 skipped: legacy STRING file not found (", STRING_PARQUET, "); set STRING_PARQUET to run it"); quit(save = "no", status = 0) }
 # Every interacting protein pair as a text key, in both orders (so the order of a pair never matters).
 sp <- as.data.table(read_parquet(STRING_PARQUET))[, .(a = as.character(protein1), b = as.character(protein2))]
 # (the keys, e.g. "P12345 Q67890", for both orders of every pair)

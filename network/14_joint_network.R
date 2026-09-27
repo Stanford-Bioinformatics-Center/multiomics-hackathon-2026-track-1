@@ -56,7 +56,7 @@
 #   $HACK_FIG/14a_joint_network_EE_vs_RE.png, 14b_joint_network_edge_difference.png (never in the repo)
 #
 # EXPECTED OUTPUT (2026-09-26) AND VALIDATION
-#   431 protein-protein, 147 metabolite-metabolite and 186 metabolite-protein edges (764 in total). The
+#   434 protein-protein, 143 metabolite-metabolite and 127 metabolite-protein edges (704 in total; mnet). The
 #   script stops if the protein-protein or metabolite-metabolite weights differ from steps 3 / 6, or if a
 #   metabolite-protein weight differs from a hand-computed doubled-embedding dot product.
 #
@@ -64,7 +64,7 @@
 #   The three edge types have different numbers of terms in their dot products (16, 9 and 16), so their
 #   weights are on somewhat different scales; the figures draw them on one scale and edge colour (14a) /
 #   line type (14b) shows the type. Differences between the arms are not tested. Metabolite-protein links
-#   cover only the 60 metabolites that Rhea links to our 471 genes.
+#   cover only the 56 metabolites that Rhea links to our 471 genes.
 # =====================================================================================================
 
 # Load packages quietly.

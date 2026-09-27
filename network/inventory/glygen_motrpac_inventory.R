@@ -61,7 +61,7 @@ f2g <- as.data.table(HUMAN_FEATURE_TO_GENE)[assay == "prot-ph", .(feature_id = a
 gps <- fread(file.path(INV, "glygen_phosphosites.csv"), colClasses = list(character = "entrez_gene"))
 # match key: canonical accession (isoform suffix removed) + position + FIRST LETTER of GlyGen's three-letter
 # residue (Ser -> S, Thr -> T, but Tyr also -> T, so tyrosine sites can never match; AA below is not used)
-gps[, key := paste(sub("-.*$", "", glygen_ac), position, substr(residue, 1, 1))]
+gps[, key := paste(sub("-.*$", "", glygen_ac), position, unname(c(Ser = "S", Thr = "T", Tyr = "Y")[residue]))]   # three-letter code -> one letter (Tyr -> Y, not T)
 # One-letter to three-letter residue codes (S = serine, T = threonine, Y = tyrosine); defined but not used below.
 AA <- c(S = "Ser", T = "Thr", Y = "Tyr")
 # For each tissue: per phosphosite feature, whether it responds to either arm, plus its confidence and gene.

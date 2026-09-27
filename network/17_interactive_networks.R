@@ -197,7 +197,7 @@ page_data <- function(P, net, types) {
   # phosphosites: protein -> [{site, f, kin, xt, known, c: {"tissue|arm|time": [logFC, adj_p]}}]
   ph <- PHS[protein %in% nodes]
   phos <- lapply(split(ph, ph$protein), function(x) unname(lapply(split(x, x$feature_id), function(y)
-    list(site = y$site[1], f = y$feature_id[1], kin = ifelse(is.na(y$kinases[1]), "", y$kinases[1]), xt = isTRUE(y$crosstalk[1]), known = isTRUE(y$known_in_glygen[1]),
+    list(site = y$site[1], f = y$feature_id[1], kin = ifelse(is.na(y$kinases[1]), "", y$kinases[1]), xt = isTRUE(y$crosstalk[1]), known = isTRUE(y$known_site_mnet[1]),
          c = setNames(lapply(seq_len(nrow(y)), function(i) c(signif(y$logFC[i], 4), signif(y$adj_p[i], 3))), paste(y$tissue, y$arm, y$time, sep = "|"))))))
   # modules of this network with their CAMERA-PR results: [{id, members, cam: {"tissue|ome|arm|time": [z, dir, fdr, n]}}]
   md <- MODS[network == net & node %in% nodes]; cm <- CAM[network == net]
