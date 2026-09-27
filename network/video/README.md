@@ -20,7 +20,12 @@ python3 network/video/rat_dance.py song.mp3 --size 1920x1080 --bg black --out ~/
 python3 network/video/rat_dance.py song.mp3 --transparent             # ProRes 4444 .mov with alpha, to drop into an edit
 python3 network/video/rat_dance.py song.mp3 --bpm 170                 # if it dances at half / double time
 python3 network/video/rat_dance.py song.mp3 --nudge -0.03             # steps 30 ms earlier
+python3 network/video/rat_dance.py song.mp3 --no-bandana              # the plain rat
 ```
+The rat wears the red Team 2-PAC bandana, tied 2Pac-style with the knot in front (`exvideo/costume.py`: the GIF is
+enlarged 4x, the head is found per frame from the ears and nose, the band is drawn under the ears and clipped to the
+head, the knot sits above the nose with both ends up and out; colours from the team's badge art). Same rat, same flag,
+in the music video.
 Checked on synthetic drum grooves at 70, 92, 128 and 174 BPM and a 100→120 BPM ramp: tempo found in all five (70 at
 double time), every beat within 14 ms, and the rat on a step-hit pose at every beat it steps on.
 

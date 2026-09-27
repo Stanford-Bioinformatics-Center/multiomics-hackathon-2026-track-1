@@ -99,6 +99,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--sung-headers", action="store_true", help="(--sync even only) the song also sings each section header; time a slot for it")
     ap.add_argument("--dancer", default=str(DEFAULT_DANCER), help="a looping dancer GIF (transparent background best) drawn at the side, stepping on the beat (default: %(default)s)")
     ap.add_argument("--no-dancer", action="store_true", help="no dancer")
+    ap.add_argument("--no-bandana", action="store_true", help="the plain rat, without the red Team 2-PAC bandana")
     ap.add_argument("--dancer-clip", type=int, default=0, help="which single-colour clip of the GIF to dance (0 = first; the rat GIF: 0 grey, 1 red, 2 teal)")
     ap.add_argument("--dancer-steps-per-beat", type=float, choices=(0.5, 1.0, 2.0), help="dance steps per song beat (default: whichever is closest to the GIF's own speed)")
     ap.add_argument("--dancer-credit", default=DEFAULT_CREDIT, help="credit for the dancer GIF, shown only on the closing card")
@@ -214,7 +215,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not args.no_dancer and Path(args.dancer).expanduser().exists():
             t = time.time(); bt = beats.detect_beats(song)
             period = statistics.median(b - a for a, b in zip(bt["beats"], bt["beats"][1:])) if len(bt["beats"]) > 1 else None
-            dz = dancer.prepare(Path(args.dancer).expanduser(), dest / "dancer_frames", clip=args.dancer_clip, steps_per_beat=args.dancer_steps_per_beat, beat_period=period)
+            dz = dancer.prepare(Path(args.dancer).expanduser(), dest / "dancer_frames", clip=args.dancer_clip, steps_per_beat=args.dancer_steps_per_beat, beat_period=period, bandana=not args.no_bandana)
             spec["dancer"] = {**dz, "beats": beats.extend_grid(bt["beats"], total), "credit": args.dancer_credit, "aspect": dz["aspect"]}
             (dest / "beats.json").write_text(json.dumps(bt, indent=1) + "\n", encoding="utf-8")
             print(f"      dancer: {bt['bpm']} BPM, {len(bt['beats'])} beats; clip {dz['clip']} of {len(dz['clip_lengths'])} (GIF frames {dz['gif_frames'][0]}-{dz['gif_frames'][1]}), "

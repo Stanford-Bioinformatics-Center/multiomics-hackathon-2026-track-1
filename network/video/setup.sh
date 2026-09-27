@@ -13,6 +13,6 @@ command -v node >/dev/null || { echo "Node.js missing: https://nodejs.org"; exit
 command -v claude >/dev/null || echo "note: Claude Code ('claude') not found; use --backend api with ANTHROPIC_API_KEY"
 [ -x "$HERE/.venv/bin/python" ] || python3 -m venv "$HERE/.venv"
 "$HERE/.venv/bin/pip" install -q --upgrade pip
-"$HERE/.venv/bin/pip" install -q "faster-whisper==1.2.1"
+"$HERE/.venv/bin/pip" install -q "faster-whisper==1.2.1" "pillow>=10"
 (cd "$HERE/render" && npm install --no-audit --no-fund)
 echo "ready: python3 $HERE/make_music_video.py"

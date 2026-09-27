@@ -133,12 +133,13 @@ def read_rgba_pngs(files: List[str]) -> np.ndarray:
 
 
 def prepare(gif: Path, dest: Path, clip: int = 0, steps_per_beat: Optional[float] = None, beat_period: Optional[float] = None,
-            gif_frame_s: float = 0.03) -> Dict[str, object]:
+            gif_frame_s: float = 0.03, bandana: bool = False) -> Dict[str, object]:
     """Loop frames on disk + where the hits are.
 
     Returns frames (the loop, in order), hits (frame positions of the steps within the loop, starting at 0; the loop
     wraps back to 0 after the last frame), steps_per_beat (1 = a step on every beat; chosen from 1/2, 1, 2 as the
-    rate closest to the GIF's own speed when not given), aspect, and a record of what was dropped.
+    rate closest to the GIF's own speed when not given), aspect, and a record of what was dropped. With `bandana`, the
+    rat wears the red Team 2-PAC bandana (knot in front) and the frames are 4x the GIF's size.
     """
     rgba = read_rgba(gif)
     groups = clips(rgba)
@@ -152,6 +153,9 @@ def prepare(gif: Path, dest: Path, clip: int = 0, steps_per_beat: Optional[float
         raise InputError(f"could not find the dance's steps in clip {clip} of {gif} (found {len(hit)} hits)")
     i, j = best_loop(alpha, hit)
     loop = despill(frames[hit[i]:hit[j]])                  # the end hit is the start hit again, so it is left out
+    if bandana:                                            # the Team 2-PAC look (exvideo.costume): frames come back 4x larger
+        from .costume import bandana as dress
+        loop = dress(loop)
     rel = [h - hit[i] for h in hit[i:j]]
     step_frames = float(np.mean(np.diff(hit[i:j + 1])))
     if steps_per_beat is None:
@@ -161,7 +165,7 @@ def prepare(gif: Path, dest: Path, clip: int = 0, steps_per_beat: Optional[float
     h, w = loop.shape[1:3]
     return {"frames": files, "n_frames": len(files), "hits": rel, "steps_per_loop": len(rel), "steps_per_beat": steps_per_beat,
             "aspect": round(w / h, 4), "clip": clip, "clip_lengths": [len(g) for g in groups],
-            "gif_frames": [int(idx[hit[i]]), int(idx[hit[j]])], "dropped_flash_frames": len(rgba) - sum(len(g) for g in groups)}
+            "gif_frames": [int(idx[hit[i]]), int(idx[hit[j]])], "dropped_flash_frames": len(rgba) - sum(len(g) for g in groups), "bandana": bandana}
 
 
 def frame_at(t: float, beats: List[float], hits: List[int], n_frames: int, steps_per_beat: float, fps: float) -> int:

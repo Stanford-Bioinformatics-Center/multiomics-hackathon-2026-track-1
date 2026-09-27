@@ -197,5 +197,27 @@ class BeatTests(unittest.TestCase):
         self.assertEqual(dancer.frame_at(0.6 - 0.01, grid, hits, n, 1.0, 30), 17)         # nearest video frame snaps to the hit
         self.assertEqual([dancer.frame_at(t, grid, hits, n, 0.5, 30) for t in grid[:3]], [0, 8, 17])   # a step every other beat
 
+class CostumeTests(unittest.TestCase):
+    """A synthetic grey head with two pink ears and a pink nose: the band goes under the ears, the knot above the nose."""
+
+    def test_band_under_ears_knot_above_nose(self):
+        import numpy as np
+        from exvideo import costume
+        f = np.zeros((60, 40, 4), np.uint8)
+        f[10:50, 8:32] = (120, 120, 110, 255)                          # head + body
+        f[10:14, 10:14] = (200, 120, 120, 255); f[10:14, 26:30] = (200, 120, 120, 255)   # ears
+        f[24:27, 23:26] = (200, 120, 120, 255)                          # nose, right of centre
+        g = costume.head_geometry(f)
+        self.assertTrue(13 < g["ly"] < 17 and 13 < g["ry"] < 17, g)     # just under the ears
+        self.assertAlmostEqual(g["nose"], 24.0, delta=0.6)
+        out = costume.bandana(np.stack([f] * 4))
+        self.assertEqual(out.shape, (4, 60 * costume.UP, 40 * costume.UP, 4))
+        cloth = (out[0, ..., 0] > 70) & (out[0, ..., 1] < 70) & (out[0, ..., 3] > 200)      # red cloth, not the pink ears
+        top = (min(g["ly"], g["ry"]) - g["thick"] / 2 - 1.0) * costume.UP
+        ys, xs = np.nonzero(cloth); ends = xs[ys < top]                  # only the knot's ends rise above the band
+        self.assertTrue(np.any(cloth[int(g["ly"] * costume.UP)]))       # the band is there
+        self.assertGreater(len(ends), 0)
+        self.assertAlmostEqual(ends.mean() / costume.UP, 24.0, delta=3.0)   # the knot is above the nose (2Pac: in front)
+
 if __name__ == "__main__":
     unittest.main()

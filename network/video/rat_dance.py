@@ -7,7 +7,8 @@
 #   Give it any song; it makes a video of the rat-dance meme stepping exactly on the song's beats:
 #     1. finds the song's beats (exvideo.beats: onsets -> tempo -> dynamic-programming beat tracking);
 #     2. cleans the rat GIF (exvideo.dancer: drops the solid-green flash frame, keeps ONE colour clip, removes the
-#        green fringe) and finds its steps (the bottom of each bob) and a seamless loop;
+#        green fringe) and finds its steps (the bottom of each bob) and a seamless loop; dresses it in the red Team
+#        2-PAC bandana, knot in front (exvideo.costume; --no-bandana for the plain rat);
 #     3. for every video frame, picks the rat frame so that step k's hit lands exactly on beat k (exvideo.dancer.frame_at,
 #        the same rule the music-video renderer uses) — the dance speeds up and slows down with the song, never drifts;
 #     4. ffmpeg scales the rat up, puts it on a background (or keeps it transparent) and adds the song.
@@ -19,7 +20,7 @@
 #   python3 network/video/rat_dance.py song.mp3 --transparent                        # ProRes 4444 .mov, for editing
 #   python3 network/video/rat_dance.py song.mp3 --bpm 170                            # if it dances at half/double time
 #   python3 network/video/rat_dance.py song.mp3 --nudge -0.03                        # shift the steps earlier by 30 ms
-#   Needs: ffmpeg (brew install ffmpeg), numpy; the rat GIF (default below, or --dancer).
+#   Needs: ffmpeg (brew install ffmpeg), numpy, Pillow (bash network/video/setup.sh; switches to .venv by itself); the rat GIF.
 #
 # OUTPUTS: the video (default <song>_rat.mp4 beside the song) and <video>.beats.json (tempo, beats, dancer loop)
 #
@@ -41,9 +42,16 @@ import time
 from pathlib import Path
 from typing import Optional, Sequence
 
-import numpy as np
-
 HERE = Path(__file__).resolve().parent
+# Use the video tools' own environment (network/video/.venv, made by setup.sh) when this Python lacks numpy or Pillow.
+_VENV = HERE / ".venv" / "bin" / "python"
+try:
+    import numpy as np
+    import PIL  # noqa: F401
+except ImportError:
+    if _VENV.exists() and os.environ.get("EXVIDEO_REEXEC") != "1":
+        os.environ["EXVIDEO_REEXEC"] = "1"; os.execv(str(_VENV), [str(_VENV), str(Path(__file__).resolve()), *sys.argv[1:]])
+    raise
 sys.path.insert(0, str(HERE))
 from exvideo import audio, beats, dancer  # noqa: E402
 from exvideo.errors import VideoStageError  # noqa: E402
@@ -58,6 +66,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--out", help="the video (default: <song>_rat.mp4, or .mov with --transparent, beside the song)")
     ap.add_argument("--dancer", default=str(DEFAULT_DANCER), help="the dancer GIF (default: %(default)s)")
     ap.add_argument("--clip", type=int, default=0, help="which single-colour clip of the GIF (the rat: 0 grey, 1 red, 2 teal)")
+    ap.add_argument("--no-bandana", action="store_true", help="the plain rat, without the red Team 2-PAC bandana")
     ap.add_argument("--steps-per-beat", type=float, choices=(0.5, 1.0, 2.0), help="rat steps per beat (default: closest to the rat's own speed)")
     ap.add_argument("--bpm", type=float, help="the song's rough tempo, if the rat dances at half or double time (search within x1.25 of it)")
     ap.add_argument("--nudge", type=float, default=0.0, help="shift every step by this many seconds (negative = earlier)")
@@ -87,7 +96,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         with tempfile.TemporaryDirectory() as tmp:
             # 2. the rat
             dz = dancer.prepare(Path(args.dancer).expanduser(), Path(tmp) / "frames", clip=args.clip,
-                                steps_per_beat=args.steps_per_beat, beat_period=period)
+                                steps_per_beat=args.steps_per_beat, beat_period=period, bandana=not args.no_bandana)
             loop = dancer.read_rgba_pngs(dz["frames"])
             print(f"[2/3] rat: clip {dz['clip']} (GIF frames {dz['gif_frames'][0]}-{dz['gif_frames'][1]}), {dz['steps_per_loop']} steps per loop, "
                   f"{dz['steps_per_beat']:g} step(s) per beat, {dz['dropped_flash_frames']} flash frame(s) dropped")
