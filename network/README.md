@@ -239,7 +239,7 @@ Rscript network/99_manifest.R                 # fingerprints every output and co
 | 15 | `$HACK_FIG/15a_joint_classes_EE_vs_RE.png`, `15b_joint_classes_edge_difference.png` (not committed) | the joint network with metabolites grouped by class: 15a the arms separately (14a style), 15b their difference (14b style) |
 | 10 | `10_layout_genes.csv`, `10_layout_metabolites.csv` | node positions (0..1) of the figure 10 / 11 layouts, reused by step 17 |
 | 16 | `16_protein_annotation.csv`, `16_crosstalk_sites.csv`; `$HACK_FIG/16a_joint_edge_difference_phospho.png`, `16b_joint_edge_difference_glycosylation.png`, `16c_joint_edge_difference_phospho_glyco_crosstalk.png` (not committed) | per network protein: phosphosites measured / responding and glycosylation category and counts; per crosstalk residue: protein, residue, MoTrPAC features, responds (EE / RE / both / no), glycosylation subtype, evidence, source; the three figures |
-| 17 | `17_node_cell_stats.csv`, `17_modules.csv` (+ `17_module_modules.gmt`), `17_module_camera.csv`, `17_phospho_site_stats.csv`, `17_kinase_edges.csv`, `17_glygen_protein_annotation.csv` | from `17_filter_stats.R`: per-node per-cell logFC / adj. p; modules; CAMERA-PR per module × cell; phosphosite statistics with GlyGen flags; kinase → substrate pairs; GlyGen counts per protein |
+| 17 | `17_node_cell_stats.csv`, `17_modules.csv` (+ `17_module_modules.gmt`), `17_module_camera.csv`, `17_phospho_site_stats.csv`, `17_glygen_protein_annotation.csv` | from `17_filter_stats.R`: per-node per-cell logFC / adj. p; modules; CAMERA-PR per module × cell; phosphosite statistics with GlyGen flags; GlyGen counts per protein |
 | 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
 | 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
 | 18 | `18_t2d_class_summary.csv`, `18_t2d_species.csv`, `18_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
@@ -331,7 +331,7 @@ their outputs. Team decisions: **STRING at ≥ 700** (mnet's score = physical-su
 combined score; mnet supplies ≥ 500), **measured nodes only** (our 471 proteins / 450 metabolites; mnet's
 unmeasured metabolites, proteins and its 20 lipid-class nodes are not added, so its lipid → class edges are not
 used), **our metabolite class rule kept** (step 6, now fed by mnet's Rhea links and STRING ≥ 700), and **PTM
-annotation from mnet** (UniProt + OmniPath phosphosites and kinase → substrate edges, UniProt glycosites, and its
+annotation from mnet** (UniProt + OmniPath phosphosites with their kinases, UniProt glycosites, and its
 isoform-aware MoTrPAC feature → site bridge) **with GlyGen only for what mnet lacks** (glycan structures,
 protein-level O-GlcNAc evidence, other O-glycosylation databases, mutations, disease, pathways, expression).
 
@@ -341,7 +341,6 @@ protein-level O-GlcNAc evidence, other O-glycosylation databases, mutations, dis
 | metabolite–protein links (Rhea) | 186 (60 metabolites, 80 genes) | 127 (56 metabolites, 55 genes; catalysis + transport, currency molecules such as water / ATP removed by mnet) |
 | metabolite–metabolite (class rule) | 147 (44 metabolites) | 143 (40 metabolites) |
 | joint network | 364 nodes / 764 edges | 353 nodes / 704 edges |
-| kinase → substrate pairs among our proteins | 25 (GlyGen) | 75 (OmniPath via mnet) |
 | phospho = O-glycosylation residues (crosstalk) | 59 on 26 proteins (GlyGen) | 60 on 27 proteins, 15 respond (mnet bridge; mnet + GlyGen O-sites) |
 
 ### Our choices
@@ -680,16 +679,14 @@ each module split into its genes (tested in RNA and protein) and metabolites (te
 members and ≥ 70% measured (MoTrPAC defaults), FDR across a network's modules within each cell: 1,602 tests, 146
 at FDR < 0.05 (e.g. a 14-metabolite joint module up in blood 0.5 h after resistance, FDR 1e-6); (4) annotation
 layers: MoTrPAC phosphosites of our proteins per tissue × arm × time (909 features on 227 proteins; 906 mapped to
-canonical sites by mnet's bridge) with mnet site knowledge (UniProt + OmniPath), 75 OmniPath kinase → substrate
-pairs between our proteins (via mnet), and 21 fields per protein (mnet PTM counts + GlyGen extras). In the page, **filters** (omes, tissues, times, arm, adj. p threshold) recompute node
+canonical sites by mnet's bridge) with mnet site knowledge (UniProt + OmniPath), and 21 fields per protein (mnet PTM counts + GlyGen extras). In the page, **filters** (omes, tissues, times, arm, adj. p threshold) recompute node
 colours, significance outlines and **edge weights** (dot products restricted to the selected dimensions; with
 everything selected they equal the pipeline weights, checked in a headless browser to < 1e-6); the **module**
 menu marks modules significant in the selection and shows each module's test table; **colour nodes by** switches
 to any non-PTM annotation (kinase role, GlyGen mutations, disease, pathways, ...); **PTM tags** (multi-select:
 MoTrPAC phosphosites per arm, known phosphosites, N-linked, O-linked, O-GlcNAc, site-unknown glycosylation,
 crosstalk) are drawn on the proteins as in figure 16, recomputed for the selected tissues, times and threshold; the legend box on the network
-is rebuilt for every mode (gradients with tick values, categories and count bins with the number of nodes in each); **kinase → substrate** arrows turn red when a
-substrate site responds in the selection. **Read with care:** CAMERA-PR is competitive (a module moves more than
+is rebuilt for every mode (gradients with tick values, categories and count bins with the number of nodes in each). **Edges are only the network's own edges** — physical STRING / Rhea links weighted by the embedding dot product; OmniPath kinase → substrate pairs are **not** drawn or counted (kinases appear only as site annotations in the tooltips), and clicking a node highlights only neighbours joined by a visible edge. **Read with care:** CAMERA-PR is competitive (a module moves more than
 other features of that ome); FDR is within each cell, not across the many cells a user can browse; modules are
 one structural definition among several; PTM and GlyGen layers are database knowledge.
 
@@ -710,30 +707,32 @@ The page's module panel lists the top 5 significant sets with their member genes
 `17_module_names.csv`). **Read with care:** a name says what the module's members have in common in the
 databases, not what exercise does to it — that is the CAMERA-PR table below it.
 
-**Step 17 — T2D layers (2026-09-26).** Two more "colour nodes by" modes in the interactive pages. **T2D change**:
-purple = lower, orange = higher in T2D muscle (Öhman 2021 log2 T2D / NGT, from Amar et al. 2024), bold outline =
-T2D-significant (Öhman p < 0.05, or listed by Chae 2018), grey = no T2D data; metabolites in the classes step 18
-treats as T2D-elevated (free fatty acids, acylcarnitines, ceramides, sphingomyelins) get a **literature** direction
-(dashed outline; no measured T2D metabolite data exist in the paper's sets). **Exercise vs T2D direction**: each
-T2D-altered node's exercise direction (sign of its significant cells in the selected arm, omes, tissues, times) is
-compared with its T2D direction: opposite (green), same (orange), T2D-altered but no response (beige); with "endurance
-minus resistance" selected, both arms are compared (opposite after both / one arm only, same, mixed). The legend
-counts every category and states, per arm, the share moving opposite to T2D, the share **expected if the two
-directions were unrelated** (from how many nodes go up with exercise and how many are lower in T2D), and Fisher's
-exact test. In muscle: endurance 14 / 20 opposite (70%; expected 74%; Fisher p 1.0), resistance 17 / 27 (63%;
-expected 58%; p 0.65) — no association beyond the imbalance. (A first version counted proteins without a Chae entry
-as "opposite" through a JSON encoding error — 86%, p 1e-6; found by an offline recount and fixed.)
+**Step 17 — T2D layers (2026-09-26; consensus-only since the same day).** Two more "colour nodes by" modes in the
+interactive pages, both restricted to the **strongest T2D signals: proteins whose direction is validated in both
+muscle studies of Amar et al. 2024** — Öhman 2021 p < 0.05 and listed by Chae 2018 (their published significant set,
+FDR < 0.1) with the same sign. Every other node is left blank ("not validated in both studies"); single-study
+directions and the literature directions for metabolite classes were dropped (no measured T2D metabolite data exist in
+the paper's sets). **T2D change**: purple = lower, orange = higher in T2D in both studies (bold outline).
+**Exercise vs T2D direction**: each consensus protein's exercise direction (sign of its significant cells in the
+selected arm, omes, tissues, times) is compared with its T2D direction: opposite (green), same (orange), no response
+(beige); with "endurance minus resistance" selected, both arms are compared. The legend counts every category and
+states, per arm, the share moving opposite to T2D, the share **expected if the two directions were unrelated**, and
+Fisher's exact test — with at most 8 proteins this is descriptive only. (An earlier single-study version found no
+association beyond chance in muscle: endurance 14 / 20 opposite, expected 74%, Fisher p 1.0; resistance 17 / 27,
+expected 58%, p 0.65.)
 
-**T2D consensus (2026-09-26).** A "T2D evidence" selector switches both T2D views between *single study* (Öhman,
-Chae where Öhman is not significant, literature classes for metabolites) and *consensus*: only directions validated
-in **both** muscle studies of Amar et al. 2024 — Öhman p < 0.05 and listed by Chae (their published significant
-set, FDR < 0.1) with the same sign. Genome-wide 231 proteins are in both studies: **85 consensus** (68 lower in T2D —
+**T2D consensus.** Genome-wide 231 proteins are in both studies: **85 consensus** (68 lower in T2D —
 mostly mitochondrial respiration, TCA cycle and fatty-acid oxidation: NDUFS3, NDUFA10, NDUFV1, OGDH, IDH3A, FH, ACO2,
-SUCLA2, DLST, ETFA, ETFB, ACADM, DECR1 …; 17 higher), **39 significant in both but opposite**, the rest significant
-in one only (`17_t2d_consensus.csv`). Only **8 consensus proteins are among our 471** (6 in the joint network:
-DCTN1, DCXR, DIABLO, HSPB6, DECR1, PRDX5, BLVRB lower; PEBP1 higher): the 471 must also be measured in blood by the
-OLINK panel, which targets secreted / inflammatory proteins and misses most mitochondrial ones. Metabolites cannot
-be validated this way (one literature source, no measurements).
+SUCLA2, DLST, ETFA, ETFB, ACADM, DECR1 …; 17 higher), **39 significant in both but opposite**, 107 significant in
+Chae only (`17_t2d_consensus.csv`). Only **8 consensus proteins are among our 471** — the only nodes the T2D layers
+colour: DCTN1, DCXR, DIABLO, HSPB6, DECR1, PRDX5, BLVRB lower; PEBP1 higher (6 of them in the joint network). The 471
+must also be measured in blood by the OLINK panel, which targets secreted / inflammatory proteins and misses most
+mitochondrial ones.
+
+**Step 17 — edges.** The pages draw and count only the network's own edges: physical STRING / Rhea links weighted by
+the embedding dot product. OmniPath kinase → substrate pairs are not edges (step 17s no longer writes
+`17_kinase_edges.csv`); kinases appear only as phosphosite annotations in the tooltips, and clicking a node
+highlights only neighbours joined by a visible edge.
 
 **Step 18d — disease-filtered vs disease-overlaid modules (figures 18a / 18b).** Disease data: all 8 proteomics
 datasets (9 disease sets) of Amar et al. 2024 (*Cell Metab* 36:1411; doi 10.1016/j.cmet.2023.12.021), processed in

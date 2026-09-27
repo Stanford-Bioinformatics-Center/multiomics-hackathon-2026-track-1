@@ -27,8 +27,7 @@
 #      metabolites against our 450 metabolites; a module is named after its most significant pathway (adj. p < 0.05;
 #      Reactome, KEGG, WikiPathways, PID, BioCarta, GO BP, MitoCarta) and, if significant, its RefMet class.
 #   4. Annotation layers: MoTrPAC phosphosites of our proteins (logFC / adj. p per tissue x arm x time, with
-#      GlyGen knowledge per site: known site, kinase, O-GlcNAc crosstalk), GlyGen kinase -> substrate edges between
-#      our proteins, and GlyGen per-protein annotation counts (needs network/inventory and step 16).
+#      GlyGen knowledge per site: known site, kinase, O-GlcNAc crosstalk) and GlyGen per-protein annotation counts (needs network/inventory and step 16).
 #
 # HOW TO RUN
 #   After steps 1, 1b, 3, 6, 10, 14, 15:   Rscript network/17_filter_stats.R   (a few minutes; loads all
@@ -49,7 +48,6 @@
 #   17_module_modules.gmt    the modules as gene sets (input to run_cameraPR)
 #   17_module_camera.csv     network, module, tissue, ome, arm, time, n_members_tested, direction, z, p, fdr
 #   17_phospho_site_stats.csv   protein, feature_id, site, tissue, arm, time, logFC, adj_p, known_in_glygen, kinases, crosstalk
-#   17_kinase_edges.csv          kinase, substrate, sites, n_sites, source (GlyGen kinase annotations; both among the 471)
 #   17_module_ora.csv        module x gene set: ORA against our universe (471 genes / 450 metabolites), overlap
 #                            members, p, BH adj. p (MoTrPAC run_ORA; pathway, GO, MitoCarta, CellMarker, RefMet sets)
 #   17_module_names.csv      one readable name per module (most significant pathway / metabolite class, or hubs)
@@ -172,7 +170,7 @@ message(sprintf("module tests: %d (modules x cells); FDR < 0.05: %d", nrow(CAM),
 
 # ---- 4. annotation layers: MoTrPAC phospho + mnet PTM (UniProt / OmniPath) + GlyGen extras ------------------
 # PTM knowledge comes from the team's mnet resource (resources/mo_annotation): phosphosites (UniProt + OmniPath)
-# with kinases, OmniPath kinase -> substrate edges, UniProt glycosites, and its isoform-aware bridge from MoTrPAC
+# with kinases, UniProt glycosites, and its isoform-aware bridge from MoTrPAC
 # feature IDs to canonical sites. GlyGen (network/inventory) adds only what mnet lacks: glycan structures,
 # protein-level O-GlcNAc evidence, O-glycosylation sites from other databases, and non-PTM fields.
 MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackathon/resources/mo_annotation"))
@@ -183,7 +181,6 @@ genes <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(characte
 g_acc <- genes[, .(acc = unlist(strsplit(uniprot, ";"))), by = .(entrez_gene, gene_symbol)]
 mn_ph <- fread(file.path(MNET_DIR, "phosphosites.csv"))
 mn_gl <- fread(file.path(MNET_DIR, "glycosites.csv"))
-mn_ks <- fread(file.path(MNET_DIR, "kinase_substrate.csv"))
 mn_map <- fread(file.path(MNET_DIR, "motrpac_feature_site_map.csv"))
 mn_ptm <- fread(file.path(MNET_DIR, "proteins_ptm.csv"))
 # 4a. MoTrPAC phosphosites of our proteins: logFC and adj. p per tissue x arm x time (muscle 0.5/4/24 h, adipose 4 h)
@@ -222,15 +219,7 @@ xtab[, `:=`(residue = sub("^[^_]*_", "", site_id), responds = fcase(responds_EE 
 fwrite(xtab[, .(protein, residue, site_id, features, responds, responds_EE, responds_RE, gly_type, gly_source)], file.path(OUT, "17_crosstalk_sites.csv"))
 message(sprintf("crosstalk residues (MoTrPAC phosphosite = O-glycosylation site; mnet + GlyGen): %d on %d proteins; %d respond",
                 nrow(xtab), uniqueN(xtab$protein), sum(xtab$responds != "no")))
-# 4b. kinase -> substrate edges (mnet: OmniPath enzyme-substrate, phosphorylation), both proteins among our 471
-ks <- mn_ks[direction == "phosphorylation"]
-ks[, `:=`(e_acc = sub("-[0-9]+$", "", enzyme_node_id), s_acc = sub("-[0-9]+$", "", substrate_node_id))]
-ks <- merge(ks, g_acc[, .(e_acc = acc, kinase = gene_symbol)], by = "e_acc")
-ks <- merge(ks, g_acc[, .(s_acc = acc, substrate = gene_symbol)], by = "s_acc")
-KE <- ks[, .(sites = paste(sort(unique(sub("^[^_]*_", "", site_id))), collapse = ","), n_sites = uniqueN(site_id),
-             source = paste(head(sort(unique(unlist(strsplit(sources, ";")))), 6), collapse = ";")), by = .(kinase, substrate)]
-fwrite(KE, file.path(OUT, "17_kinase_edges.csv"))
-message(sprintf("kinase -> substrate edges among the 471 (mnet / OmniPath): %d (%d self)", nrow(KE), sum(KE$kinase == KE$substrate)))
+# (no kinase -> substrate EDGES: network edges are only physical STRING / Rhea links weighted by the dot product)
 # 4c. protein annotations: mnet PTM counts + GlyGen extras (one row per protein)
 mp <- merge(g_acc, mn_ptm[, .(acc = sub("-[0-9]+$", "", node_id), n_phosphosites, n_phosphosites_with_kinase, is_kinase, n_substrate_sites,
                                 n_glycosites, n_N_linked, n_O_linked, n_O_GlcNAc)], by = "acc")[order(-n_phosphosites)][!duplicated(gene_symbol)]
