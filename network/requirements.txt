@@ -1,0 +1,17 @@
+# network/requirements.txt — Python and system requirements of the main pipeline (network/run_all.sh)
+#
+# Python >= 3.9 (reference run: 3.12.4). The Python steps (01c_metabolite_ids.py, 01d_metabolite_classes.py,
+# inventory/glygen_protein_inventory.py) use the standard library only, so there is nothing to pip install;
+# `pip install -r network/requirements.txt` is a no-op kept for tooling that expects this file.
+#
+# R packages: see network/requirements.R (Rscript network/requirements.R installs and checks them).
+#
+# System tools:
+#   R >= 4.4 (reference run: 4.4.3)          https://cloud.r-project.org
+#   pandoc (reference run: 3.10)            step 17i; ships with RStudio / Positron / Quarto
+#   pdflatex via TinyTeX (TeX Live 2026)    step 13; requirements.R installs TinyTeX if missing
+#   curl                                    step 20f (published disease tables)
+#   internet access                         first run only: steps 01c, 05, inv1, 20f (cached afterwards)
+#
+# Not part of the main pipeline: network/interaction_db (own requirements.txt / pyproject.toml) and
+# network/video (Node; package.json).

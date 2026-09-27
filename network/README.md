@@ -165,9 +165,11 @@ flowchart LR
 | `visNetwork`, `htmlwidgets`, `htmltools`, `jsonlite` + pandoc | 2.1.4, 1.6.4, 0.5.9, 2.0.0 | step 17 (interactive pages; pandoc ships with RStudio / Positron / Quarto) |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | `readxl` | 1.4.5 | step 20 (the published disease tables are Excel supplements) |
+| `repfdr` | 1.2.3 | step 18c (repfdr states, as in Amar et al. 2024) |
 | `patchwork`, `scales` | 1.3.2, 1.4.0 | multi-panel figures (steps 19-21, method figure) |
 | `checkmate`, `testthat`, `pkgload` | 2.3.4, 3.3.2, 1.5.0 | the **exnet engine** (`network/engine/`): typed input assertions, its 25 tests, loading it from source |
-| Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
+| Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups), 1d and inventory (GlyGen) |
+| `curl` (command line) | — | step 20f (published disease tables) |
 | TinyTeX (R `tinytex`) | via `tinytex::install_tinytex()` | step 13 (compiles the LaTeX table to PDF) |
 | Internet | — | first run only: step 1c (RefMet / UniChem / PubChem), step 5 (Rhea download), inventory (GlyGen API); all cached afterwards |
 | Node.js + Puppeteer (optional) | 22.5 | only for the headless-browser test of the pages (not needed to run the pipeline) |
@@ -175,7 +177,16 @@ flowchart LR
 Exact versions of everything used for the committed results are recorded in **`network/ENVIRONMENT.md`**
 (written by `00_environment.R` on every run), with MD5 fingerprints of every external input.
 
-**Install**
+**Install** — all requirements are listed in `network/requirements.R` (R packages, with the reference
+versions) and `network/requirements.txt` (Python and system tools). With R >= 4.4 on the PATH:
+
+```bash
+Rscript network/requirements.R            # installs what is missing, then compares with the reference versions
+Rscript network/requirements.R --exact    # the reference run's exact CRAN versions (may build from source)
+Rscript network/requirements.R --check    # only report
+```
+
+The same by hand:
 
 ```r
 if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
@@ -184,7 +195,7 @@ if (!require("pak", quietly = TRUE)) install.packages("pak")
 pak::pak("MoTrPAC/MotrpacHumanPreSuspensionAnalysis")       # github.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis
 install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "ggrepel", "ggforce", "ggnewscale",
                    "visNetwork", "htmlwidgets", "htmltools", "jsonlite", "curl", "rmarkdown", "tinytex",
-                   "readxl", "patchwork", "scales", "checkmate", "testthat", "pkgload"))
+                   "readxl", "repfdr", "patchwork", "scales", "checkmate", "testthat", "pkgload"))
 # optional: install the engine as a package (the pipeline loads it from source, so this is not required)
 # install.packages("network/engine", repos = NULL, type = "source")
 BiocManager::install(c("limma", "TMSig"))                   # module tests in step 17
