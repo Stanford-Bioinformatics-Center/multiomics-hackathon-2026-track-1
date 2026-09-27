@@ -79,6 +79,10 @@ Answer with JSON only, exactly this shape (no other text):
 
 
 BANNED_FILE = Path(__file__).resolve().parent / "suno_banned.txt"
+# The Suno style for every song (Vidal, 2026-09-27): a mix of the mid-90s West Coast greatest-hits sound and a "rat type
+# beat", described without naming any artist (Suno rejects names). Fixed, so every song sounds like the same album.
+SUNO_STYLE = ("mid-90s West Coast G-funk greatest-hits sound x rat type beat, talkbox hook, soulful piano, warm 80s funk "
+              "samples, squeaky bouncy synth plucks, skittering hi-hats, 92 BPM, short intro, passionate gritty male rap vocal")
 MIN_SYL, MAX_SYL = 10, 16       # syllables per bar: one bar of rap at ~92 BPM holds up to 16 (16th notes); the team's
                                 # loved example runs 12-17, so Suno lands every bar on time
 RESPECT_FILE = Path(__file__).resolve().parent / "respect_banned.txt"
@@ -279,7 +283,7 @@ def parse_lyrics(text: str, walk: Sequence[str]) -> Dict[str, Any]:
         start = len(bars)                                  # bar numbers run 1-16 across the sections
         rh = sec.get("rhymes") if isinstance(sec.get("rhymes"), list) and len(sec.get("rhymes")) == len(lines) else [None] * len(lines)
         bars += [{"bar": start + j + 1, "node": node, "text": x.strip(), "rhyme": (str(rh[j]).strip().lower().lstrip("-") if rh[j] else None)} for j, x in enumerate(lines)]
-    style = str(obj.get("suno_style") or "90s west coast hip hop, g-funk, deep bass, laid-back groove, male rap vocal, 92 bpm")[:200]
+    style = SUNO_STYLE                                    # fixed (see SUNO_STYLE); the model's suggestion is not used
     return {"title": str(obj.get("title") or "Untitled").strip(), "suno_style": style, "personas": personas, "bars": bars}
 
 
