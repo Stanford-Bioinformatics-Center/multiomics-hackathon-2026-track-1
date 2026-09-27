@@ -71,7 +71,8 @@ STEPS=(
   "18bc|Rscript $HERE/18_option_bc_hybrid.R"
   "19|Rscript $HERE/19_t2d_stories.R"       # three T2D stories: endurance vs resistance (figures 19a-c)
   "20f|bash $HERE/20_fetch_disease_sets.sh" # published disease tables (online; cached)
-  "20|Rscript $HERE/20_disease_chunks.R"    # best story per disease chunk: old T2D, new T2D, ageing (figures 20a-c)
+  "20|Rscript $HERE/20_disease_chunks.R"    # best story per disease chunk: old T2D, new T2D, ageing (figures 20a-e)
+  "21|Rscript $HERE/21_story_figure.R"      # Figure 1: the whole story on one page
   "99v|Rscript $HERE/99_validate_outputs.R"
   "99m|Rscript $HERE/99_manifest.R"
 )
