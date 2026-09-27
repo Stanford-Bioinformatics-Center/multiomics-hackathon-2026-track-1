@@ -29,6 +29,9 @@ N[, a := ifelse(n == 1, pi / 2, pi * (15 + 150 * (i - 1) / pmax(n - 1, 1)) / 180
 HUES <- c(red = "#e34948", yellow = "#eda100", blue = "#2a78d6", green = "#008300", orange = "#eb6834", purple = "#4a3aa7")
 setorder(ch, -y, x); ch[, dot := unname(HUES)[(seq_len(.N) - 1) %% length(HUES) + 1]]
 
+# symmetric x range around the node columns, so the centred title sits over the nodes (long neighbour names hang
+# outside it: clip is off)
+xc <- mean(range(ch$x)); half <- max(abs(ch$x - xc)) + 0.75; XLIM <- c(xc - half, xc + half)
 p <- ggplot() +
   geom_segment(data = N, aes(x0, y0, xend = x1, yend = y1), colour = "#c9c8c3", linewidth = 0.5) +
   geom_point(data = N, aes(x1, y1), colour = "#9a9993", size = 1.6) +
@@ -39,11 +42,12 @@ p <- ggplot() +
   geom_label(data = ch, aes(x, y - 0.13, label = choice), fill = "#fcfcfb", colour = "#0b0b0b", label.size = 0,
              fontface = "bold", size = 3.6, vjust = 1, label.padding = unit(0.08, "lines")) +
 
-  coord_equal(clip = "off") +
+  coord_equal(xlim = XLIM, clip = "off") +
   labs(title = "Choose Your Own Adventure") +                     # title only: no hint of what the choice is for
   theme_void(base_size = 12) +
   theme(plot.background = element_rect(fill = "#fcfcfb", colour = NA),
         plot.title = element_text(face = "bold", size = 22, colour = "#0b0b0b", hjust = 0.5, margin = margin(b = 16)),
+        plot.title.position = "panel",
         plot.subtitle = element_text(size = 10.5, colour = "#52514e", hjust = 0.5, margin = margin(b = 14)),
         legend.position = "bottom", legend.text = element_text(colour = "#0b0b0b"), legend.title = element_text(colour = "#52514e"),
         plot.margin = margin(18, 24, 14, 24))
