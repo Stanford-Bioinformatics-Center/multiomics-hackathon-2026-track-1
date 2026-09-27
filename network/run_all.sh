@@ -57,6 +57,7 @@ STEPS=(
   "14|Rscript $HERE/14_joint_network.R"
   "07|Rscript $HERE/07_hub_report.R"      # hub report (after 14: it includes the joint network)
   "14t|Rscript $HERE/engine/run_tests.R"   # engine tests: toy example, bad inputs, reproduces step 14 weights exactly
+  "M|Rscript $HERE/docs/make_method_figure.R"   # the method figure (hard x soft edges), from the engine's toy example
   "15|Rscript $HERE/15_joint_network_classes.R"
   "inv1|python3 $HERE/inventory/glygen_protein_inventory.py"
   "inv2|Rscript $HERE/inventory/glygen_motrpac_inventory.R"
