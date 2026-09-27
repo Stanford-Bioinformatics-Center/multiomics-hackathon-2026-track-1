@@ -43,7 +43,7 @@ molecules change, which is closer to how exercise is thought to act on disease p
 ```mermaid
 flowchart LR
   A[MoTrPAC results<br/>RNA, protein, metabolites<br/>adipose, blood, muscle] --> B[Step 1 / 1b<br/>node vectors per arm<br/>471 genes x 18, 450 metabolites x 9]
-  S[Curated STRING file<br/>combined_score >= 700] --> C[Step 2<br/>edges: El-Kebir 2015 rules<br/>431 edges, same for both arms]
+  S[mnet resource: STRING v12<br/>score >= 700] --> C[Step 2<br/>edges: El-Kebir 2015 rules<br/>434 edges, same for both arms]
   B --> D[Step 3<br/>edge weight = dot product<br/>of the two genes' vectors, per arm]
   C --> D
   B --> F[Step 1c / 1d<br/>metabolite IDs ChEBI<br/>and class counts]
@@ -73,7 +73,7 @@ flowchart LR
    changed after exercise (vs controls) in each tissue, layer and time. 18 numbers for genes (3 tissues
    × RNA/protein × 3 times), 9 for metabolites (3 tissues × 3 times).
 2. **Edges (step 2).** STRING decides *whether* two genes are connected. This does not use the exercise
-   data, so both arms have the same 431 edges.
+   data, so both arms have the same 434 edges (mnet STRING v12 ≥ 700; 431 with the legacy file).
 3. **Weights (step 3).** The exercise data decides *how strong* each edge is in each arm: the dot
    product of the two genes' vectors.
 5. **Metabolite identifiers (steps 1c, 1d).** ChEBI and other database IDs and class counts.
@@ -292,6 +292,29 @@ that each ome's most extreme value is exactly ±1, and that normalised = raw ÷ 
 hackathon's documentation guidance (methods with provenance, and validation with expected outputs), the
 divisors, the features that set them and the checks are all recorded here and in the scripts.
 
+### Edge and annotation source: the team's mnet resource (since 2026-09-26)
+
+The network is now built on the team's multi-omic annotation resource **mnet**
+(`~/Desktop/output/hackathon/resources/mo_annotation`, override with `MNET_DIR`; its own README documents the
+build: STRING v12, Rhea, ChEBI, SwissLipids, UniProt, OmniPath). Steps 2 and 5 read it by default
+(`EDGE_SOURCE=mnet`; `EDGE_SOURCE=legacy` reproduces the earlier inputs), and every later step runs unchanged on
+their outputs. Team decisions: **STRING at ≥ 700** (mnet's score = physical-subnetwork score, else 0.9 × the full
+combined score; mnet supplies ≥ 500), **measured nodes only** (our 471 proteins / 450 metabolites; mnet's
+unmeasured metabolites, proteins and its 20 lipid-class nodes are not added, so its lipid → class edges are not
+used), **our metabolite class rule kept** (step 6, now fed by mnet's Rhea links and STRING ≥ 700), and **PTM
+annotation from mnet** (UniProt + OmniPath phosphosites and kinase → substrate edges, UniProt glycosites, and its
+isoform-aware MoTrPAC feature → site bridge) **with GlyGen only for what mnet lacks** (glycan structures,
+protein-level O-GlcNAc evidence, other O-glycosylation databases, mutations, disease, pathways, expression).
+
+| Result | legacy inputs | mnet |
+|---|---|---|
+| protein–protein edges (STRING ≥ 700) | 431 | 434 (isolated 185, largest component 230 unchanged) |
+| metabolite–protein links (Rhea) | 186 (60 metabolites, 80 genes) | 127 (56 metabolites, 55 genes; catalysis + transport, currency molecules such as water / ATP removed by mnet) |
+| metabolite–metabolite (class rule) | 147 (44 metabolites) | 143 (40 metabolites) |
+| joint network | 364 nodes / 764 edges | 353 nodes / 704 edges |
+| kinase → substrate pairs among our proteins | 25 (GlyGen) | 75 (OmniPath via mnet) |
+| phospho = O-glycosylation residues (crosstalk) | 59 on 26 proteins (GlyGen) | 60 on 27 proteins, 15 respond (mnet bridge; mnet + GlyGen O-sites) |
+
 ### Our choices
 
 | Step | Choice | Why |
@@ -366,7 +389,7 @@ keep edges between our genes. The file: 124,099 pairs, 13,855 proteins (13,846 U
 IDs that never match), all combined_score ≥ 700. **Difference from the paper:** they used STRING v9.1
 `protein.actions` (experimental direct interactions plus orthology-predicted ones); our file is an
 all-evidence combined_score ≥ 700 network that also counts co-expression and text mining.
-Result: 444 of 471 genes in STRING; **431 edges**; 185 isolated genes; largest component 230; median
+Result (mnet, STRING v12 ≥ 700): 444 of 471 genes in STRING; **434 edges** (legacy file: 431); 185 isolated genes; largest component 230; median
 degree 1 (top: ITGB1 21, CD34 16, NT5E 16, ITGAM 14). The node set is dominated by secreted and
 cell-surface proteins because blood protein is the OLINK panel.
 
@@ -394,14 +417,14 @@ without error bars, and none should be read as statistically established.
 Rhea reaction that the gene's reviewed (Swiss-Prot) protein catalyses. Our ChEBI IDs are matched as-is
 and in their pH 7.3 form (Rhea's mapping), so L-lactic acid finds L-lactate. Rhea's generic lipid
 entries are not expanded to our species. **Result:** 175 of our 213 ChEBI-identified metabolites occur in
-Rhea; **60 metabolites link to 80 of our 471 genes (186 links)**. Coverage is limited because the gene
+Rhea; with mnet (catalysis + transport, currency molecules removed) **56 metabolites link to 55 of our 471 genes (127 links)**; the legacy direct-Rhea build gave 60 metabolites, 80 genes, 186 links. Coverage is limited because the gene
 set (bounded by the blood OLINK panel) has few metabolic enzymes, and most lipid species have no ChEBI ID.
 
 **Step 6 — metabolite networks.** Rule (team choices after step 8): two metabolites are linked if the
 **same** protein among our 471 genes handles both in Rhea, **or** two different such proteins that
 **interact in STRING** (≥ 700, i.e. an edge of the step 2 gene network) handle them; AND they share a
 RefMet **super class** (14 families). `METAB_LINK=shared` restricts to the same-protein rule and
-`METAB_CLASS_LEVEL=main_class` switches to the 50 main classes. 224 metabolite pairs are linked; **147
+`METAB_CLASS_LEVEL=main_class` switches to the 50 main classes. With mnet's links, 195 metabolite pairs are linked and **143 edges on 40 metabolites** survive the class rule (legacy: 224 pairs; **147
 also share a super class and become edges** (122 via a shared protein, 25 only via STRING-interacting
 proteins), among **44 metabolites** in 4 components (largest 15): nucleic acids 72 edges, fatty acyls 35,
 organic acids 30, sphingolipids 10. The `link_type` column says how each edge is justified, with the
@@ -416,7 +439,7 @@ sign (no noise reference or test yet). The edge table keeps both metabolites' ma
 |---|---|---|---|---|---|
 | Gene networks | gene | 286 | 0 | 13 (degree > 8.5) | ITGB1: 21 genes (integrins, CD34, ICAM1, PECAM1, …) |
 | Metabolite networks | metabolite | 44 | 0 | 0 (degree > 17.1) | AMP: 14 nucleic acids |
-| Metabolite networks | mediating protein | 80 | 0 | 3 (> 6 metabolites) | NT5E: 9 nucleotides/nucleosides, a shared protein on 36 of the 147 edges |
+| Metabolite networks (legacy inputs) | mediating protein | 80 | 0 | 3 (> 6 metabolites) | NT5E: 9 nucleotides/nucleosides, a shared protein on 36 of the 147 edges |
 
 The other flagged mediating proteins are MGLL (8 fatty acids, supports 28 edges) and SLC27A4 (7: fatty
 acids, ATP, AMP; 11 edges). With the super class, purines and pyrimidines share a class, so NT5E links
@@ -434,7 +457,7 @@ arms compare on that network (correlation between the arms' edge weights; edges 
 | Baseline: our 471 genes, main class (50) | 472 | 60 | 78 | 39 | 0.17 | 27 |
 | Exp 1: all human reviewed Rhea enzymes, main class | 4,140 | 155 | 555 | 126 | 0.49 | 162 |
 | Exp 2: our 471 genes, super class (14) | 472 | 60 | 122 | **44** | 0.17 | 42 |
-| **Exp 3: exp 2 + STRING-interacting proteins (≥ 700) — step 6 rule** | 472 | 60 | 147 | **44** | 0.18 | 52 |
+| **Exp 3: exp 2 + STRING-interacting proteins (≥ 700) — step 6 rule** (legacy inputs) | 472 | 60 | 147 | **44** | 0.18 | 52 |
 | Side line: Rhea enzymes from any organism, main class | 236,245 | 171 | 618 | 138 | 0.49 | 185 |
 
 **Same protein vs STRING-interacting proteins (exp 2 vs exp 3).** The step 6 rule connects two
@@ -460,7 +483,7 @@ encodings. Node colour = mean scaled
 response across the node's dimensions (violet down, orange up, limits ±2); node size = strength in that
 arm; edge width = |w|, solid = positive, dashed = negative. Genes: squares. Metabolites: shape = RefMet
 super class, and each connected group is labelled with its super-class name. Only
-connected nodes are drawn (286 genes, 44 metabolites). Titles are descriptive only.
+connected nodes are drawn (286 genes, 40 metabolites with mnet; 44 with the legacy inputs). Titles are descriptive only.
 
 **Step 11 — edge-difference figures.** One network per data type, in the same node positions as
 10a / 10b. Edge colour and width show w_diff = w_EE − w_RE: red and thicker = endurance weight higher,
@@ -547,9 +570,9 @@ step corrects; the largest changes in every ome occur in the resistance arm, whi
 max-normalisation (step 12, option 2) shrinks resistance relative to endurance.
 
 **Step 14 — joint protein + metabolite network.** One network per arm with three edge types, all gated
-without the exercise data: protein–protein (STRING ≥ 700, step 2; 431), metabolite–metabolite (shared
-or STRING-linked Rhea enzymes + same super class, step 6; 147) and metabolite–protein (Rhea, step 5:
-the metabolite is a substrate or product of a reaction catalysed by the protein; 186). Within-layer
+without the exercise data: protein–protein (STRING ≥ 700, step 2; 434), metabolite–metabolite (shared
+or STRING-linked Rhea enzymes + same super class, step 6; 143) and metabolite–protein (Rhea via mnet, step 5:
+the metabolite is a substrate or product of a reaction catalysed, or transported, by the protein; 127). Within-layer
 weights are carried over from steps 3 and 6. For a metabolite–protein edge the metabolite's 9-value
 embedding is **doubled to 18 values** — each tissue × time value is placed in both the RNA slot and the
 protein slot of that tissue × time, in the gene embedding's column order — and the weight is **one dot
@@ -559,10 +582,10 @@ protein at 0.5 h and 24 h) are skipped, leaving 16 terms.
 
 | Edge type | Edges | cor(w_EE, w_RE) | Sign changes | Median \|w\| |
 |---|---|---|---|---|
-| protein – protein | 431 | 0.445 | 152 | 0.042 |
-| metabolite – metabolite | 147 | 0.177 | 52 | 0.0070 |
-| metabolite – protein | 186 | 0.375 | 58 | 0.013 |
-| all | 764 | 0.458 | 262 | 0.022 |
+| protein – protein | 434 | 0.442 | 152 | 0.042 |
+| metabolite – metabolite | 143 | 0.180 | 52 | 0.0069 |
+| metabolite – protein | 127 | 0.232 | 46 | 0.012 |
+| all | 704 | 0.447 | 250 | 0.023 |
 
 Figure 14a stacks the EE (top) and RE (bottom) layers in one identical force-directed layout (seed
 20260926; no cross-layer lines), as in 10a / 10b: node fill = mean normalised response, size = strength,
@@ -575,10 +598,10 @@ therefore different typical sizes (median \|w\| above), so metabolite–metaboli
 to the others; differences between the arms are not tested.
 
 **Step 15 — joint network with metabolites grouped by class.** Nothing is recomputed: nodes, edges and
-weights come from step 14; the class is the RefMet super class (step 1c). The 60 metabolites fall into
-10 classes (organic acids 19, nucleic acids 16, fatty acyls 11, sphingolipids 6, carbohydrates 2,
-glycerophospholipids 2; alkaloids, organoheterocyclic compounds, prenol lipids and sterol lipids 1
-each). A new force-directed layout (seed 20260926) adds extra links (weight 3; real edges weight 1)
+weights come from step 14; the class is the RefMet super class (step 1c). With mnet the 56 metabolites fall
+into 9 classes (organic acids 20, nucleic acids 16, fatty acyls 12, carbohydrates 2, glycerophospholipids 2;
+alkaloids, organoheterocyclic compounds, prenol lipids and sterol lipids 1 each; the legacy inputs gave 60
+metabolites in 10 classes, including 6 sphingolipids). A new force-directed layout (seed 20260926) adds extra links (weight 3; real edges weight 1)
 between every pair of same-class metabolites, **used for the layout only** — never drawn and never
 weighted by the data — so each class gathers into one group. Each group gets a faint outline ("bubble")
 and its class name; metabolite names are dropped (the class names replace them) and the 10 strongest
@@ -590,28 +613,28 @@ says nothing about whether the metabolites of a class behave alike.
 
 **Step 16 — the joint difference network annotated with phospho and glycosylation (sample).** Figure 15b
 is redrawn unchanged (layout, class bubbles, edges = w_EE − w_RE, node sizes, grey metabolite triangles)
-and only the 304 protein circles are recoloured. **16a, MoTrPAC phosphoproteomics** (measured; muscle 0.5 /
+and only the protein circles (297 with mnet) are recoloured. **16a, MoTrPAC phosphoproteomics** (measured; muscle 0.5 /
 4 / 24 h, adipose 4 h; a site "responds" at adj. p < 0.05 in that arm's exercise-vs-control contrast at any
-time point): not measured 165, measured with no responding site 85, a site responds after endurance only
-6, after resistance only 26, after both 22; labels give responding / measured sites for the 12 proteins
-with the most responding sites (e.g. GYS1 21/44, BAG3 17/31, HSPB1 12/15). **16b, GlyGen glycosylation**
-(release 2.11.1; database knowledge — MoTrPAC has no glycoproteomics): no record 28, glycosylated with the
-site unknown (protein-level, mostly the O-GlcNAc Database) 77, N-linked sites only 30, O-linked only (incl.
-O-GlcNAc) 73, both 96; labels give site and glycan-structure counts for the 12 most glycosylated proteins.
+time point): not measured 161, measured with no responding site 83, a site responds after endurance only
+6, after resistance only 26, after both 21; labels give responding / measured sites for the 12 proteins
+with the most responding sites (e.g. GYS1 21/44, BAG3 17/31, HSPB1 12/15). **16b, glycosylation**
+(UniProt sites via mnet; GlyGen release 2.11.1 for protein-level evidence and glycans; database knowledge —
+MoTrPAC has no glycoproteomics): no record 99, glycosylated with the site unknown (GlyGen protein-level, mostly
+the O-GlcNAc Database) 97, N-linked sites only 73, O-linked only (incl. O-GlcNAc) 6, both 22 (UniProt lists far
+fewer O-sites than GlyGen, which merges O-GlcNAc databases); labels give site and glycan-structure counts for the 12 most glycosylated proteins.
 Counts come from `network/inventory/` (see its README). **Read with care:** colours are protein-level
 summaries (the site, tissue and time are in `16_protein_annotation.csv`); glycosylation is prior knowledge,
 not an exercise response; nothing here is tested.
 
 **16c — both layers and site-level crosstalk.** Fill = the 16a phospho category, ring = glycosylated or not
-(any type, site known or protein-level: 276 of the 304 drawn proteins; the types are in 16b), and a diamond on proteins where a phosphosite MoTrPAC measured is the **same residue** as an
-O-glycosylation site GlyGen lists (same canonical protein, position and residue; plain accessions matched on
-GlyGen's canonical, isoform accessions only when GlyGen's canonical is that isoform; multi-site features
-contribute each residue). Phosphorylation and O-GlcNAcylation compete for the same serine / threonine
-hydroxyl, so these are candidate switch sites. **59 residues on 26 proteins** (14 of them drawn in the joint
-network), almost all O-GlcNAc sites reported in the O-GlcNAc Atlas / Database; **14 respond** (7 after
-resistance only, 7 after both; none after endurance only) — BAG3 S65 / S173 / S177 / S291, EIF4B S497 / S498 /
-S504, HSPB1 S176 / T184 / S199, FOXO3 S284, PDLIM7 S111, and EIF4G1 T207 and GYS1 T721 (GlyGen "other"
-O-linked sites). Gold diamond = at least one shared residue responds. **Read with care:** the shared residue
+(any type, site known or protein-level; the types are in 16b), and a diamond on proteins where a phosphosite
+MoTrPAC measured is the **same residue** as a known O-glycosylation site (UniProt via mnet, or GlyGen's O-GlcNAc
+and other databases): MoTrPAC features are mapped to canonical sites with mnet's isoform-aware bridge (residue
+mismatches excluded; multi-site features contribute each residue). Phosphorylation and O-GlcNAcylation compete for the same serine / threonine
+hydroxyl, so these are candidate switch sites. **60 residues on 27 proteins** (15 of them drawn in the joint
+network), almost all O-GlcNAc sites; **15 respond** (8 after resistance only, 7 after both; none after endurance
+only) — BAG3 S65 / S173 / S177 / S291, EIF4B S497 / S498 / S504, HSPB1 S176 / T184 / S199, FOXO3 S284, PDLIM7
+S111, HNRNPK T118 (newly matched through the mnet bridge), and EIF4G1 T207 and GYS1 T721. Gold diamond = at least one shared residue responds. **Read with care:** the shared residue
 is measured as phosphorylated; its O-GlcNAc state is database knowledge from other studies, so these are
 candidates for competition, not observed switching.
 
@@ -619,26 +642,44 @@ candidates for competition, not observed switching.
 precomputes, and the pages use: (1) for every node the MoTrPAC log fold change and adj. p in each tissue × ome ×
 time point for EE vs control, RE vs control and EE vs RE (the exact feature / platform chosen in steps 1 / 1b;
 checked against the step 1 / 1b values); (2) **modules** = Louvain communities of each network's structure
-(exercise data not used; ≥ 5 members): joint 17, gene 14, metabolite 4; (3) **module tests** with MoTrPAC's own
-`run_cameraPR()` (limma CAMERA-PR via TMSig — the method behind the package's published pathway results),
+(exercise data not used; ≥ 5 members; Louvain, Blondel et al. 2008): joint 16, gene 15, metabolite 3 with mnet inputs; (3) **module tests** with MoTrPAC's own
+`run_cameraPR()` (limma CAMERA-PR via TMSig — Wu & Smyth 2012; the method behind the package's published pathway results),
 each module split into its genes (tested in RNA and protein) and metabolites (tested in metabolomics), ≥ 5
-members and ≥ 70% measured (MoTrPAC defaults), FDR across a network's modules within each cell: 1,608 tests, 160
+members and ≥ 70% measured (MoTrPAC defaults), FDR across a network's modules within each cell: 1,602 tests, 146
 at FDR < 0.05 (e.g. a 14-metabolite joint module up in blood 0.5 h after resistance, FDR 1e-6); (4) annotation
-layers: MoTrPAC phosphosites of our proteins per tissue × arm × time (909 features on 227 proteins) with GlyGen
-site knowledge, 25 GlyGen kinase → substrate pairs between our proteins, and 18 GlyGen fields per protein
-(`network/inventory/`). In the page, **filters** (omes, tissues, times, arm, adj. p threshold) recompute node
+layers: MoTrPAC phosphosites of our proteins per tissue × arm × time (909 features on 227 proteins; 906 mapped to
+canonical sites by mnet's bridge) with mnet site knowledge (UniProt + OmniPath), 75 OmniPath kinase → substrate
+pairs between our proteins (via mnet), and 21 fields per protein (mnet PTM counts + GlyGen extras). In the page, **filters** (omes, tissues, times, arm, adj. p threshold) recompute node
 colours, significance outlines and **edge weights** (dot products restricted to the selected dimensions; with
 everything selected they equal the pipeline weights, checked in a headless browser to < 1e-6); the **module**
 menu marks modules significant in the selection and shows each module's test table; **colour nodes by** switches
-to MoTrPAC phosphosite responses (filtered) or any GlyGen field; **kinase → substrate** arrows turn red when a
+to MoTrPAC phosphosite responses (filtered), any mnet PTM field or any GlyGen field; the legend box on the network
+is rebuilt for every mode (gradients with tick values, categories and count bins with the number of nodes in each); **kinase → substrate** arrows turn red when a
 substrate site responds in the selection. **Read with care:** CAMERA-PR is competitive (a module moves more than
 other features of that ome); FDR is within each cell, not across the many cells a user can browse; modules are
-one structural definition among several; GlyGen layers are database knowledge.
+one structural definition among several; PTM and GlyGen layers are database knowledge.
+
+**Module names (ORA).** Each module is named after the pathway most over-represented among its members.
+Modules are gene / metabolite *lists*, so the appropriate test is over-representation analysis (hypergeometric;
+Rivals et al. 2007) rather than GSEA, which needs a ranked list (Subramanian et al. 2005). The background is the
+universe the modules were drawn from — our 471 genes (genes) and 450 metabolites (RefMet classes) — not the
+genome, because a genome-wide background would mostly re-discover how the 471 were selected (Timmons et al.
+2015; Wijesooriya et al. 2022). Test: MoTrPAC's `run_ORA()` with its collections (Reactome, KEGG MEDICUS,
+WikiPathways, PID, BioCarta, GO BP / CC / MF, MitoCarta, CellMarker, RefMet; from MSigDB, Liberzon et al.
+2011); sets need ≥ 5 members in the universe and ≥ 2 module members; MoTrPAC's 70% set-coverage rule is off
+(it is meant for genome-wide backgrounds and would remove almost every set against 471 genes); BH within each
+collection and module. The name is the most significant pathway (Reactome, KEGG, WikiPathways, PID, BioCarta,
+GO BP, MitoCarta) at adj. p < 0.05, plus the RefMet class of the metabolite part when significant; modules
+without one are named "no significant pathway" with their three best-connected members. With mnet inputs 31
+of 34 modules carry a pathway / class name (e.g. gene M02 "Focal adhesion [WikiPathways]", adj. p 1e-13).
+The page's module panel lists the top 5 significant sets with their member genes (`17_module_ora.csv`,
+`17_module_names.csv`). **Read with care:** a name says what the module's members have in common in the
+databases, not what exercise does to it — that is the CAMERA-PR table below it.
 
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
-figures). Each network (joint: 364 nodes / 764 edges, class-grouped layout of 15a / 15b; genes: 286 / 431,
-layout of 10a / 11a; metabolites: 44 / 147, layout of 10b / 11b) becomes one self-contained HTML page
+figures). Each network (mnet inputs — joint: 353 nodes / 704 edges, class-grouped layout of 15a / 15b; genes:
+286 / 434, layout of 10a / 11a; metabolites: 40 / 143, layout of 10b / 11b) becomes one self-contained HTML page
 (visNetwork / vis-network) with:
 
 | Control | What it does |
@@ -709,21 +750,40 @@ product of the node vectors; normalised values within −1..+1 with each ome's e
 | Genes / metabolites | 471 / 450 |
 | Metabolites with ChEBI | 213 |
 | Metabolites in lipid super classes | 320 |
-| Edges / isolated genes / largest component / hubs removed | 431 / 185 / 230 / 0 |
+| Edges / isolated genes / largest component / hubs removed | 434 / 185 / 230 / 0 |
 | Sigmoid scale s | 0.042 |
-| cor(w_EE, w_RE) / edges changing sign | 0.45 / 152 |
-| Metabolites / genes linked through Rhea | 60 / 80 |
-| Metabolite edges / metabolites in the network (super class, shared or STRING-linked proteins) | 147 / 44 |
+| cor(w_EE, w_RE) / edges changing sign | 0.44 / 152 |
+| Metabolites / genes linked through Rhea (mnet) | 56 / 55 |
+| Metabolite edges / metabolites in the network (super class, shared or STRING-linked proteins) | 143 / 40 |
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
-| Joint network edges / cor(w_EE, w_RE) of metabolite–protein edges | 764 / 0.375 |
-| Metabolite classes on the joint network | 10 |
+| Joint network edges / cor(w_EE, w_RE) of metabolite–protein edges | 704 / 0.232 |
+| Metabolite classes on the joint network | 9 |
 
-**Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.45 (metabolite edges:
-r = 0.18), and 152 of 431 gene edges (52 of 147 metabolite edges) change sign between arms. Without a
+**Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.44 (metabolite edges:
+r = 0.18), and 152 of 434 gene edges (52 of 143 metabolite edges) change sign between arms (mnet inputs). Without a
 test against measurement noise, none of these differences is established: most responses are small
 relative to their error (median |value| / SE = 0.83 for genes, 0.80 for metabolites), so many sign
 changes are near-zero weights flipping within noise. Whether r = 0.45 means "similar" or "different"
 also needs a noise-only reference (roadmap).
+
+- **References for steps 16–17 and the mnet switch** (check before manuscript use): Blondel VD, Guillaume JL,
+  Lambiotte R, Lefebvre E. Fast unfolding of communities in large networks. *J Stat Mech* 2008:P10008 ·
+  Wu D, Smyth GK. Camera: a competitive gene set test accounting for inter-gene correlation. *Nucleic Acids Res*
+  2012;40:e133 · Ritchie ME et al. limma powers differential expression analyses for RNA-sequencing and
+  microarray studies. *Nucleic Acids Res* 2015;43:e47 · Rivals I, Personnaz L, Taing L, Potier MC. Enrichment or
+  depletion of a GO category within a class of genes: which test? *Bioinformatics* 2007;23:401–407 · Subramanian A
+  et al. Gene set enrichment analysis. *PNAS* 2005;102:15545–15550 · Timmons JA, Szkop KJ, Gallagher IJ. Multiple
+  sources of bias confound functional enrichment analysis of global -omics data. *Genome Biol* 2015;16:186 ·
+  Wijesooriya K, Jadaan SA, Perera KL, Kaur T, Ziemann M. Urgent need for consistent standards in functional
+  enrichment analysis. *PLoS Comput Biol* 2022;18:e1009935 · Liberzon A et al. Molecular signatures database
+  (MSigDB) 3.0. *Bioinformatics* 2011;27:1739–1740 · Milacic M et al. The Reactome Pathway Knowledgebase 2024.
+  *Nucleic Acids Res* 2024;52:D672–D678 · Agrawal A et al. WikiPathways 2024. *Nucleic Acids Res* 2024;52:D679–D689 ·
+  Gene Ontology Consortium. The Gene Ontology knowledgebase in 2023. *Genetics* 2023;224:iyad031 · Rath S et al.
+  MitoCarta3.0. *Nucleic Acids Res* 2021;49:D1541–D1547 · Szklarczyk D et al. The STRING database in 2023.
+  *Nucleic Acids Res* 2023;51:D638–D646 · Bansal P et al. Rhea, the reaction knowledgebase in 2022. *Nucleic Acids
+  Res* 2022;50:D693–D700 · Türei D et al. Integrated intra- and intercellular signaling knowledge for multicellular
+  omics analysis (OmniPath). *Mol Syst Biol* 2021;17:e9923 · York WS et al. GlyGen: computational and informatics
+  resources for glycoscience. *Glycobiology* 2020;30:72–73.
 
 ### 7b. Preliminary biological observations (descriptive, NOT tested)
 

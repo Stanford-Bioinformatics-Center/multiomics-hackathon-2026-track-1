@@ -170,50 +170,83 @@ CAM <- cam[, .(network, module, tissue = as.character(tissue), ome, arm, time, n
 fwrite(CAM, file.path(OUT, "17_module_camera.csv"))
 message(sprintf("module tests: %d (modules x cells); FDR < 0.05: %d", nrow(CAM), sum(CAM$fdr < 0.05)))
 
-# ---- 4. annotation layers: MoTrPAC phospho, GlyGen phospho / kinases, GlyGen protein annotations ------------
-# (needs network/inventory first: glygen_protein_inventory.py, glygen_motrpac_inventory.R; and step 16 for crosstalk)
+# ---- 4. annotation layers: MoTrPAC phospho + mnet PTM (UniProt / OmniPath) + GlyGen extras ------------------
+# PTM knowledge comes from the team's mnet resource (resources/mo_annotation): phosphosites (UniProt + OmniPath)
+# with kinases, OmniPath kinase -> substrate edges, UniProt glycosites, and its isoform-aware bridge from MoTrPAC
+# feature IDs to canonical sites. GlyGen (network/inventory) adds only what mnet lacks: glycan structures,
+# protein-level O-GlcNAc evidence, O-glycosylation sites from other databases, and non-PTM fields.
+MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackathon/resources/mo_annotation"))
 INV <- file.path(OUT, "inventory")
 if (!file.exists(file.path(INV, "protein_inventory.csv"))) stop("run network/inventory/ first (protein_inventory.csv missing)")
-genes <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))[, .(entrez_gene, gene_symbol)]
+genes <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))[, .(entrez_gene, gene_symbol, uniprot)]
+# our genes by UniProt accession (a gene can carry several accessions, ";"-separated)
+g_acc <- genes[, .(acc = unlist(strsplit(uniprot, ";"))), by = .(entrez_gene, gene_symbol)]
+mn_ph <- fread(file.path(MNET_DIR, "phosphosites.csv"))
+mn_gl <- fread(file.path(MNET_DIR, "glycosites.csv"))
+mn_ks <- fread(file.path(MNET_DIR, "kinase_substrate.csv"))
+mn_map <- fread(file.path(MNET_DIR, "motrpac_feature_site_map.csv"))
+mn_ptm <- fread(file.path(MNET_DIR, "proteins_ptm.csv"))
+# 4a. MoTrPAC phosphosites of our proteins: logFC and adj. p per tissue x arm x time (muscle 0.5/4/24 h, adipose 4 h)
 data("HUMAN_FEATURE_TO_GENE", package = PKG)
 f2g <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[assay == "prot-ph", .(feature_id = as.character(feature_id), entrez_gene = as.character(entrez_gene))])
-f2g <- genes[f2g, on = "entrez_gene", nomatch = 0]
-# 4a. MoTrPAC phosphosites of our proteins: logFC and adj. p per tissue x arm x time (muscle 0.5/4/24 h, adipose 4 h)
+f2g <- genes[, .(entrez_gene, gene_symbol)][f2g, on = "entrez_gene", nomatch = 0]
 PH <- rbindlist(lapply(c("muscle", "adipose"), function(t) da_rows(paste0(toupper(t), "_PROT_PH_DA"))[, tissue := t]))
 PH <- f2g[PH, on = "feature_id", nomatch = 0][, platform := NULL]
-PH[, `:=`(acc = sub("_.*$", "", feature_id), sites = sub("^[^_]*_", "", feature_id))]
-# GlyGen knowledge per site: known phosphosite, kinase(s), O-GlcNAc / O-glyco crosstalk residue (single-site features)
-gps <- fread(file.path(INV, "glygen_phosphosites.csv"))
-gps[, key := paste(sub("-.*$", "", glygen_ac), position, substr(residue, 1, 1))]
-kin_by_key <- gps[kinase != "", .(kinases = paste(sort(unique(kinase)), collapse = ";")), by = key]
-PH[, key := fifelse(grepl("^[STY][0-9]+[sty]$", sites), paste(acc, sub("^[STY]([0-9]+).*$", "\\1", sites), substr(sites, 1, 1)), NA_character_)]
-PH[, known_in_glygen := !is.na(key) & key %in% gps$key]
-PH <- kin_by_key[PH, on = "key"]
-xt <- if (file.exists(file.path(OUT, "16_crosstalk_sites.csv"))) fread(file.path(OUT, "16_crosstalk_sites.csv")) else data.table(protein = character(), residue = character())
-PH[, site_label := gsub("([sty])", "", sites)]
-PH[, crosstalk := mapply(function(p, s) any(paste(p, strsplit(s, "(?<=[0-9])(?=[STY])", perl = TRUE)[[1]]) %in% paste(xt$protein, xt$residue)), gene_symbol, site_label)]
-fwrite(PH[, .(protein = gene_symbol, feature_id, site = site_label, tissue, arm, time, logFC, adj_p, known_in_glygen, kinases, crosstalk)],
+PH[, site := gsub("([sty])", "", sub("^[^_]*_", "", feature_id))]
+# canonical site IDs per feature from the mnet bridge (all mapping statuses except residue mismatches)
+br <- unique(mn_map[mapping_status != "residue_mismatch" & !is.na(site_id) & site_id != "", .(feature_id, site_id)])
+# O-glycosylation sites (Ser / Thr / Tyr): mnet UniProt glycosites + GlyGen sites (other databases)
+og_mnet <- mn_gl[residue %in% c("S", "T", "Y") & glyco_type %in% c("O-linked", "O-GlcNAc"), .(site_id, gly_type = glyco_type, gly_source = "UniProt (mnet)")]
+gg <- fread(file.path(INV, "glygen_glycosites.csv"))[type == "O-linked" & residue %in% c("Ser", "Thr", "Tyr")]
+og_gg <- unique(gg[, .(site_id = paste0(sub("-.*$", "", glygen_ac), "_", substr(residue, 1, 1), position), gly_type = fifelse(subtype == "O-GlcNAcylation", "O-GlcNAc", "O-linked"),
+                       gly_source = paste0("GlyGen: ", source))])
+OG <- rbind(og_mnet, og_gg)[, .(gly_type = paste(sort(unique(gly_type)), collapse = ";"), gly_source = paste(sort(unique(gly_source)), collapse = "; ")), by = site_id]
+# per feature: known in mnet phosphosites, kinases (mnet), crosstalk (any of its sites is an O-glycosylation site)
+kin_site <- mn_ph[kinases != "" & !is.na(kinases), .(site_id, kinases = gsub("[|,]", ";", kinases))]
+fx <- br[, .(known = any(site_id %in% mn_ph$site_id), kinases = paste(sort(unique(unlist(strsplit(kin_site$kinases[match(site_id, kin_site$site_id)], ";")))), collapse = ";"),
+             crosstalk = any(site_id %in% OG$site_id), sites = paste(site_id, collapse = ";")), by = feature_id]
+fx[kinases == "NA", kinases := ""]
+PH <- fx[PH, on = "feature_id"]
+PH[is.na(known), `:=`(known = FALSE, crosstalk = FALSE, kinases = "")]
+fwrite(PH[, .(protein = gene_symbol, feature_id, site, tissue, arm, time, logFC, adj_p, known_in_glygen = known, kinases, crosstalk)],
        file.path(OUT, "17_phospho_site_stats.csv"))
-message(sprintf("phospho sites: %d features on %d proteins", uniqueN(PH$feature_id), uniqueN(PH$gene_symbol)))
-# 4b. kinase -> substrate edges (GlyGen: UniProtKB + iPTMnet), both proteins among our 471
-KE <- gps[kinase != "" & kinase %in% genes$gene_symbol, .(sites = paste(sort(unique(paste0(substr(residue, 1, 1), position))), collapse = ","),
-                                                          n_sites = uniqueN(position),
-                                                          source = paste(sort(unique(unlist(strsplit(source, ";")))), collapse = ";")),
-          by = .(kinase, substrate = gene_symbol)]
+message(sprintf("phospho sites: %d features on %d proteins (%d mapped to mnet sites; %d crosstalk)", uniqueN(PH$feature_id), uniqueN(PH$gene_symbol),
+                uniqueN(PH[feature_id %in% br$feature_id, feature_id]), uniqueN(PH[crosstalk == TRUE, feature_id])))
+# crosstalk residues (replaces the GlyGen-only matching of step 16 for the pages)
+# (same route as step 16: MoTrPAC feature -> our gene -> mnet canonical site -> O-glycosylation site)
+xtab <- merge(PH[, .(responds_EE = any(adj_p < 0.05 & arm == "EE"), responds_RE = any(adj_p < 0.05 & arm == "RE")), by = .(feature_id, protein = gene_symbol)],
+              br, by = "feature_id")[site_id %in% OG$site_id]
+xtab <- xtab[, .(features = paste(sort(unique(feature_id)), collapse = ";"), responds_EE = any(responds_EE), responds_RE = any(responds_RE)), by = .(protein, site_id)]
+xtab <- OG[xtab, on = "site_id"]
+xtab[, `:=`(residue = sub("^[^_]*_", "", site_id), responds = fcase(responds_EE & responds_RE, "both", responds_EE, "endurance", responds_RE, "resistance", default = "no"))]
+fwrite(xtab[, .(protein, residue, site_id, features, responds, responds_EE, responds_RE, gly_type, gly_source)], file.path(OUT, "17_crosstalk_sites.csv"))
+message(sprintf("crosstalk residues (MoTrPAC phosphosite = O-glycosylation site; mnet + GlyGen): %d on %d proteins; %d respond",
+                nrow(xtab), uniqueN(xtab$protein), sum(xtab$responds != "no")))
+# 4b. kinase -> substrate edges (mnet: OmniPath enzyme-substrate, phosphorylation), both proteins among our 471
+ks <- mn_ks[direction == "phosphorylation"]
+ks[, `:=`(e_acc = sub("-[0-9]+$", "", enzyme_node_id), s_acc = sub("-[0-9]+$", "", substrate_node_id))]
+ks <- merge(ks, g_acc[, .(e_acc = acc, kinase = gene_symbol)], by = "e_acc")
+ks <- merge(ks, g_acc[, .(s_acc = acc, substrate = gene_symbol)], by = "s_acc")
+KE <- ks[, .(sites = paste(sort(unique(sub("^[^_]*_", "", site_id))), collapse = ","), n_sites = uniqueN(site_id),
+             source = paste(head(sort(unique(unlist(strsplit(sources, ";")))), 6), collapse = ";")), by = .(kinase, substrate)]
 fwrite(KE, file.path(OUT, "17_kinase_edges.csv"))
-message(sprintf("kinase -> substrate edges among the 471: %d (%d self)", nrow(KE), sum(KE$kinase == KE$substrate)))
-# 4c. GlyGen protein annotations (counts; one row per protein) for the "colour by" selector and tooltips
+message(sprintf("kinase -> substrate edges among the 471 (mnet / OmniPath): %d (%d self)", nrow(KE), sum(KE$kinase == KE$substrate)))
+# 4c. protein annotations: mnet PTM counts + GlyGen extras (one row per protein)
+mp <- merge(g_acc, mn_ptm[, .(acc = sub("-[0-9]+$", "", node_id), n_phosphosites, n_phosphosites_with_kinase, is_kinase, n_substrate_sites,
+                                n_glycosites, n_N_linked, n_O_linked, n_O_GlcNAc)], by = "acc")[order(-n_phosphosites)][!duplicated(gene_symbol)]
 P <- fread(file.path(INV, "protein_inventory.csv"))
-ANN <- P[, .(protein = gene_symbol,
-             glygen_phosphosites = phospho_sites_unique, glygen_kinase_sites = phospho_sites_with_kinase,
-             glycosylated = as.integer(gly_sites_unique + gly_protein_level_no_site > 0), glyco_sites = gly_sites_unique,
-             glyco_N_sites = gly_sites_N, glyco_O_sites = gly_sites_O, glycans = glycans_at_sites,
+ANN <- P[, .(protein = gene_symbol, glycans = glycans_at_sites, glyco_protein_level = gly_protein_level_no_site,
              mutations = n_snv, disease = n_disease, biomarkers = n_biomarkers, ptm_annotation = n_ptm_annotation,
              site_annotation = n_site_annotation, enzyme = n_enzyme_annotation, pathways = n_pathway, reactions = n_reactions,
              expression_tissues = n_expression_tissue, publications = n_publication)]
-ANN <- merge(ANN, xt[, .(crosstalk_residues = .N), by = .(protein)], by = "protein", all.x = TRUE)[is.na(crosstalk_residues), crosstalk_residues := 0L]
+ANN <- merge(mp[, .(protein = gene_symbol, phosphosites = n_phosphosites, kinase_sites = n_phosphosites_with_kinase, is_kinase = as.integer(is_kinase %in% c(TRUE, "True")),
+                    substrate_sites = n_substrate_sites, glyco_sites = n_glycosites, glyco_N_sites = n_N_linked, glyco_O_sites = n_O_linked + n_O_GlcNAc)],
+             ANN, by = "protein", all = TRUE)
+for (k in setdiff(names(ANN), "protein")) set(ANN, which(is.na(ANN[[k]])), k, 0L)
+ANN[, glycosylated := as.integer(glyco_sites + glyco_protein_level > 0)]
+ANN <- merge(ANN, xtab[, .(crosstalk_residues = .N), by = protein], by = "protein", all.x = TRUE)[is.na(crosstalk_residues), crosstalk_residues := 0L]
 fwrite(ANN, file.path(OUT, "17_glygen_protein_annotation.csv"))
-message(sprintf("GlyGen annotations: %d proteins x %d fields", nrow(ANN), ncol(ANN) - 1))
+message(sprintf("protein annotations: %d proteins x %d fields (PTM from mnet, extras from GlyGen)", nrow(ANN), ncol(ANN) - 1))
 
 # ---- 5. module names: over-representation of pathways among each module's members ---------------------------
 # Modules are gene / metabolite LISTS drawn from our 471-gene / 450-metabolite universe, so the right test is

@@ -159,6 +159,37 @@ setorder(link, metabolite, gene_symbol)
 # Save.
 fwrite(link, file.path(OUT, "05_metabolite_protein_links.csv"))
 
+# ---- mnet source (default since 2026-09-26): replace the links with the team's mnet Rhea edges -------
+# mnet (resources/mo_annotation) links proteins and metabolites through Rhea catalysis and transport
+# reactions, with currency / cofactor molecules (water, ATP, NAD+ ...) removed by its curation. Our metabolites
+# are matched to mnet's measured metabolite nodes by name, then RefMet ID, then ChEBI ID; proteins by UniProt.
+EDGE_SOURCE <- Sys.getenv("EDGE_SOURCE", unset = "mnet")
+MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackathon/resources/mo_annotation"))
+if (EDGE_SOURCE == "mnet") {
+  mn <- fread(file.path(MNET_DIR, "nodes.csv"), colClasses = "character")
+  mm <- mn[node_type == "metabolite" & is_measured == "True"]
+  ids[, mnet_id := mm$node_id[match(tolower(metabolite), tolower(mm$label))]]
+  ids[is.na(mnet_id) & refmet_id != "", mnet_id := mm$node_id[match(refmet_id, mm$refmet_id)]]
+  ids[is.na(mnet_id) & chebi_id != "", mnet_id := mm$node_id[match(chebi_id, mm$chebi_id)]]
+  me <- as.data.table(nanoparquet::read_parquet(file.path(MNET_DIR, "edges.parquet")))[edge_type %in% c("catalysis", "transport")]
+  # orient: metabolite node, protein node
+  me[, `:=`(m = fifelse(node1_type == "metabolite", node1, node2), p = sub("-[0-9]+$", "", fifelse(node1_type == "protein", node1, node2)))]
+  me <- merge(me, ids[!is.na(mnet_id), .(m = mnet_id, metabolite)], by = "m")
+  me <- merge(me, acc[, .(p = uniprot, entrez_gene)], by = "p", allow.cartesian = TRUE)
+  link <- me[, .(n_reactions = uniqueN(unlist(strsplit(paste(evidence, collapse = ";"), "[;|, ]+"))),
+                 example_reactions = paste(head(sort(unique(unlist(strsplit(paste(evidence, collapse = ";"), "[;|, ]+")))), 5), collapse = ";"),
+                 uniprot = paste(sort(unique(p)), collapse = ";"), matched_via = paste(sort(unique(edge_type)), collapse = "+")),
+             by = .(metabolite, entrez_gene)]
+  link <- genes[link, on = "entrez_gene"]
+  link <- ids[, .(metabolite, super_class, main_class)][link, on = "metabolite"]
+  setcolorder(link, c("metabolite", "super_class", "main_class", "entrez_gene", "gene_symbol", "uniprot", "n_reactions", "example_reactions", "matched_via"))
+  setorder(link, metabolite, gene_symbol)
+  fwrite(link, file.path(OUT, "05_metabolite_protein_links.csv"))
+  rhea_release <- "mnet (Rhea current; resources/mo_annotation)"; rhea_date <- "2026-09-26"
+  m_rx <- data.table(metabolite = ids[!is.na(mnet_id), metabolite])
+  message(sprintf("mnet: %d of %d metabolites matched to mnet nodes; %d links", sum(!is.na(ids$mnet_id)), nrow(ids), nrow(link)))
+}
+
 # ---- summary -------------------------------------------------------------------------------------
 summ <- data.table(
   metric = c("rhea_release", "rhea_release_date", "metabolites", "metabolites_with_chebi",

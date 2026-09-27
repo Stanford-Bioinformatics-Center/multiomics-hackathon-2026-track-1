@@ -31,14 +31,16 @@
 #
 # DATA AND PROVENANCE
 #   Network: steps 14 / 15. Phospho: MotrpacHumanPreSuspensionAnalysis v0.2.4 (MUSCLE/ADIPOSE_PROT_PH_DA,
-#   HUMAN_FEATURE_TO_GENE). Glycosylation: GlyGen release 2.11.1 via the inventory (protein_inventory.csv).
+#   HUMAN_FEATURE_TO_GENE). Glycosylation: UniProt sites via the team's mnet resource (resources/mo_annotation) + GlyGen
+#   release 2.11.1 protein-level evidence and glycans (inventory); crosstalk through mnet's MoTrPAC site bridge.
 #
 # TECH STACK:  R 4.4; data.table, ggplot2, ggrepel, ggforce, ggnewscale (second fill / colour scales in 16c).
 #
 # INPUTS
 #   $HACK_OUT/14_joint_edges.csv, 14_joint_nodes.csv, 15_class_layout.csv, 02_nodes_string.csv
 #   $HACK_OUT/inventory/protein_inventory.csv   (gly_sites_N, gly_sites_O, gly_protein_level_no_site, glycans_at_sites)
-#   $HACK_OUT/inventory/glygen_glycosites.csv   (glycosylation site positions, for 16c)
+#   $HACK_OUT/inventory/glygen_glycosites.csv   (GlyGen O-glycosylation sites, for 16c)
+#   resources/mo_annotation (MNET_DIR): proteins_ptm.csv, glycosites.csv, motrpac_feature_site_map.csv (mnet PTM)
 # OUTPUTS
 #   $HACK_FIG/16a_joint_edge_difference_phospho.png, 16b_joint_edge_difference_glycosylation.png,
 #            16c_joint_edge_difference_phospho_glyco_crosstalk.png (never in the repo)
@@ -96,11 +98,18 @@ php <- ph[, .(ph_measured = .N, ph_resp_EE = sum(sig_EE), ph_resp_RE = sum(sig_R
 A <- php[genes, on = "entrez_gene"]
 for (v in c("ph_measured", "ph_resp_EE", "ph_resp_RE", "ph_resp_any")) set(A, which(is.na(A[[v]])), v, 0L)
 
-# ---- protein annotation: GlyGen glycosylation --------------------------------------------------------------
+# ---- protein annotation: glycosylation (mnet UniProt sites + GlyGen protein-level evidence and glycans) -------
+# Site-level glycosylation from the team's mnet resource (resources/mo_annotation, UniProt glycosites); GlyGen
+# (network/inventory) adds protein-level evidence (mostly O-GlcNAc Database, no site) and glycan structures.
+MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackathon/resources/mo_annotation"))
 inv <- file.path(OUT, "inventory", "protein_inventory.csv")
 if (!file.exists(inv)) stop("run network/inventory/glygen_protein_inventory.py and glygen_motrpac_inventory.R first (", inv, " missing)")
-gl <- fread(inv, colClasses = list(character = "entrez_gene"))[, .(entrez_gene, gly_N = gly_sites_N, gly_O = gly_sites_O, gly_sites = gly_sites_unique,
-                                                                   gly_protein_level = gly_protein_level_no_site, glycans = glycans_at_sites)]
+g_acc <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))[, .(acc = unlist(strsplit(uniprot, ";"))), by = entrez_gene]
+mptm <- fread(file.path(MNET_DIR, "proteins_ptm.csv"))[, .(acc = sub("-[0-9]+$", "", node_id), gly_N = n_N_linked, gly_O = n_O_linked + n_O_GlcNAc, gly_sites = n_glycosites)]
+mg <- merge(g_acc, mptm, by = "acc")[order(-gly_sites)][!duplicated(entrez_gene), !"acc"]
+gl <- fread(inv, colClasses = list(character = "entrez_gene"))[, .(entrez_gene, gly_protein_level = gly_protein_level_no_site, glycans = glycans_at_sites)]
+gl <- mg[gl, on = "entrez_gene"]
+for (v in c("gly_N", "gly_O", "gly_sites")) set(gl, which(is.na(gl[[v]])), v, 0L)
 A <- gl[A, on = "entrez_gene"]
 stopifnot(!anyNA(A$gly_sites))
 
@@ -181,36 +190,33 @@ annotated("ph_cat", PH_LEV, PH_COL, "protein: MoTrPAC phosphosites",
                            "Labels: proteins with the most responding sites, responding / measured."),
           file = "16a_joint_edge_difference_phospho.png")
 # 16b: GlyGen glycosylation
-annotated("gl_cat", GL_LEV, GL_COL, "protein: GlyGen glycosylation",
+annotated("gl_cat", GL_LEV, GL_COL, "protein: glycosylation",
           lab_rank = function(d) d$gly_sites + d$glycans / 1000,
           lab_text = function(d) sprintf("%s  %d sites, %d glycans", d$node, d$gly_sites, d$glycans),
-          title = "Joint protein-metabolite network, endurance minus resistance edge weights, proteins annotated with GlyGen glycosylation",
-          caption = paste0("GlyGen release 2.11.1 (database knowledge, not measured in this study). Sites with a known position; 'site unknown' = protein-level evidence, mostly the O-GlcNAc Database. ",
+          title = "Joint protein-metabolite network, endurance minus resistance edge weights, proteins annotated with glycosylation (UniProt via mnet, GlyGen)",
+          caption = paste0("Glycosylation sites: UniProt via the team's mnet resource; 'site unknown' = GlyGen protein-level evidence (mostly the O-GlcNAc Database); database knowledge, not measured in this study. ",
                            "Labels: proteins with the most glycosylation sites, with glycan structures observed at those sites."),
           file = "16b_joint_edge_difference_glycosylation.png")
 # ---- 16c: both layers + site-level crosstalk -------------------------------------------------------------------
 # Crosstalk residue = a serine / threonine / tyrosine that MoTrPAC measured as a phosphosite AND GlyGen lists as an
 # O-glycosylation site (mostly O-GlcNAc) on the same canonical protein, position and residue. The two modifications
 # compete for the same hydroxyl group, so these are candidate phospho / O-GlcNAc switch sites.
+# O-glycosylation sites (Ser / Thr / Tyr) from mnet (UniProt) and GlyGen (other databases), as canonical site IDs
 gsf <- file.path(OUT, "inventory", "glygen_glycosites.csv")
 if (!file.exists(gsf)) stop("re-run network/inventory/glygen_protein_inventory.py (", gsf, " missing)")
-og <- fread(gsf)[type == "O-linked" & residue %in% c("Ser", "Thr", "Tyr")]
-og <- og[, .(gly_subtypes = paste(sort(unique(subtype)), collapse = ";"), gly_evidence = paste(sort(unique(category)), collapse = ";"),
-             gly_sources = paste(sort(unique(unlist(strsplit(source, ";")))), collapse = ";")),
-         by = .(glygen_ac, base = sub("-.*$", "", glygen_ac), position, res1 = substr(residue, 1, 1))]
-# MoTrPAC features split into their sites (a multi-site feature contributes each of its residues)
-fs <- ph[, .(feature_id, entrez_gene, sig_EE, sig_RE, acc = sub("_.*$", "", feature_id), sites = sub("^[^_]*_", "", feature_id))]
-fs <- fs[, .(res1 = regmatches(sites, gregexpr("[STY]", sites))[[1]], position = as.integer(regmatches(sites, gregexpr("[0-9]+", sites))[[1]]),
-             n_sites = lengths(regmatches(sites, gregexpr("[STY][0-9]+", sites)))), by = .(feature_id, entrez_gene, sig_EE, sig_RE, acc)]
-# match: plain accessions (UniProt canonical sequence) on the GlyGen canonical base; isoform accessions only if GlyGen's canonical is that isoform
-xt <- rbind(merge(fs[!grepl("-", acc)], og, by.x = c("acc", "position", "res1"), by.y = c("base", "position", "res1")),
-            merge(fs[grepl("-", acc)], og[, !"base"], by.x = c("acc", "position", "res1"), by.y = c("glygen_ac", "position", "res1")), fill = TRUE)
-xt <- genes[xt, on = "entrez_gene"]
+og_m <- fread(file.path(MNET_DIR, "glycosites.csv"))[residue %in% c("S", "T", "Y") & glyco_type %in% c("O-linked", "O-GlcNAc"), .(site_id, gly_type = glyco_type, gly_source = "UniProt (mnet)")]
+og_g <- fread(gsf)[type == "O-linked" & residue %in% c("Ser", "Thr", "Tyr"),
+                   .(site_id = paste0(sub("-.*$", "", glygen_ac), "_", substr(residue, 1, 1), position), gly_type = fifelse(subtype == "O-GlcNAcylation", "O-GlcNAc", "O-linked"), gly_source = paste0("GlyGen: ", source))]
+og <- unique(rbind(og_m, og_g))[, .(gly_subtypes = paste(sort(unique(gly_type)), collapse = ";"), gly_sources = paste(sort(unique(gly_source)), collapse = "; ")), by = site_id]
+# MoTrPAC features -> canonical sites through mnet's isoform-aware bridge (residue mismatches excluded)
+br <- unique(fread(file.path(MNET_DIR, "motrpac_feature_site_map.csv"))[mapping_status != "residue_mismatch" & site_id != "", .(feature_id, site_id, n_sites)])
+xt <- merge(ph[, .(feature_id, entrez_gene, sig_EE, sig_RE)], br, by = "feature_id")[og, on = "site_id", nomatch = 0]
+xt <- genes[xt, on = "entrez_gene", nomatch = 0]   # our 471 proteins only
 # one row per residue: features measuring it, and whether any of them responds (EE, RE); single-site evidence flagged
 XT <- xt[, .(features = paste(sort(unique(feature_id)), collapse = ";"), n_features = uniqueN(feature_id),
              single_site_feature = any(n_sites == 1), responds_EE = any(sig_EE), responds_RE = any(sig_RE),
-             gly_subtypes = gly_subtypes[1], gly_evidence = gly_evidence[1], gly_sources = gly_sources[1]),
-         by = .(protein = gene_symbol, residue = paste0(res1, position), position)][order(protein, position)]
+             gly_subtypes = gly_subtypes[1], gly_sources = gly_sources[1]),
+         by = .(protein = gene_symbol, residue = sub("^[^_]*_", "", site_id), position = as.integer(sub("^[^_]*_[STY]", "", site_id)))][order(protein, position)]
 XT[, responds := fcase(responds_EE & responds_RE, "both", responds_EE, "endurance", responds_RE, "resistance", default = "no")]
 fwrite(XT[, !"position"], file.path(OUT, "16_crosstalk_sites.csv"))
 # per protein: crosstalk residues and how many respond
@@ -234,7 +240,7 @@ q <- base_plot() +
   geom_point(data = P3, aes(x, y, size = abs_delta, shape = node_type, fill = ph_f, colour = gly2), stroke = P3$ring_stroke) +
   scale_fill_manual(values = PH_COL, labels = setNames(nlab(P3, "ph_cat", PH_LEV), PH_LEV), drop = FALSE, name = "fill: MoTrPAC phosphosites",
                     guide = guide_legend(order = 1, ncol = 3, override.aes = list(shape = 21, size = 3, colour = "grey20", stroke = 0.3))) +
-  scale_colour_manual(values = GL_RING, labels = setNames(nlab(P3, "gly2", GLY2), GLY2), drop = FALSE, name = "ring: GlyGen glycosylation",
+  scale_colour_manual(values = GL_RING, labels = setNames(nlab(P3, "gly2", GLY2), GLY2), drop = FALSE, name = "ring: glycosylation (UniProt via mnet, GlyGen)",
                       guide = guide_legend(order = 2, override.aes = list(shape = 21, size = 3, fill = "white", stroke = c(1, 0.3)))) +
   ggnewscale::new_scale_fill() +
   geom_point(data = MK, aes(mx, my, fill = mk), shape = 23, size = 2.1, colour = "grey10", stroke = 0.35) +

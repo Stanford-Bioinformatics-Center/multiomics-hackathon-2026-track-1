@@ -159,10 +159,11 @@ KIN <- fread(file.path(OUT, "17_kinase_edges.csv")); ANN <- fread(file.path(OUT,
 for (f in c("17_node_cell_stats.csv", "17_phospho_site_stats.csv", "17_modules.csv", "17_module_camera.csv", "17_kinase_edges.csv"))
   if (!file.exists(file.path(OUT, f))) stop("run network/17_filter_stats.R first (", f, " missing)")
 # Annotation fields offered in the "colour nodes by" menu: column, label, kind (count / binary).
-ANN_FIELDS <- list(list(col = "glygen_phosphosites", label = "GlyGen: phosphosites"), list(col = "glygen_kinase_sites", label = "GlyGen: phosphosites with a known kinase"),
-                   list(col = "glycosylated", label = "GlyGen: glycosylated (any)", binary = TRUE), list(col = "glyco_sites", label = "GlyGen: glycosylation sites"),
-                   list(col = "glyco_N_sites", label = "GlyGen: N-linked sites"), list(col = "glyco_O_sites", label = "GlyGen: O-linked sites"),
-                   list(col = "glycans", label = "GlyGen: glycan structures at sites"), list(col = "crosstalk_residues", label = "phospho = O-glyco residues (crosstalk)"),
+ANN_FIELDS <- list(list(col = "phosphosites", label = "mnet: phosphosites (UniProt + OmniPath)"), list(col = "kinase_sites", label = "mnet: phosphosites with a known kinase"),
+                   list(col = "is_kinase", label = "mnet: is a kinase", binary = TRUE), list(col = "substrate_sites", label = "mnet: substrate sites it phosphorylates (as kinase)"),
+                   list(col = "glycosylated", label = "glycosylated (mnet sites or GlyGen protein-level)", binary = TRUE), list(col = "glyco_sites", label = "mnet: glycosylation sites (UniProt)"),
+                   list(col = "glyco_N_sites", label = "mnet: N-linked sites"), list(col = "glyco_O_sites", label = "mnet: O-linked / O-GlcNAc sites"),
+                   list(col = "glycans", label = "GlyGen: glycan structures at sites"), list(col = "crosstalk_residues", label = "phospho = O-glyco residues (crosstalk; mnet + GlyGen)"),
                    list(col = "mutations", label = "GlyGen: mutations / SNVs"), list(col = "disease", label = "GlyGen: disease associations"),
                    list(col = "biomarkers", label = "GlyGen: biomarkers"), list(col = "ptm_annotation", label = "GlyGen: PTM annotations"),
                    list(col = "site_annotation", label = "GlyGen: active / binding sites"), list(col = "enzyme", label = "GlyGen: enzyme (EC) annotations"),
@@ -287,7 +288,7 @@ function(el, x, cfg) {
        "<datalist id='" + el.id + "-dl'>" + nodes.getIds().sort().map(function (i) { return "<option value=\"" + String(i).replace(/"/g, "&quot;") + "\">"; }).join("") + "</datalist>";
   if (S.classes.length) h += "<span class='hk-sep'></span><b>Class</b> <select class='hk-cls'><option value=''>all</option>" + S.classes.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("") + "</select>";
   h += "</div><div><b>Edges</b> " + D.types.map(function (t) { return cb("hk-type", t, t, 1); }).join(" ") +
-       (D.kin.length ? " " + cb("hk-kin", "1", "kinase → substrate (GlyGen; " + D.kin.length + ")", 0) : "") +
+       (D.kin.length ? " " + cb("hk-kin", "1", "kinase → substrate (OmniPath via mnet; " + D.kin.length + ")", 0) : "") +
        (S.hulls.length ? "<span class='hk-sep'></span>" + cb("hk-hull", "1", "class outlines", 1) + " <button class='hk-col'>Collapse classes</button>" : "") +
        "<span class='hk-sep'></span><button class='hk-reset'>Reset</button></div>";
   bar.innerHTML = h;
@@ -360,8 +361,9 @@ function(el, x, cfg) {
       var t = "<b>" + esc(n.id) + "</b> (" + (n.shape === "triangle" ? "metabolite · " + esc(n.group) : "protein") + ")<br><i>" + ARMLAB[st.arm] + ", selection</i>: mean normalised response " + f3(response(n.id));
       if (sc.length) t += "<br>" + sc.slice(0, 9).map(function (r) { return (r[4] < thr ? "<b>" : "") + r[0] + " " + r[1] + " " + r[2] + ": logFC " + f3(r[3]) + ", adj. p " + f3(r[4]) + (r[4] < thr ? "</b>" : ""); }).join("<br>") + (sc.length > 9 ? "<br>… " + (sc.length - 9) + " more" : "");
       if (D.phos[n.id]) { var pcs = phosCells(n.id).filter(function (r) { return r[4] < thr; });
-        t += "<br><u>MoTrPAC phosphosites</u>: " + D.phos[n.id].length + " measured, " + pcs.length + " respond in selection" + (pcs.length ? "<br>" + pcs.slice(0, 8).map(function (r) { return r[3].site + " (" + r[0] + " " + r[1] + ") logFC " + f3(r[2]) + ", adj. p " + f3(r[4]) + (r[3].kin ? " · kinase " + esc(r[3].kin) : "") + (r[3].xt ? " · O-GlcNAc site" : ""); }).join("<br>") : ""); }
-      var a = D.ann[n.id]; if (a) t += "<br><u>GlyGen</u>: " + a.glygen_phosphosites + " phosphosites (" + a.glygen_kinase_sites + " with kinase) · " + (a.glycosylated ? a.glyco_sites + " glycosylation sites, " + a.glycans + " glycans" : "no glycosylation record") + (a.crosstalk_residues ? " · " + a.crosstalk_residues + " phospho = O-glyco residues" : "") + "<br>" + a.mutations + " mutations · " + a.disease + " diseases · " + a.pathways + " pathways · " + a.publications + " publications";
+        t += "<br><u>MoTrPAC phosphosites</u>: " + D.phos[n.id].length + " measured, " + pcs.length + " respond in selection" + (pcs.length ? "<br>" + pcs.slice(0, 8).map(function (r) { return r[3].site + " (" + r[0] + " " + r[1] + ") logFC " + f3(r[2]) + ", adj. p " + f3(r[4]) + (r[3].kin ? " · kinase " + esc(r[3].kin) : "") + (r[3].xt ? " · also an O-glycosylation site" : ""); }).join("<br>") : ""); }
+      var a = D.ann[n.id]; if (a) t += "<br><u>PTM (mnet)</u>: " + a.phosphosites + " phosphosites (" + a.kinase_sites + " with kinase)" + (a.is_kinase ? " · kinase (" + a.substrate_sites + " substrate sites)" : "") + " · " + a.glyco_sites + " glycosylation sites (N " + a.glyco_N_sites + ", O " + a.glyco_O_sites + ")" + (a.crosstalk_residues ? " · " + a.crosstalk_residues + " phospho = O-glyco residues" : "") +
+        "<br><u>GlyGen</u>: " + a.glycans + " glycan structures" + (a.glyco_protein_level ? " · glycosylated (protein-level evidence)" : "") + " · " + a.mutations + " mutations · " + a.disease + " diseases · " + a.pathways + " pathways · " + a.publications + " publications";
       var mm = D.mods.filter(function (m) { return m.members.indexOf(n.id) >= 0; })[0]; if (mm) t += "<br>module " + mm.id;
       return { id: n.id, size: size, title: t, borderWidth: onF ? bw : 0.5, font: { color: onF ? "#1A1A1A" : "rgba(0,0,0,0.06)" },
                color: { background: onF ? col : "rgba(230,230,230,0.25)", border: onF ? border : "rgba(170,170,170,0.25)", highlight: { background: col, border: "#000000" }, hover: { background: col, border: "#000000" } } };
@@ -380,7 +382,7 @@ function(el, x, cfg) {
         return s.site + ": " + (best ? "logFC " + f3(best[0]) + ", adj. p " + f3(best[1]) + " (" + best[2] + " " + best[3] + ")" : "not measured in selection"); });
       var any = resp.some(function (s) { return on(st.tis).some(function (t) { return on(st.times).some(function (h) { var r = s.c[t + "|" + st.arm + "|" + h]; return r && r[1] < st.thr; }); }); });
       return { id: e.id, hidden: !st.kinase, width: any ? 3 : 1.6, color: { color: any ? "#D7301F" : "#111111", highlight: "#D7301F" },
-               title: "<b>" + esc(k.kinase) + " → " + esc(k.substrate) + "</b> (kinase → substrate, GlyGen: " + esc(k.source) + ")<br>sites: " + esc(k.sites) +
+               title: "<b>" + esc(k.kinase) + " → " + esc(k.substrate) + "</b> (kinase → substrate, OmniPath via mnet: " + esc(k.source) + ")<br>sites: " + esc(k.sites) +
                       "<br>MoTrPAC at these sites (" + ARMLAB[st.arm] + "): " + (rtxt.length ? "<br>" + rtxt.join("<br>") : "not measured") + (any ? "<br><b>a substrate site responds (red edge)</b>" : "") }; }));
     // 5. legend: rebuilt for whatever is shown (node colour mode, outline, edges, sizes, arrows), with counts
     var sw = function (c, lab, n, shape) { return "<div class='hk-row'><span class='hk-swatch' style='background:" + c + (shape === "ring" ? ";border:3px solid #000;background:#FFF" : "") + "'></span>" + lab + (n !== undefined ? " <span class='hk-n'>(" + n + ")</span>" : "") + "</div>"; };
@@ -399,7 +401,7 @@ function(el, x, cfg) {
     G += "<div class='hk-ls'>circle = protein, triangle = metabolite; size = strength (sum |w|) over the shown edges</div>";
     G += "<div class='hk-lt'>Edges</div>" + (st.arm === "ER" ? "<div class='hk-ls'>colour = w_EE − w_RE; width = |difference|</div>" + bar3(["#2166AC", "#D9D9D9", "#B2182B"], "−" + f3(lim), "0", "+" + f3(lim), "higher in resistance", "higher in endurance") + "<div class='hk-ls'>solid = protein–protein, long dash = metabolite–metabolite, dotted = metabolite–protein</div>"
          : "<div class='hk-ls'>width = |w| (up to " + f3(lim) + "); dashed = negative weight</div>" + D.types.map(function (t) { return "<div class='hk-row'><span class='hk-line' style='background:" + TYPE_COL[t] + "'></span>" + t + "</div>"; }).join(""));
-    if (st.kinase) G += "<div class='hk-row'><span class='hk-line' style='background:#111'></span>→ kinase → substrate (GlyGen)</div><div class='hk-row'><span class='hk-line' style='background:#D7301F'></span>→ a substrate site responds in the selection</div>";
+    if (st.kinase) G += "<div class='hk-row'><span class='hk-line' style='background:#111'></span>→ kinase → substrate (OmniPath via mnet)</div><div class='hk-row'><span class='hk-line' style='background:#D7301F'></span>→ a substrate site responds in the selection</div>";
     legendBox.innerHTML = G;
     legend.innerHTML = "<b>Selection</b>: " + ARMLAB[st.arm] + " · " + on(st.omes).map(function (o) { return OMES[o]; }).join(", ") + " · " + on(st.tis).join(", ") + " · " + on(st.times).join(", ") + " · adj. p &lt; " + thr;
     // 6. modules: significance for the selection, and the selected module's table

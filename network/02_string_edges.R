@@ -69,16 +69,29 @@ suppressMessages({
 
 # Results folder (override with HACK_OUT); must be the same folder step 1 wrote to.
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
-# The STRING file (override with STRING_PARQUET, e.g. when the second curated file arrives).
+# Which edge source (override with EDGE_SOURCE): "mnet" (default since 2026-09-26) = the team's multi-omic
+# annotation resource (resources/mo_annotation: STRING v12, score = physical-subnetwork score, else 0.9 x the
+# full combined score; kept at >= 700 here); "legacy" = the first curated STRING file (combined_score >= 700).
+EDGE_SOURCE <- Sys.getenv("EDGE_SOURCE", unset = "mnet")
+# The team's mnet folder (override with MNET_DIR).
+MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackathon/resources/mo_annotation"))
+# The legacy STRING file (override with STRING_PARQUET).
 STRING_PARQUET <- Sys.getenv("STRING_PARQUET", unset = path.expand(
   "~/Downloads/Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet"))
+# High-confidence cut-off (El-Kebir 2015; the team kept >= 700 when switching to mnet).
+MIN_SCORE <- 700
 # The "40" in the hub rule (75th percentile + 40 x interquartile range), from El-Kebir 2015.
 HUB_IQR_MULT <- 40
 
 # ---- rules 1-2: background network, no direction, no self-links, one row per pair ------------------
 # Read the STRING file and keep the two protein IDs (as text) and the score (as a number).
-s <- as.data.table(read_parquet(STRING_PARQUET))[, .(a = as.character(protein1), b = as.character(protein2),
+s <- if (EDGE_SOURCE == "mnet") {
+  # mnet protein-protein edges (node IDs are UniProt accessions), high-confidence only
+  as.data.table(read_parquet(file.path(MNET_DIR, "edges.parquet")))[edge_type == "ppi" & score >= MIN_SCORE,
+    .(a = sub("-[0-9]+$", "", as.character(node1)), b = sub("-[0-9]+$", "", as.character(node2)), combined_score = as.numeric(score))]
+} else as.data.table(read_parquet(STRING_PARQUET))[, .(a = as.character(protein1), b = as.character(protein2),
                                                      combined_score = as.numeric(combined_score))]
+message("edge source: ", EDGE_SOURCE)
 # Remember how many rows the file had.
 n_raw <- nrow(s)
 # Drop self-links (a == b); write every pair in alphabetical order so A-B and B-A become the same

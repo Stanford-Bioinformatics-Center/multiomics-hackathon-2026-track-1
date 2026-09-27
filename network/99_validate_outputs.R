@@ -116,7 +116,7 @@ check(all(e$combined_score >= 700), "step 2: combined_score >= 700")
 # Expected headline numbers from the summary.
 s2 <- rd("02_network_summary.csv"); v <- setNames(s2$value, s2$metric)
 # Record edges and isolated genes.
-note("step2_edges", v[["edges"]], 431); note("step2_isolated", v[["isolated_nodes"]], 185)
+note("step2_edges", v[["edges"]], 434); note("step2_isolated", v[["isolated_nodes"]], 185)
 # Record the largest component and hubs removed.
 note("step2_largest_component", v[["largest_component"]], 230); note("step2_hubs_removed", v[["hubs_removed"]], 0)
 
@@ -136,7 +136,7 @@ s <- median(abs(c(w$w_EE, w$w_RE)))
 # Check both arms' sigmoid values.
 check(isTRUE(all.equal(w$sig_EE, plogis(w$w_EE / s))) && isTRUE(all.equal(w$sig_RE, plogis(w$w_RE / s))), "step 3: sigmoid")
 # Expected headline numbers.
-note("step3_sigmoid_scale", round(s, 3), 0.042); note("step3_cor_EE_RE", round(cor(w$w_EE, w$w_RE), 2), 0.45)
+note("step3_sigmoid_scale", round(s, 3), 0.042); note("step3_cor_EE_RE", round(cor(w$w_EE, w$w_RE), 2), 0.44)
 # Record the sign changes.
 note("step3_sign_changes", sum(sign(w$w_EE) != sign(w$w_RE)), 152)
 
@@ -176,13 +176,13 @@ check(isTRUE(all.equal(me$w_EE, unname(rowSums(MEm[me$metabolite_a, ] * MEm[me$m
 # Record the headline numbers for steps 5-7.
 s5 <- rd("05_rhea_summary.csv"); v5 <- setNames(s5$value, s5$metric)
 # Record metabolites linked to our genes.
-note("step5_metabolites_linked", as.numeric(v5[["metabolites_linked_to_our_genes"]]), 60)
+note("step5_metabolites_linked", as.numeric(v5[["metabolites_linked_to_our_genes"]]), 56)
 # Record genes linked to our metabolites.
-note("step5_genes_linked", as.numeric(v5[["genes_linked_to_our_metabolites"]]), 80)
+note("step5_genes_linked", as.numeric(v5[["genes_linked_to_our_metabolites"]]), 55)
 # Record the number of metabolite edges.
-note("step6_metabolite_edges", nrow(me), 147)
+note("step6_metabolite_edges", nrow(me), 143)
 # Record the number of metabolites in the metabolite network.
-note("step6_metabolites_in_network", uniqueN(c(me$metabolite_a, me$metabolite_b)), 44)
+note("step6_metabolites_in_network", uniqueN(c(me$metabolite_a, me$metabolite_b)), 40)
 # Record gene hubs above the Tukey fence.
 hs <- rd("07_hub_summary.csv"); note("step7_gene_hubs_tukey", hs[1, n_hubs_tukey], 13)
 # Record hubs flagged by the El-Kebir rule in any network.
@@ -211,8 +211,8 @@ check(isTRUE(all.equal(jx$w_EE, unname(rowSums(D18(MEm)[jx$node_a, ] * G18(EE)[j
 check(isTRUE(all.equal(sort(je[edge_type == "protein - protein", w_EE]), sort(w$w_EE))) &&
       isTRUE(all.equal(sort(je[edge_type == "metabolite - metabolite", w_RE]), sort(me$w_RE))), "step 14: within-layer weights unchanged")
 # Record the joint network's size and the arms' agreement on the metabolite - protein edges.
-note("step14_joint_edges", nrow(je), 764)
-note("step14_cross_edges_cor", round(cor(jx$w_EE, jx$w_RE), 3), 0.375)
+note("step14_joint_edges", nrow(je), 704)
+note("step14_cross_edges_cor", round(cor(jx$w_EE, jx$w_RE), 3), 0.232)
 
 # ---- step 15: joint network with metabolite classes ------------------------------------------------------
 # The grouped layout (option 1) and the step 14 nodes.
@@ -221,7 +221,7 @@ cl <- rd("15_class_layout.csv"); jn <- rd("14_joint_nodes.csv")
 check(setequal(cl$node, jn$node) && !anyDuplicated(cl$node) && !anyNA(cl[node_type == "metabolite", class]),
       "step 15: grouped layout covers the step 14 nodes, metabolites classed")
 # Record the number of metabolite classes shown.
-note("step15_metabolite_classes", uniqueN(cl[node_type == "metabolite", class]), 10)
+note("step15_metabolite_classes", uniqueN(cl[node_type == "metabolite", class]), 9)
 
 # ---- step 17: interactive pages and Cytoscape files --------------------------------------------------------
 # Helper: read a Cytoscape.js file's node ids and edge table.
