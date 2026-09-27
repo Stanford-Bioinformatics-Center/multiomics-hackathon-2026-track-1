@@ -240,7 +240,8 @@ ANN <- P[, .(protein = gene_symbol, glycans = glycans_at_sites, glyco_protein_le
              site_annotation = n_site_annotation, enzyme = n_enzyme_annotation, pathways = n_pathway, reactions = n_reactions,
              expression_tissues = n_expression_tissue, publications = n_publication)]
 ANN <- merge(mp[, .(protein = gene_symbol, phosphosites = n_phosphosites, kinase_sites = n_phosphosites_with_kinase, is_kinase = as.integer(is_kinase %in% c(TRUE, "True")),
-                    substrate_sites = n_substrate_sites, glyco_sites = n_glycosites, glyco_N_sites = n_N_linked, glyco_O_sites = n_O_linked + n_O_GlcNAc)],
+                    substrate_sites = n_substrate_sites, glyco_sites = n_glycosites, glyco_N_sites = n_N_linked, glyco_O_sites = n_O_linked,
+                    glyco_OGlcNAc_sites = n_O_GlcNAc)],
              ANN, by = "protein", all = TRUE)
 for (k in setdiff(names(ANN), "protein")) set(ANN, which(is.na(ANN[[k]])), k, 0L)
 ANN[, glycosylated := as.integer(glyco_sites + glyco_protein_level > 0)]

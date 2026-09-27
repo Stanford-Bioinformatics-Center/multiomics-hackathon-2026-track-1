@@ -159,11 +159,8 @@ KIN <- fread(file.path(OUT, "17_kinase_edges.csv")); ANN <- fread(file.path(OUT,
 for (f in c("17_node_cell_stats.csv", "17_phospho_site_stats.csv", "17_modules.csv", "17_module_camera.csv", "17_kinase_edges.csv"))
   if (!file.exists(file.path(OUT, f))) stop("run network/17_filter_stats.R first (", f, " missing)")
 # Annotation fields offered in the "colour nodes by" menu: column, label, kind (count / binary).
-ANN_FIELDS <- list(list(col = "phosphosites", label = "mnet: phosphosites (UniProt + OmniPath)"), list(col = "kinase_sites", label = "mnet: phosphosites with a known kinase"),
-                   list(col = "is_kinase", label = "mnet: is a kinase", binary = TRUE), list(col = "substrate_sites", label = "mnet: substrate sites it phosphorylates (as kinase)"),
-                   list(col = "glycosylated", label = "glycosylated (mnet sites or GlyGen protein-level)", binary = TRUE), list(col = "glyco_sites", label = "mnet: glycosylation sites (UniProt)"),
-                   list(col = "glyco_N_sites", label = "mnet: N-linked sites"), list(col = "glyco_O_sites", label = "mnet: O-linked / O-GlcNAc sites"),
-                   list(col = "glycans", label = "GlyGen: glycan structures at sites"), list(col = "crosstalk_residues", label = "phospho = O-glyco residues (crosstalk; mnet + GlyGen)"),
+# Node-colour menu: non-PTM annotations only (phosphorylation and glycosylation are drawn as tags on the nodes).
+ANN_FIELDS <- list(list(col = "is_kinase", label = "mnet: is a kinase", binary = TRUE), list(col = "substrate_sites", label = "mnet: substrate sites it phosphorylates (as kinase)"),
                    list(col = "mutations", label = "GlyGen: mutations / SNVs"), list(col = "disease", label = "GlyGen: disease associations"),
                    list(col = "biomarkers", label = "GlyGen: biomarkers"), list(col = "ptm_annotation", label = "GlyGen: PTM annotations"),
                    list(col = "site_annotation", label = "GlyGen: active / binding sites"), list(col = "enzyme", label = "GlyGen: enzyme (EC) annotations"),
@@ -212,7 +209,7 @@ function(el, x, cfg) {
   var net = document.getElementById("graph" + el.id).chart;
   var nodes = net.body.data.nodes, edges = net.body.data.edges;
   var TIS = ["adipose", "blood", "muscle"], TIMES = ["0.5h", "4h", "24h"], OMES = {rna: "RNA", prot: "protein", metab: "metabolites"};
-  var st = { omes: {}, tis: {adipose: 1, blood: 1, muscle: 1}, times: {"0.5h": 1, "4h": 1, "24h": 1}, arm: "EE", thr: 0.05, colour: "response",
+  var st = { tags: {mp: 1, kp: 0, N: 1, O: 1, OG: 1, unk: 0, xt: 1}, pins: {}, omes: {}, tis: {adipose: 1, blood: 1, muscle: 1}, times: {"0.5h": 1, "4h": 1, "24h": 1}, arm: "EE", thr: 0.05, colour: "response",
              focus: null, collapsed: false, hulls: S.hulls.length > 0, typeOn: {}, kinase: false, module: "" };
   D.omes.forEach(function (o) { st.omes[o] = 1; }); D.types.forEach(function (t) { st.typeOn[t] = true; });
   var DASH = { solid: false, neg: [5, 5], mm: [10, 5], mp: [2, 4], kin: [3, 3] };
@@ -281,24 +278,31 @@ function(el, x, cfg) {
           "<span class='hk-sep'></span><b>Arm</b> " + ["EE", "RE", "ER"].map(function (a) { return "<label><input type='radio' name='" + el.id + "-arm' class='hk-arm' value='" + a + "'" + (a === "EE" ? " checked" : "") + "> " + ARMLAB[a] + "</label>"; }).join(" ") +
           "<span class='hk-sep'></span><b>adj. p &lt;</b> <input class='hk-thr' type='number' step='0.01' min='0' max='1' value='0.05' style='width:55px'></div>";
   h += "<div><b>Colour nodes by</b> <select class='hk-colour'><option value='response'>exercise response (filtered)</option>" +
-       "<option value='phospho'>MoTrPAC phosphosites (filtered)</option>" +
        D.annFields.map(function (f) { return "<option value='ann:" + f.col + "'>" + esc(f.label) + "</option>"; }).join("") + "</select>" +
        "<span class='hk-sep'></span><b>Module</b> <select class='hk-mod'><option value=''>none</option></select>" +
        "<span class='hk-sep'></span><b>Find</b> <input class='hk-find' list='" + el.id + "-dl' placeholder='gene or metabolite'>" +
        "<datalist id='" + el.id + "-dl'>" + nodes.getIds().sort().map(function (i) { return "<option value=\"" + String(i).replace(/"/g, "&quot;") + "\">"; }).join("") + "</datalist>";
   if (S.classes.length) h += "<span class='hk-sep'></span><b>Class</b> <select class='hk-cls'><option value=''>all</option>" + S.classes.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("") + "</select>";
+  h += "</div><div><b>PTM tags</b> (any combination) " + cb("hk-tag", "mp", "MoTrPAC phospho (red EE / blue RE / purple both)", 1) + " " +
+       cb("hk-tag", "kp", "known phosphosites", 0) + " " + cb("hk-tag", "N", "N-linked glyco", 1) + " " + cb("hk-tag", "O", "O-linked glyco (GalNAc)", 1) + " " +
+       cb("hk-tag", "OG", "O-GlcNAc", 1) + " " + cb("hk-tag", "unk", "glycosylated, site unknown", 0) + " " + cb("hk-tag", "xt", "phospho = O-glyco residue", 1);
   h += "</div><div><b>Edges</b> " + D.types.map(function (t) { return cb("hk-type", t, t, 1); }).join(" ") +
        (D.kin.length ? " " + cb("hk-kin", "1", "kinase → substrate (OmniPath via mnet; " + D.kin.length + ")", 0) : "") +
        (S.hulls.length ? "<span class='hk-sep'></span>" + cb("hk-hull", "1", "class outlines", 1) + " <button class='hk-col'>Collapse classes</button>" : "") +
        "<span class='hk-sep'></span><button class='hk-reset'>Reset</button></div>";
   bar.innerHTML = h;
   var legend = document.createElement("div"); legend.className = "hk-legend";
-  var legendBox = document.createElement("div"); legendBox.className = "hk-legbox"; el.style.position = "relative"; el.appendChild(legendBox);
+  var legendBox = document.createElement("div"); legendBox.className = "hk-legbox";
   var panel = document.createElement("div"); panel.className = "hk-panel";
   var help = document.createElement("div"); help.className = "hk-help";
   help.innerHTML = "Filters recompute node colours, significance outlines and edge weights (dot products over the selected dimensions only) · click a node to highlight it and its neighbours, empty space to clear · hover for values" + (S.classes.length ? " · double-click a collapsed class to open it" : "");
   el.parentNode.insertBefore(bar, el); el.parentNode.appendChild(legend); el.parentNode.appendChild(panel); el.parentNode.appendChild(help);
   var q = function (s) { return bar.querySelector(s); };
+  // the network and its legend side by side: the legend panel sits to the right of the canvas, never over it
+  var wrap = document.createElement("div"); wrap.className = "hk-wrap"; el.parentNode.insertBefore(wrap, el); wrap.appendChild(el); wrap.appendChild(legendBox);
+  el.style.flex = "1 1 auto"; el.style.minWidth = "0"; el.style.width = "auto";
+  wrap.parentNode.insertBefore(legend, wrap);   // the selection summary goes above the network, clear of the zoom buttons
+  setTimeout(function () { net.setSize("100%", "760px"); net.redraw(); net.fit(); }, 60);
   // kinase edges are added once (hidden until switched on)
   D.kin.forEach(function (k, i) { edges.add({ id: "kin" + i, from: k.kinase, to: k.substrate, etype: "kinase", arrows: { to: { enabled: true, scaleFactor: 0.6 } },
     hidden: true, width: 1.6, dashes: DASH.kin, color: { color: "#111111", highlight: "#111111" }, smooth: { enabled: true, type: "curvedCW", roundness: 0.2 }, kin: k }); });
@@ -315,6 +319,29 @@ function(el, x, cfg) {
     pts.forEach(function (p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); });
     pts.slice().reverse().forEach(function (p) { while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); });
     lo.pop(); up.pop(); return lo.concat(up); }
+  // PTM tags: a short stalk from the node edge ending in a symbol, fanned out clockwise from the upper right
+  function star(ctx, x, y, r) { ctx.beginPath(); for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; ctx.lineTo(x + rr * Math.cos(a), y + rr * Math.sin(a)); } ctx.closePath(); }
+  net.on("afterDrawing", function (ctx) {
+    var ids = Object.keys(st.pins); if (!ids.length) return;
+    var pos = net.getPositions(ids);
+    ids.forEach(function (id) { if (!pos[id] || net.isCluster(id)) return; var nd = nodes.get(id); if (!nd || nd.hidden) return;
+      var r = (nd.size || 10), P = st.pins[id];
+      ctx.save(); ctx.globalAlpha = (st.keep && !st.keep[id]) ? 0.12 : 1;
+      P.forEach(function (p, k) { var ang = (-70 + k * 32) * Math.PI / 180, c = Math.cos(ang), sn = Math.sin(ang);
+        var x0 = pos[id].x + c * r, y0 = pos[id].y + sn * r, x1 = pos[id].x + c * (r + 13), y1 = pos[id].y + sn * (r + 13), hx = pos[id].x + c * (r + 18.5), hy = pos[id].y + sn * (r + 18.5);
+        ctx.strokeStyle = "#555"; ctx.lineWidth = 1.1; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+        ctx.lineWidth = 0.9; ctx.strokeStyle = "#222";
+        if (p.kind === "P" || p.kind === "Pdb") { ctx.fillStyle = p.kind === "P" ? p.fill : "#D0D0D0"; ctx.beginPath(); ctx.arc(hx, hy, 5.5, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = p.kind === "P" ? "#FFFFFF" : "#222"; ctx.font = "bold 7.5px Helvetica"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("P", hx, hy + 0.4); }
+        else if (p.kind === "sq" || p.kind === "sqo" || p.kind === "sqh") { ctx.fillStyle = p.kind === "sqh" ? "#FFFFFF" : p.fill; ctx.strokeStyle = p.kind === "sqh" ? "#0072BC" : "#222";
+          if (p.kind === "sqh") ctx.setLineDash([2, 1.5]); ctx.fillRect(hx - 4.5, hy - 4.5, 9, 9); ctx.strokeRect(hx - 4.5, hy - 4.5, 9, 9); ctx.setLineDash([]);
+          if (p.kind === "sqo") { ctx.fillStyle = "#FFFFFF"; ctx.beginPath(); ctx.arc(hx, hy, 2, 0, 2 * Math.PI); ctx.fill(); } }
+        else if (p.kind === "star") { ctx.fillStyle = "#FFD700"; star(ctx, hx, hy, 6.5); ctx.fill(); ctx.stroke(); }
+        else if (p.kind === "more") { ctx.fillStyle = "#222"; ctx.font = "bold 8px Helvetica"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("+" + p.n, hx, hy); }
+        if (p.n > 1 && p.kind !== "more") { ctx.fillStyle = "#222"; ctx.font = "7px Helvetica"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.n, pos[id].x + c * (r + 27), pos[id].y + sn * (r + 27)); }
+      });
+      ctx.restore(); });
+  });
   net.on("beforeDrawing", function (ctx) { if (!st.hulls || st.collapsed) return;
     S.hulls.forEach(function (g) { var ids = nodes.getIds({ filter: function (n) { return n.hull === g.key; } }); if (!ids.length) return;
       var p = net.getPositions(ids), pts = ids.map(function (i) { return { x: p[i].x, y: p[i].y }; }), hp = hull(pts);
@@ -326,6 +353,7 @@ function(el, x, cfg) {
   // ---------- the main redraw ----------
   function apply() {
     if (st.collapsed) openAll();
+    if (st.colour.indexOf("ann:") === 0 && !D.annFields.some(function (f) { return "ann:" + f.col === st.colour; })) st.colour = "response";
     // 1. edge weights for the selection
     var eAll = edges.get({ filter: function (e) { return e.etype !== "kinase"; } }), W = {}, strength = {};
     eAll.forEach(function (e) { var a = weight(e, "EE"), b = weight(e, "RE"), w = st.arm === "EE" ? a[0] : st.arm === "RE" ? b[0] : a[0] - b[0];
@@ -368,6 +396,28 @@ function(el, x, cfg) {
       return { id: n.id, size: size, title: t, borderWidth: onF ? bw : 0.5, font: { color: onF ? "#1A1A1A" : "rgba(0,0,0,0.06)" },
                color: { background: onF ? col : "rgba(230,230,230,0.25)", border: onF ? border : "rgba(170,170,170,0.25)", highlight: { background: col, border: "#000000" }, hover: { background: col, border: "#000000" } } };
     }));
+    // 3b. PTM tags per protein for the current selection
+    var PIN = {EE: "#E41A1C", RE: "#377EB8", both: "#984EA3"}, pinTally = {EE: 0, RE: 0, both: 0, kp: 0, N: 0, O: 0, OG: 0, unk: 0, xt: 0};
+    st.pins = {}; st.keep = keep;
+    nAll.forEach(function (n) { var P = [], a = D.ann[n.id] || null;
+      if (st.tags.mp && D.phos[n.id]) { var rs = [];
+        D.phos[n.id].forEach(function (s) { var ee = false, re = false, mp = 1;
+          on(st.tis).forEach(function (t) { on(st.times).forEach(function (h) { var e = s.c[t + "|EE|" + h], r = s.c[t + "|RE|" + h];
+            if (e && e[1] < thr) { ee = true; mp = Math.min(mp, e[1]); } if (r && r[1] < thr) { re = true; mp = Math.min(mp, r[1]); } }); });
+          if (ee || re) rs.push({ kind: "P", arm: ee && re ? "both" : ee ? "EE" : "RE", p: mp, site: s.site }); });
+        rs.sort(function (x, y) { return x.p - y.p; });
+        rs.forEach(function (r) { pinTally[r.arm]++; });
+        rs.slice(0, 6).forEach(function (r) { P.push({ kind: "P", fill: PIN[r.arm] }); });
+        if (rs.length > 6) P.push({ kind: "more", n: rs.length - 6 }); }
+      if (a && st.tags.kp && a.phosphosites > 0) { P.push({ kind: "Pdb", n: a.phosphosites }); pinTally.kp++; }
+      if (a) {
+        if (st.tags.N && a.glyco_N_sites > 0) { P.push({ kind: "sq", fill: "#0072BC", n: a.glyco_N_sites }); pinTally.N++; }
+        if (st.tags.O && a.glyco_O_sites > 0) { P.push({ kind: "sq", fill: "#FFD400", n: a.glyco_O_sites }); pinTally.O++; }
+        if (st.tags.OG && a.glyco_OGlcNAc_sites > 0) { P.push({ kind: "sqo", fill: "#0072BC", n: a.glyco_OGlcNAc_sites }); pinTally.OG++; }
+        if (st.tags.unk && !(a.glyco_sites > 0) && a.glyco_protein_level > 0) { P.push({ kind: "sqh" }); pinTally.unk++; } }
+      if (a && st.tags.xt && a.crosstalk_residues > 0) { P.push({ kind: "star", n: a.crosstalk_residues }); pinTally.xt++; }
+      if (P.length) st.pins[n.id] = P; });
+    st.pinTally = pinTally;
     // 4. edge styles + tooltips
     edges.update(eAll.map(function (e) { var r = W[e.id], vis = visible(e), onF = !st.focus || fset[e.from] || fset[e.to];
       var c = st.arm === "ER" ? div3(r.w, lim, ["#2166AC", "#D9D9D9", "#B2182B"]) : TYPE_COL[e.etype];
@@ -399,6 +449,19 @@ function(el, x, cfg) {
            : BINS.map(function (b) { return sw(b[3], b[2], tally[b[2]] || 0); }).join("")) + sw("#E6E6E6", "no record (incl. metabolites)", tally["no record"] || 0);
     }
     G += "<div class='hk-ls'>circle = protein, triangle = metabolite; size = strength (sum |w|) over the shown edges</div>";
+    var T = st.pinTally || {}, pin = function (bg, fg, txt, lab, n, cls) { return "<div class='hk-row'><span class='hk-pin " + (cls || "") + "' style='background:" + bg + ";color:" + fg + "'>" + txt + "</span>" + lab + (n !== undefined ? " <span class='hk-n'>(" + n + ")</span>" : "") + "</div>"; };
+    if (on(st.tags).length) {
+      G += "<div class='hk-lt'>PTM tags (stalks on proteins)</div>";
+      if (st.tags.mp) G += "<div class='hk-ls'>MoTrPAC phosphosites responding (adj. p &lt; " + thr + ", selected tissues / times; one pin per site, up to 6, then +n)</div>" +
+        pin("#E41A1C", "#FFF", "P", "after endurance only", T.EE + " sites") + pin("#377EB8", "#FFF", "P", "after resistance only", T.RE + " sites") + pin("#984EA3", "#FFF", "P", "after both", T.both + " sites");
+      if (st.tags.kp) G += pin("#D0D0D0", "#222", "P", "known phosphosites (mnet: UniProt + OmniPath; number = sites)", T.kp + " proteins");
+      if (st.tags.N || st.tags.O || st.tags.OG || st.tags.unk) G += "<div class='hk-ls'>glycosylation, SNFG symbols (UniProt via mnet; number = sites)</div>" +
+        (st.tags.N ? pin("#0072BC", "#FFF", "", "N-linked (GlcNAc)", T.N + " proteins", "hk-sq") : "") +
+        (st.tags.O ? pin("#FFD400", "#222", "", "O-linked, mucin-type (GalNAc)", T.O + " proteins", "hk-sq") : "") +
+        (st.tags.OG ? pin("#0072BC", "#FFF", "●", "O-GlcNAc", T.OG + " proteins", "hk-sq") : "") +
+        (st.tags.unk ? pin("#FFFFFF", "#0072BC", "", "glycosylated, site unknown (GlyGen protein-level)", T.unk + " proteins", "hk-sq hk-dash") : "");
+      if (st.tags.xt) G += "<div class='hk-row'><span class='hk-star'>★</span>a MoTrPAC phosphosite that is also an O-glycosylation site <span class='hk-n'>(" + T.xt + " proteins)</span></div>";
+    }
     G += "<div class='hk-lt'>Edges</div>" + (st.arm === "ER" ? "<div class='hk-ls'>colour = w_EE − w_RE; width = |difference|</div>" + bar3(["#2166AC", "#D9D9D9", "#B2182B"], "−" + f3(lim), "0", "+" + f3(lim), "higher in resistance", "higher in endurance") + "<div class='hk-ls'>solid = protein–protein, long dash = metabolite–metabolite, dotted = metabolite–protein</div>"
          : "<div class='hk-ls'>width = |w| (up to " + f3(lim) + "); dashed = negative weight</div>" + D.types.map(function (t) { return "<div class='hk-row'><span class='hk-line' style='background:" + TYPE_COL[t] + "'></span>" + t + "</div>"; }).join(""));
     if (st.kinase) G += "<div class='hk-row'><span class='hk-line' style='background:#111'></span>→ kinase → substrate (OmniPath via mnet)</div><div class='hk-row'><span class='hk-line' style='background:#D7301F'></span>→ a substrate site responds in the selection</div>";
@@ -422,7 +485,7 @@ function(el, x, cfg) {
     var r = m.cam[t + "|" + o + "|" + st.arm + "|" + h]; if (r) out.push([t, o, h, r[0], r[1], r[2], r[3]]); }); }); }); return out; }
   // ---------- wiring ----------
   var chk = function (cls, obj) { bar.querySelectorAll(cls).forEach(function (c) { c.onchange = function () { obj[c.value] = c.checked ? 1 : 0; apply(); }; }); };
-  chk(".hk-ome", st.omes); chk(".hk-tis", st.tis); chk(".hk-time", st.times);
+  chk(".hk-ome", st.omes); chk(".hk-tis", st.tis); chk(".hk-time", st.times); chk(".hk-tag", st.tags);
   bar.querySelectorAll(".hk-arm").forEach(function (r) { r.onchange = function () { st.arm = r.value; apply(); }; });
   q(".hk-thr").onchange = function () { var v = parseFloat(this.value); if (v > 0 && v <= 1) { st.thr = v; apply(); } };
   q(".hk-colour").onchange = function () { st.colour = this.value; apply(); };
@@ -458,12 +521,16 @@ CSS <- tags$style(HTML("
   .hk-panel td, .hk-panel th { border: 1px solid #DDD; padding: 2px 8px; text-align: left; } .hk-panel tr.hk-sig td { font-weight: bold; background: #FFF4D6; }
   .hk-grad { display: inline-block; width: 80px; height: 9px; vertical-align: middle; border: 1px solid #999; margin: 0 4px; }
   .hk-sw2 { display: inline-block; width: 11px; height: 11px; vertical-align: middle; border: 1px solid #777; margin: 0 3px 0 6px; border-radius: 6px; }
-  .hk-legbox { position: absolute; top: 58px; right: 8px; width: 265px; max-height: 640px; overflow-y: auto; background: rgba(255,255,255,0.94); border: 1px solid #BBB; border-radius: 4px; padding: 6px 9px; font-size: 11px; z-index: 5; }
+  .hk-wrap { display: flex; gap: 12px; align-items: flex-start; }
+  .hk-legbox { flex: 0 0 290px; max-height: 800px; overflow-y: auto; background: #FFFFFF; border: 1px solid #BBB; border-radius: 4px; padding: 6px 10px; font-size: 11px; margin-top: 50px; }
   .hk-lt { font-weight: bold; font-size: 12px; margin-top: 4px; } .hk-ls { color: #444; margin: 2px 0; } .hk-row { margin: 1px 0; } .hk-n { color: #777; }
   .hk-swatch { display: inline-block; width: 12px; height: 12px; border: 1px solid #777; border-radius: 7px; vertical-align: middle; margin-right: 6px; box-sizing: border-box; }
   .hk-line { display: inline-block; width: 22px; height: 3px; vertical-align: middle; margin-right: 6px; }
   .hk-bar3 { height: 10px; border: 1px solid #999; margin-top: 3px; } .hk-ticks { display: flex; justify-content: space-between; font-size: 10px; color: #333; } .hk-sub { color: #777; }
   .hk-ul { margin: 2px 0 4px 18px; padding: 0; }
+  .hk-pin { display: inline-block; width: 13px; height: 13px; border-radius: 7px; border: 1px solid #222; font-size: 8.5px; font-weight: bold; text-align: center; line-height: 13px; vertical-align: middle; margin-right: 6px; box-sizing: border-box; }
+  .hk-pin.hk-sq { border-radius: 0; font-size: 7px; } .hk-pin.hk-dash { border: 1.5px dashed #0072BC; }
+  .hk-star { color: #FFD700; font-size: 14px; -webkit-text-stroke: 0.6px #222; margin-right: 5px; vertical-align: middle; }
   div.vis-tooltip { font-family: Helvetica, Arial, sans-serif; font-size: 11.5px; line-height: 1.4; max-width: 460px; white-space: normal; }
 "))
 
@@ -530,7 +597,7 @@ PJ <- prepare(JN, JE)
 jcls <- JN[node_type == "metabolite", .N, by = class][order(-N), class]
 page(PJ, "joint", names(TYPE_COL), jcls, lapply(jcls, function(c) list(key = c, label = c)), "17a_joint_network.html",
      "Joint protein-metabolite network: endurance, resistance and their difference",
-     "364 nodes (304 proteins, 60 metabolites) · 764 edges: STRING >= 700, Rhea metabolite-protein links, shared/STRING-linked enzyme + same RefMet super class · layout as figures 15a / 15b")
+     sprintf("%d nodes (%d proteins, %d metabolites) · %d edges: STRING v12 >= 700 and Rhea catalysis / transport (team mnet resource), shared/STRING-linked enzyme + same RefMet super class · layout as figures 15a / 15b", nrow(PJ$N), sum(PJ$N$node_type == "protein"), sum(PJ$N$node_type == "metabolite"), nrow(PJ$E)))
 cyto(PJ, "joint", "hackathon joint protein-metabolite network")
 
 # ---- gene network (steps 1, 3, 10) ------------------------------------------------------------------------

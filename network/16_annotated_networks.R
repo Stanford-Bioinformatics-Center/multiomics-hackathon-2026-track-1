@@ -105,11 +105,11 @@ MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackath
 inv <- file.path(OUT, "inventory", "protein_inventory.csv")
 if (!file.exists(inv)) stop("run network/inventory/glygen_protein_inventory.py and glygen_motrpac_inventory.R first (", inv, " missing)")
 g_acc <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))[, .(acc = unlist(strsplit(uniprot, ";"))), by = entrez_gene]
-mptm <- fread(file.path(MNET_DIR, "proteins_ptm.csv"))[, .(acc = sub("-[0-9]+$", "", node_id), gly_N = n_N_linked, gly_O = n_O_linked + n_O_GlcNAc, gly_sites = n_glycosites)]
+mptm <- fread(file.path(MNET_DIR, "proteins_ptm.csv"))[, .(acc = sub("-[0-9]+$", "", node_id), gly_N = n_N_linked, gly_O = n_O_linked, gly_OG = n_O_GlcNAc, gly_sites = n_glycosites)]
 mg <- merge(g_acc, mptm, by = "acc")[order(-gly_sites)][!duplicated(entrez_gene), !"acc"]
 gl <- fread(inv, colClasses = list(character = "entrez_gene"))[, .(entrez_gene, gly_protein_level = gly_protein_level_no_site, glycans = glycans_at_sites)]
 gl <- mg[gl, on = "entrez_gene"]
-for (v in c("gly_N", "gly_O", "gly_sites")) set(gl, which(is.na(gl[[v]])), v, 0L)
+for (v in c("gly_N", "gly_O", "gly_OG", "gly_sites")) set(gl, which(is.na(gl[[v]])), v, 0L)
 A <- gl[A, on = "entrez_gene"]
 stopifnot(!anyNA(A$gly_sites))
 
@@ -129,7 +129,7 @@ stopifnot(!anyNA(N[node_type == "protein", ph_cat]), !anyNA(N[node_type == "prot
 fwrite(N[node_type == "protein", .(protein = node, ph_measured, ph_resp_EE, ph_resp_RE, ph_resp_any, ph_cat, gly_sites, gly_N, gly_O,
                                    gly_protein_level, glycans, gl_cat)], file.path(OUT, "16_protein_annotation.csv"))
 
-# ---- drawing (figure 15b + recoloured proteins) -----------------------------------------------------------------
+# ---- drawing (figure 15b + PTM tags on the proteins) -----------------------------------------------------------------
 theme_net <- function(base = 8) theme_classic(base_size = base) %+replace% theme(
   text = element_text(colour = INK, size = base), axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(),
   axis.title = element_blank(), legend.position = "bottom", legend.box = "vertical",
@@ -158,45 +158,6 @@ base_plot <- function() ggplot() +
   scale_size(range = c(0.6, 4), name = "node strength difference (absolute)") + scale_shape_manual(values = SHAPES, name = "node") +
   coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.05), clip = "off") + theme_net()
 
-# one annotated figure: proteins filled by category, labels for the top proteins by a count
-annotated <- function(cat_col, levels, cols, legend_name, lab_rank, lab_text, title, caption, file) {
-  P <- N[node_type == "protein"]
-  # legend entries with the number of drawn proteins in each category
-  n_cat <- P[, .N, by = c(cat_col)]; lbl <- sprintf("%s (%d)", levels, n_cat$N[match(levels, n_cat[[cat_col]])]); lbl <- sub("\\(NA\\)", "(0)", lbl)
-  P[, cat := factor(get(cat_col), levels = levels)]
-  P[, rank_value := lab_rank(P)]
-  L <- P[rank_value > 0][order(-rank_value)][seq_len(min(NLAB, .N))]
-  L[, lab := lab_text(L)]
-  q <- base_plot() +
-    geom_point(data = P, aes(x, y, size = abs_delta, shape = node_type, fill = cat), colour = "grey20", stroke = 0.3) +
-    scale_fill_manual(values = cols, labels = setNames(lbl, levels), drop = FALSE, name = legend_name) +
-    geom_text_repel(data = L, aes(x, y, label = lab), size = 2.1, colour = "grey10", min.segment.length = 0.1, segment.size = 0.15,
-                    box.padding = 0.3, max.overlaps = Inf, seed = SEED) +
-    guides(fill = guide_legend(order = 1, ncol = 3, override.aes = list(shape = 21, size = 3)),
-           colour = guide_colourbar(order = 2, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"), title.position = "top", title.hjust = 0.5),
-           linetype = guide_legend(order = 3, override.aes = list(colour = "grey30", linewidth = 0.6)),
-           shape = guide_legend(order = 4, override.aes = list(fill = "grey80", size = 2.6)), size = guide_legend(order = 5)) +
-    labs(title = title, caption = caption)
-  ggsave(file.path(FIG, file), q, width = 11, height = 7.8, dpi = 300, bg = "white")
-  message("-> ", file.path(FIG, file))
-}
-
-# 16a: MoTrPAC phosphoproteomics
-annotated("ph_cat", PH_LEV, PH_COL, "protein: MoTrPAC phosphosites",
-          lab_rank = function(d) d$ph_resp_any + d$ph_measured / 1000,
-          lab_text = function(d) sprintf("%s  %d/%d", d$node, d$ph_resp_any, d$ph_measured),
-          title = "Joint protein-metabolite network, endurance minus resistance edge weights, proteins annotated with MoTrPAC phosphoproteomics",
-          caption = paste0("Phosphosites measured in muscle (0.5, 4, 24 h) and adipose (4 h); responds = adj. p < 0.05 in that arm's exercise-vs-control contrast at any time point. ",
-                           "Labels: proteins with the most responding sites, responding / measured."),
-          file = "16a_joint_edge_difference_phospho.png")
-# 16b: GlyGen glycosylation
-annotated("gl_cat", GL_LEV, GL_COL, "protein: glycosylation",
-          lab_rank = function(d) d$gly_sites + d$glycans / 1000,
-          lab_text = function(d) sprintf("%s  %d sites, %d glycans", d$node, d$gly_sites, d$glycans),
-          title = "Joint protein-metabolite network, endurance minus resistance edge weights, proteins annotated with glycosylation (UniProt via mnet, GlyGen)",
-          caption = paste0("Glycosylation sites: UniProt via the team's mnet resource; 'site unknown' = GlyGen protein-level evidence (mostly the O-GlcNAc Database); database knowledge, not measured in this study. ",
-                           "Labels: proteins with the most glycosylation sites, with glycan structures observed at those sites."),
-          file = "16b_joint_edge_difference_glycosylation.png")
 # ---- 16c: both layers + site-level crosstalk -------------------------------------------------------------------
 # Crosstalk residue = a serine / threonine / tyrosine that MoTrPAC measured as a phosphosite AND GlyGen lists as an
 # O-glycosylation site (mostly O-GlcNAc) on the same canonical protein, position and residue. The two modifications
@@ -223,40 +184,86 @@ fwrite(XT[, !"position"], file.path(OUT, "16_crosstalk_sites.csv"))
 xp <- XT[, .(xt_n = .N, xt_resp = sum(responds != "no"), xt_label = paste0(protein[1], "  ", paste(residue, collapse = ","))), by = protein]
 xp[, xt_label := fifelse(xt_n > 4, sprintf("%s  %d residues", protein, xt_n), xt_label)]
 xp[, xt_label := sprintf("%s (%d/%d respond)", xt_label, xt_resp, xt_n)]
-P3 <- xp[N[node_type == "protein"], on = c(protein = "node")]; setnames(P3, "protein", "node")
-P3[is.na(xt_n), `:=`(xt_n = 0L, xt_resp = 0L)]
-# 16c keeps glycosylation general (any type, site known or not) so the figure stays simple; 16b has the types
-GLY2 <- c("glycosylated (any type; site known or protein-level)", "no glycosylation record")
-P3[, `:=`(ph_f = factor(ph_cat, levels = PH_LEV), gly2 = factor(fifelse(gl_cat == GL_LEV[1], GLY2[2], GLY2[1]), levels = GLY2))]
-# ring: a thick teal ring for glycosylated proteins, a thin grey border otherwise
-GL_RING <- setNames(c("#1B9E77", "grey35"), GLY2)
-P3[, ring_stroke := fifelse(gly2 == GLY2[1], 0.8, 0.3)]
-nlab <- function(df, col, lev) { n <- df[, .N, by = c(col)]; sub("\\(NA\\)", "(0)", sprintf("%s (%d)", lev, n$N[match(lev, n[[col]])])) }
-# the crosstalk marker: a diamond just above-right of the protein, gold if a crosstalk residue responds
-MK <- P3[xt_n > 0][, `:=`(mx = x + 0.009, my = y + 0.014, mk = factor(fifelse(xt_resp > 0, "a shared residue responds (either arm)", "shared residue(s), none respond"),
-                                                                   levels = c("a shared residue responds (either arm)", "shared residue(s), none respond")))]
-q <- base_plot() +
-  ggnewscale::new_scale_colour() +
-  geom_point(data = P3, aes(x, y, size = abs_delta, shape = node_type, fill = ph_f, colour = gly2), stroke = P3$ring_stroke) +
-  scale_fill_manual(values = PH_COL, labels = setNames(nlab(P3, "ph_cat", PH_LEV), PH_LEV), drop = FALSE, name = "fill: MoTrPAC phosphosites",
-                    guide = guide_legend(order = 1, ncol = 3, override.aes = list(shape = 21, size = 3, colour = "grey20", stroke = 0.3))) +
-  scale_colour_manual(values = GL_RING, labels = setNames(nlab(P3, "gly2", GLY2), GLY2), drop = FALSE, name = "ring: glycosylation (UniProt via mnet, GlyGen)",
-                      guide = guide_legend(order = 2, override.aes = list(shape = 21, size = 3, fill = "white", stroke = c(1, 0.3)))) +
-  ggnewscale::new_scale_fill() +
-  geom_point(data = MK, aes(mx, my, fill = mk), shape = 23, size = 2.1, colour = "grey10", stroke = 0.35) +
-  scale_fill_manual(values = c("a shared residue responds (either arm)" = "#FFD700", "shared residue(s), none respond" = "white"), drop = FALSE,
-                    name = "diamond: phosphosite = O-glycosylation site", guide = guide_legend(order = 3, override.aes = list(size = 3))) +
-  geom_text_repel(data = MK, aes(x, y, label = xt_label), size = 2.05, colour = "grey10", min.segment.length = 0.1, segment.size = 0.15,
-                  box.padding = 0.35, max.overlaps = Inf, seed = SEED) +
-  guides(linetype = guide_legend(order = 11, override.aes = list(colour = "grey30", linewidth = 0.6)),
-         shape = guide_legend(order = 12, override.aes = list(fill = "grey80", colour = "grey25", stroke = 0.3, size = 2.6)), size = guide_legend(order = 13)) +
-  labs(title = "Joint protein-metabolite network, endurance minus resistance edge weights: MoTrPAC phosphosites, GlyGen glycosylation and shared residues",
-       caption = paste0("Fill: phosphosites (muscle 0.5/4/24 h, adipose 4 h; responds = adj. p < 0.05 vs control). Ring: GlyGen glycosylation (release 2.11.1, database knowledge). ",
-                        "Diamond: a measured phosphosite is also a known O-glycosylation (mostly O-GlcNAc) site on the same residue; labels list those residues."))
-ggsave(file.path(FIG, "16c_joint_edge_difference_phospho_glyco_crosstalk.png"), q, width = 11.5, height = 8.6, dpi = 300, bg = "white")
-message("-> ", file.path(FIG, "16c_joint_edge_difference_phospho_glyco_crosstalk.png"))
-cat(sprintf("crosstalk residues: %d on %d proteins (%d drawn in the network); responding: %d\n", nrow(XT), uniqueN(XT$protein),
-            sum(P3$xt_n > 0), sum(XT$responds != "no")))
 
-# Show the category counts.
-print(N[node_type == "protein", .N, by = ph_cat][order(-N)]); print(N[node_type == "protein", .N, by = gl_cat][order(-N)])
+# ---- PTM tags: a stalk from each protein ending in a symbol (as in the interactive pages) --------------------
+# Tag vocabulary. MoTrPAC phosphosites (measured): one pin per responding site (up to 6, then "+n"), red = responds
+# after endurance only, blue = after resistance only, purple = after both (adj. p < 0.05, any tissue / time).
+# Glycosylation in SNFG symbols (database knowledge): blue square = N-linked (GlcNAc), yellow square = O-linked
+# mucin-type (GalNAc), blue square with a white dot = O-GlcNAc, white square = glycosylated, site unknown.
+# Crosstalk: a diamond, gold if a shared phospho / O-glycosylation residue responds, white otherwise.
+TAG_LEV <- c("phosphosite responds after endurance only", "phosphosite responds after resistance only", "phosphosite responds after both",
+             "N-linked glycosylation (GlcNAc)", "O-linked glycosylation, mucin-type (GalNAc)", "O-GlcNAc", "glycosylated, site unknown",
+             "phospho = O-glyco residue, responds", "phospho = O-glyco residue, none respond")
+TAG_FILL <- setNames(c("#E41A1C", "#377EB8", "#984EA3", "#0072BC", "#FFD400", "#0072BC", "#FFFFFF", "#FFD700", "#FFFFFF"), TAG_LEV)
+TAG_SHAPE <- setNames(c(21, 21, 21, 22, 22, 22, 22, 23, 23), TAG_LEV)
+# responding MoTrPAC sites per drawn protein, with the arm pattern (sites responding in both arms first)
+site_arm <- genes[ph[sig_EE | sig_RE, .(feature_id, entrez_gene, arm = fifelse(sig_EE & sig_RE, TAG_LEV[3], fifelse(sig_EE, TAG_LEV[1], TAG_LEV[2])))], on = "entrez_gene", nomatch = 0]
+site_arm[, ord := match(arm, TAG_LEV[c(3, 1, 2)])]
+# build the tag list for a set of layers ("phospho", "glyco", "crosstalk")
+build_tags <- function(layers) {
+  P <- N[node_type == "protein"]
+  out <- list()
+  if ("phospho" %in% layers) {
+    s <- site_arm[gene_symbol %in% P$node][order(gene_symbol, ord)][, k := seq_len(.N), by = gene_symbol]
+    out$p <- s[k <= 6, .(node = gene_symbol, tag = arm, n = NA_integer_, more = NA_integer_)]
+    mo <- s[, .(extra = .N - 6L), by = gene_symbol][extra > 0]
+    if (nrow(mo)) out$m <- mo[, .(node = gene_symbol, tag = NA_character_, n = NA_integer_, more = extra)]
+  }
+  if ("glyco" %in% layers) out$g <- rbind(P[gly_N > 0, .(node, tag = TAG_LEV[4], n = gly_N)], P[gly_O > 0, .(node, tag = TAG_LEV[5], n = gly_O)],
+                                          P[gly_OG > 0, .(node, tag = TAG_LEV[6], n = gly_OG)], P[gly_sites == 0 & gly_protein_level > 0, .(node, tag = TAG_LEV[7], n = NA_integer_)])[, more := NA_integer_]
+  if ("crosstalk" %in% layers) out$x <- xp[protein %in% P$node, .(node = protein, tag = fifelse(xt_resp > 0, TAG_LEV[8], TAG_LEV[9]), n = xt_n, more = NA_integer_)]
+  Tg <- rbindlist(out, fill = TRUE)
+  # fan the tags clockwise from the upper right; y is stretched so the stalks look equally long on the page
+  Tg[, k := seq_len(.N), by = node]
+  Tg <- N[, .(node, x0 = x, y0 = y)][Tg, on = "node"]
+  ang <- (70 - (Tg$k - 1) * 32) * pi / 180; L <- 0.021; ASP <- 1.95
+  Tg[, `:=`(hx = x0 + L * cos(ang), hy = y0 + L * ASP * sin(ang), cx = x0 + 1.55 * L * cos(ang), cy = y0 + 1.55 * L * ASP * sin(ang))]
+  Tg
+}
+# one tagged figure: 15b with grey protein circles and the chosen tag layers
+tagged <- function(layers, labels, title, caption, file) {
+  Tg <- build_tags(layers); P <- N[node_type == "protein"]
+  hd <- Tg[!is.na(tag)]; hd[, tag := factor(tag, levels = TAG_LEV)]
+  # legend text with the number of proteins carrying each tag
+  cnt <- hd[, .(np = uniqueN(node)), by = tag]; shown <- TAG_LEV[TAG_LEV %in% as.character(hd$tag)]
+  lab <- setNames(sprintf("%s (%d proteins)", shown, cnt$np[match(shown, cnt$tag)]), shown)
+  q <- base_plot() +
+    # stalks (under the nodes)
+    geom_segment(data = Tg, aes(x0, y0, xend = hx, yend = hy), colour = "grey35", linewidth = 0.25) +
+    # proteins: grey circles, as in 15b
+    geom_point(data = P, aes(x, y, size = abs_delta, shape = node_type), fill = "grey80", colour = "grey25", stroke = 0.22) +
+    ggnewscale::new_scale("shape") + ggnewscale::new_scale("size") +
+    geom_point(data = hd, aes(hx, hy, fill = tag, shape = tag), size = 1.9, colour = "grey15", stroke = 0.3) +
+    # fill and shape share one legend (identical name, breaks, labels and guide, so ggplot merges them)
+    scale_fill_manual(values = TAG_FILL[shown], labels = lab, breaks = shown, name = "PTM tags",
+                      guide = guide_legend(order = 1, ncol = 2, override.aes = list(size = 2.6))) +
+    scale_shape_manual(values = TAG_SHAPE[shown], labels = lab, breaks = shown, name = "PTM tags",
+                       guide = guide_legend(order = 1, ncol = 2, override.aes = list(size = 2.6))) +
+    # the "P" on phosphosite pins, the white dot on O-GlcNAc, "+n" for more sites, and site counts
+    geom_text(data = hd[grepl("^phosphosite", tag)], aes(hx, hy, label = "P"), size = 1.05, colour = "white", fontface = "bold") +
+    geom_point(data = hd[tag == TAG_LEV[6]], aes(hx, hy), shape = 16, size = 0.45, colour = "white") +
+    geom_text(data = Tg[!is.na(more)], aes(hx, hy, label = paste0("+", more)), size = 1.4, colour = "grey10", fontface = "bold") +
+    geom_text(data = Tg[!is.na(n) & n > 1], aes(cx, cy, label = n), size = 1.25, colour = "grey20") +
+    geom_text_repel(data = labels, aes(x, y, label = lab), size = 2.05, colour = "grey10", min.segment.length = 0.1, segment.size = 0.15,
+                    box.padding = 0.45, max.overlaps = Inf, seed = SEED) +
+    guides(colour = guide_colourbar(order = 2, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"), title.position = "top", title.hjust = 0.5),
+           linetype = guide_legend(order = 3, override.aes = list(colour = "grey30", linewidth = 0.6))) +
+    labs(title = title, caption = caption)
+  ggsave(file.path(FIG, file), q, width = 11.5, height = 8.4, dpi = 300, bg = "white")
+  message("-> ", file.path(FIG, file))
+}
+# labels: the proteins that matter for each figure
+Pp <- N[node_type == "protein"]
+lab_ph <- Pp[ph_resp_any > 0][order(-ph_resp_any, -ph_measured)][seq_len(min(NLAB, .N)), .(x, y, lab = sprintf("%s  %d/%d", node, ph_resp_any, ph_measured))]
+lab_gl <- Pp[gly_sites > 0][order(-gly_sites, -glycans)][seq_len(min(NLAB, .N)), .(x, y, lab = sprintf("%s  %d sites", node, gly_sites))]
+lab_xt <- xp[Pp, on = c(protein = "node"), nomatch = 0][, .(x, y, lab = xt_label)]
+CAP_PH <- "MoTrPAC phosphosites (muscle 0.5 / 4 / 24 h, adipose 4 h): one pin per site responding at adj. p < 0.05 vs control at any time point (up to 6, then +n)."
+CAP_GL <- "Glycosylation (database knowledge, not measured here): UniProt sites via the team's mnet resource, SNFG symbols, number = sites; site unknown = GlyGen protein-level evidence."
+tagged("phospho", lab_ph, "Joint protein-metabolite network, endurance minus resistance edge weights, with MoTrPAC phosphosite tags",
+       paste0(CAP_PH, " Labels: proteins with the most responding sites (responding / measured)."), "16a_joint_edge_difference_phospho.png")
+tagged("glyco", lab_gl, "Joint protein-metabolite network, endurance minus resistance edge weights, with glycosylation tags",
+       paste0(CAP_GL, " Labels: proteins with the most glycosylation sites."), "16b_joint_edge_difference_glycosylation.png")
+tagged(c("phospho", "glyco", "crosstalk"), lab_xt, "Joint protein-metabolite network, endurance minus resistance edge weights, with phosphosite, glycosylation and crosstalk tags",
+       paste0(CAP_PH, "\n", CAP_GL, " Diamond: a measured phosphosite is also a known O-glycosylation site (labels list those residues)."),
+       "16c_joint_edge_difference_phospho_glyco_crosstalk.png")
+cat(sprintf("crosstalk residues: %d on %d proteins (%d drawn in the network); responding: %d\n", nrow(XT), uniqueN(XT$protein), nrow(lab_xt), sum(XT$responds != "no")))
