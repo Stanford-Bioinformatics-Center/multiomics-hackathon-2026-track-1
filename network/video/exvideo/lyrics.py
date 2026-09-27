@@ -73,6 +73,15 @@ Answer with JSON only, exactly this shape (no other text):
 
 
 BANNED_FILE = Path(__file__).resolve().parent / "suno_banned.txt"
+MAX_WORDS = 12                  # per bar: one rap bar at ~92 BPM is ~2.6 s, so 16 short bars sing in ~45 s and the
+                                # whole Suno song (intro, outro, breaks) stays well under 1:30
+
+LENGTH_RULES = """
+
+LENGTH RULES (the song must stay under 1:30):
+- Every bar is ONE short line of at most {max_words} words — never two lines joined by a comma.
+- The persona is 2-4 words (e.g. "the kingpin"), no explanation in brackets.
+- The Suno style must include "short intro"."""
 
 SUNO_RULES = """
 
@@ -124,11 +133,18 @@ def find_banned(lyr: Dict[str, Any], terms: Sequence[str] = ()) -> List[Tuple[st
     return hits
 
 
+def find_long(lyr: Dict[str, Any], max_words: int = MAX_WORDS) -> List[Tuple[str, str]]:
+    """Every bar longer than `max_words` words, and every persona longer than 5 words: (where, 'N words')."""
+    out = [(f"bar {b['bar']}", f"{len(b['text'].split())} words") for b in lyr.get("bars", []) if len(b["text"].split()) > max_words]
+    out += [(f"persona {n}", f"{len(p.split())} words") for n, p in lyr.get("personas", {}).items() if len(p.split()) > 5]
+    return out
+
+
 def build_prompt(walk: Sequence[str], facts: Dict[str, Any]) -> str:
     """The full prompt: the team's words, then the originality / style instructions, the example, the data, and the
     Suno rules (with the current banned-word list)."""
     return (PROMPT_TEMPLATE.format(walk=" -> ".join(walk)) + PROMPT_SUFFIX.format(style=STYLE_EXAMPLE, facts=json.dumps(facts, indent=2, ensure_ascii=False))
-            + SUNO_RULES.format(banned=", ".join(banned_terms())))
+            + SUNO_RULES.format(banned=", ".join(banned_terms())) + LENGTH_RULES.format(max_words=MAX_WORDS))
 
 
 def call_cli(prompt: str, model: str) -> str:
@@ -207,20 +223,27 @@ def write_lyrics(prompt: str, walk: Sequence[str], backend: str, model: str) -> 
 
 
 def scrub(lyr: Dict[str, Any], walk: Sequence[str], backend: str, model: str, tries: int = 3) -> Dict[str, Any]:
-    """Make the lyrics Suno-safe: while a banned term appears, ask Claude to rewrite ONLY the offending bars (or title /
-    persona / style), keeping rhyme, rhythm and the facts; every other bar is kept word for word."""
+    """Make the lyrics Suno-ready: while a bar (or title / persona / style) contains a banned word, or a bar is longer
+    than MAX_WORDS words (or a persona longer than 5), ask Claude to rewrite ONLY those parts, keeping meaning, facts,
+    rhyme and rhythm; every other bar is kept word for word."""
     ask = BACKENDS[backend]
     for _ in range(tries):
-        hits = find_banned(lyr)
-        if not hits:
+        hits, longs = find_banned(lyr), find_long(lyr)
+        if not hits and not longs:
             return lyr
-        bad = sorted({w for w, _ in hits}); words = sorted({t.lower() for _, t in hits})
+        bad = sorted({w for w, _ in hits} | {w for w, _ in longs}, key=lambda w: (not w.startswith("bar"), int(w.split()[1]) if w.startswith("bar ") else 0, w))
+        words = sorted({t.lower() for _, t in hits})
         current = {"title": lyr["title"], "suno_style": lyr["suno_style"],
                    "sections": [{"node": n, "persona": lyr["personas"].get(n, ""), "bars": [b["text"] for b in lyr["bars"] if b["node"] == n]} for n in walk]}
+        why = []
+        if hits:
+            why.append(f"they contain the Suno-banned word(s) {', '.join(repr(w) for w in words)} in: {', '.join(sorted({w for w, _ in hits}))} "
+                       f"(banned: {', '.join(banned_terms())}; for 'phosphate' say 'phospho mark', 'phospho spot' or 'P-tag')")
+        if longs:
+            why.append(f"these are too long ({', '.join(f'{w}: {n}' for w, n in longs)}): every bar must be ONE line of at most "
+                       f"{MAX_WORDS} words and a persona 2-4 words, so the song stays under 1:30")
         fix = ("These rap lyrics are going to Suno, which rejects artist / producer names and producer tags. "
-               f"They contain the banned word(s) {', '.join(repr(w) for w in words)} in: {', '.join(bad)}. "
-               f"Rewrite ONLY those parts so they keep the same meaning, facts, rhyme and rhythm without any banned word "
-               f"(banned: {', '.join(banned_terms())}; for 'phosphate' say 'phospho mark', 'phospho spot' or 'P-tag'). "
+               + "; and ".join(why).capitalize() + ". Rewrite ONLY those parts, keeping the meaning, the facts, rhyme and rhythm. "
                "Change nothing else. Answer with the full JSON in the same shape, no other text.\n\n" + json.dumps(current, indent=2, ensure_ascii=False))
         raw = ask(fix, model)
         new = parse_lyrics(raw, walk)
@@ -230,19 +253,17 @@ def scrub(lyr: Dict[str, Any], walk: Sequence[str], backend: str, model: str, tr
                "suno_style": new["suno_style"] if "style" in bad else lyr["suno_style"],
                "personas": {n: (new["personas"].get(n, p) if f"persona {n}" in bad else p) for n, p in lyr["personas"].items()},
                "bars": [nb if b["bar"] in keep else b for b, nb in zip(lyr["bars"], new["bars"])]}
-    hits = find_banned(lyr)
-    if hits:
-        raise ModelError(f"the lyrics still contain Suno-banned words after {tries} rewrites: {hits}")
+    hits, longs = find_banned(lyr), find_long(lyr)
+    if hits or longs:
+        raise ModelError(f"after {tries} rewrites the lyrics still break the Suno rules: banned {hits}, too long {longs}")
     return lyr
 
 
 def suno_text(lyr: Dict[str, Any], walk: Sequence[str]) -> str:
-    """The lyrics formatted for Suno's custom-lyrics box: section tags, one bar per line."""
-    roman = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
+    """The lyrics formatted for Suno's custom-lyrics box: short section tags, one bar per line."""
     out = ["[Intro]", "(Team 2-PAC)", ""]
     for i, node in enumerate(walk):
-        persona = lyr["personas"].get(node, "")
-        out.append(f"[Verse {i + 1}: {roman[i] if i < len(roman) else i + 1}. {node}{', ' + persona if persona else ''}]")
+        out.append(f"[Verse {i + 1}: {node}]")                    # lean tags: Suno may sing or pause for long ones
         out += [b["text"] for b in lyr["bars"] if b["node"] == node] + [""]
     out += ["[Outro]", "(" + " -> ".join(walk) + ")"]
     return "\n".join(out)

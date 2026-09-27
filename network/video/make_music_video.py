@@ -114,6 +114,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--backend", choices=tuple(lyrics.BACKENDS), default="cli", help="how to ask Claude (default %(default)s)")
     ap.add_argument("--model", default=lyrics.DEFAULT_MODEL)
     ap.add_argument("--audio", help="the song file (skip waiting)")
+    ap.add_argument("--max-seconds", type=float, default=90.0,
+                    help="cut the song (and video) at this many seconds, with a 3 s fade-out, if it runs longer (default %(default)s = 1:30; 0 = never)")
     ap.add_argument("--stop-after-lyrics", action="store_true",
                     help="stop once the lyrics are written and on the clipboard (01_lyrics_from_walk.py); make the video later with 02_video_from_song.py")
     ap.add_argument("--lyrics", help="reuse saved lyrics (a lyrics.json from an earlier run or 01_lyrics_from_walk.py) instead of writing new ones; its walk is used")
@@ -225,6 +227,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 print("      waiting for the download ...")
                 song = audio.wait_for_download(Path(args.downloads).expanduser(), since)
         total = audio.duration(song)
+        if args.max_seconds and total > args.max_seconds:              # the 1:30 safety net: fade out and end there
+            cut = dest / f"song_first_{int(args.max_seconds)}s.wav"
+            res = subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(song), "-t", f"{args.max_seconds}",
+                                  "-af", f"afade=t=out:st={args.max_seconds - 3:.3f}:d=3", str(cut)], capture_output=True, text=True)
+            if res.returncode != 0:
+                raise VideoStageError(f"could not cut the song to {args.max_seconds:g} s: {res.stderr[:300]}")
+            print(f"      the song is {total:.0f} s; cut to {args.max_seconds:g} s with a 3 s fade-out ({cut.name})")
+            song = cut; total = audio.duration(song)
         heads = {n: f"{ROMAN[i]}. {n}: {lyr['personas'].get(n, '')}".rstrip(": ") for i, n in enumerate(path)}
         tl = None
         if args.sync == "whisper":

@@ -28,6 +28,12 @@ the walk can still be finished, so every walk has exactly 4 different nodes (no 
 part 2 needs in `$HACK_OUT/video/<walk>/` and prints the exact part-2 command. Leave the song out of part 2 and it asks
 for it (drag it in) or waits for the next download.
 
+**Songs stay under 1:30.** The lyrics are always 16 bars, 4 per node (checked). Each bar is ONE line of at most 12
+words (a bar is ~2.6 s at 92 BPM, so the rapping takes ~45 s), personas are 2-4 words, the Suno tags are just
+`[Verse 1: NODE]`, and the style asks for a short intro; over-long bars are rewritten automatically, the rest kept word
+for word. If Suno still returns a long take, the video step cuts it at 1:30 with a 3 s fade-out (`--max-seconds 90`,
+the default; `0` = never).
+
 **Suno rejected a word?** ("Your lyrics contain producer tag phosphate - we don't reference specific artists")
 `python3 network/video/fix_lyrics.py <walk folder> phosphate` bans the word from now on (`exvideo/suno_banned.txt`)
 and rewrites only the bars that use it; everything else stays word for word, and the fixed lyrics are printed and put

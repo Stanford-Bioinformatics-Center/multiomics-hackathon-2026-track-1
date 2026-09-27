@@ -77,7 +77,7 @@ class LyricsTests(unittest.TestCase):
     def test_suno_text(self) -> None:
         w = ["A", "B", "C", "D"]
         s = lyrics.suno_text(lyrics.parse_lyrics(answer(w), w), w)
-        self.assertIn("[Verse 1: I. A, p]", s)
+        self.assertIn("[Verse 1: A]", s)                          # lean tags (no persona text for Suno to sing)
         self.assertEqual(s.count("[Verse"), 4)
 
 
@@ -247,6 +247,18 @@ class SunoBanTests(unittest.TestCase):
             lyrics.BACKENDS["cli"] = old
         self.assertEqual([b["text"] for b in out["bars"]], ["keep one", "fixed P-tag line", "keep three", "keep four"])
         self.assertEqual(out["title"], "T")
+
+class LengthTests(unittest.TestCase):
+    """Songs must stay under 1:30: bars of at most MAX_WORDS words, short personas; the prompt says so."""
+
+    def test_find_long(self):
+        lyr = {"personas": {"A": "the runner who moves the lactic out"}, "bars": [{"bar": 1, "node": "A", "text": "short line here"},
+               {"bar": 2, "node": "A", "text": " ".join(["word"] * (lyrics.MAX_WORDS + 1))}]}
+        self.assertEqual(lyrics.find_long(lyr), [("bar 2", f"{lyrics.MAX_WORDS + 1} words"), ("persona A", "7 words")])
+
+    def test_prompt_has_length_rules(self):
+        p = lyrics.build_prompt(["A", "B", "C", "D"], {})
+        self.assertIn("LENGTH RULES", p); self.assertIn(f"at most {lyrics.MAX_WORDS} words", p)
 
 if __name__ == "__main__":
     unittest.main()
