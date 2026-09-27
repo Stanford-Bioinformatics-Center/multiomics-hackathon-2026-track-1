@@ -714,6 +714,17 @@ exact test. In muscle: endurance 14 / 20 opposite (70%; expected 74%; Fisher p 1
 expected 58%; p 0.65) — no association beyond the imbalance. (A first version counted proteins without a Chae entry
 as "opposite" through a JSON encoding error — 86%, p 1e-6; found by an offline recount and fixed.)
 
+**T2D consensus (2026-09-26).** A "T2D evidence" selector switches both T2D views between *single study* (Öhman,
+Chae where Öhman is not significant, literature classes for metabolites) and *consensus*: only directions validated
+in **both** muscle studies of Amar et al. 2024 — Öhman p < 0.05 and listed by Chae (their published significant
+set, FDR < 0.1) with the same sign. Genome-wide 231 proteins are in both studies: **85 consensus** (68 lower in T2D —
+mostly mitochondrial respiration, TCA cycle and fatty-acid oxidation: NDUFS3, NDUFA10, NDUFV1, OGDH, IDH3A, FH, ACO2,
+SUCLA2, DLST, ETFA, ETFB, ACADM, DECR1 …; 17 higher), **39 significant in both but opposite**, the rest significant
+in one only (`17_t2d_consensus.csv`). Only **8 consensus proteins are among our 471** (6 in the joint network:
+DCTN1, DCXR, DIABLO, HSPB6, DECR1, PRDX5, BLVRB lower; PEBP1 higher): the 471 must also be measured in blood by the
+OLINK panel, which targets secreted / inflammatory proteins and misses most mitochondrial ones. Metabolites cannot
+be validated this way (one literature source, no measurements).
+
 **Step 18d — disease-filtered vs disease-overlaid modules (figures 18a / 18b).** Disease data: all 8 proteomics
 datasets (9 disease sets) of Amar et al. 2024 (*Cell Metab* 36:1411; doi 10.1016/j.cmet.2023.12.021), processed in
 the Venus project week 6 (`DISEASE_SCORES`; directions median-centred, rodent genes as human orthologs): T2D muscle
