@@ -57,7 +57,7 @@ except ImportError:
     if _VENV.exists() and os.environ.get("EXVIDEO_REEXEC") != "1":
         os.environ["EXVIDEO_REEXEC"] = "1"; os.execv(str(_VENV), [str(_VENV), str(Path(__file__).resolve()), *sys.argv[1:]])
 sys.path.insert(0, str(HERE))
-from exvideo import align, audio, beats, dancer, lyrics, network, render, walk  # noqa: E402
+from exvideo import align, audio, beats, dancer, lyrics, network, render, starts, walk  # noqa: E402
 
 DEFAULT_DANCER = Path(os.environ.get("HACK_EXT_DANCER", str(Path.home() / "Desktop/output/hackathon-2026-track1/external/dancer/rat_dance_transparent.gif")))
 DEFAULT_CREDIT = "Dancing rat: original meme by @ratomilton (TikTok), GIF via Tenor"
@@ -66,14 +66,34 @@ from exvideo.errors import VideoStageError, WalkError  # noqa: E402
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
 
 
-def ask_start(net: network.Network, steps: int = 3) -> str:
-    """Ask for a start node until it is a figure 17 node that a full walk can start from (Enter = a random one)."""
+def ask_start(net: network.Network, out: Path, steps: int = 3) -> str:
+    """Offer the story markers (exvideo/starts.py: the top markers of T2D muscle, T2D blood and ageing blood) as a
+    numbered menu; take a number, any other figure 17 node that a full walk can start from, or Enter for random."""
+    try:
+        menu = starts.super_list(out, net)
+        starts.write_menu(menu, out / "video" / "start_menu.csv")
+    except VideoStageError as err:
+        print(f"  (no story menu: {err})"); menu = []
     ok = walk.walkable_starts(net, steps)
-    print(f"\nStart node: any of the {len(ok)} figure 17 nodes (17a joint network) a {steps + 1}-node walk can start from.")
+    if menu:
+        print("\nWhere should the walk start? The strongest markers of our three stories")
+        print("(big change in the disease, and the winning exercise arm pushes it back the other way):\n")
+        story = None
+        for i, e in enumerate(menu, 1):
+            first = e["stories"][0]["story"]
+            if first != story:
+                story = first; print(f"  {story.upper()}")
+            print(f"  {i:>2}. {starts.describe(e)}")
+    print(f"\nPick a number" + (f" (1-{len(menu)})" if menu else "") + f", or type any of the {len(ok)} figure 17 nodes a {steps + 1}-node walk can start from.")
     while True:
-        typed = input("Start node / feature (e.g. HYOU1, SRC, Glutathione; Enter = random): ").strip()
+        typed = input("Start node (number, name, or Enter = random): ").strip()
         if not typed:
-            node = random.SystemRandom().choice(ok); print(f"  random start: {node}"); return node
+            node = random.SystemRandom().choice([e["node"] for e in menu] or ok); print(f"  random start: {node}"); return node
+        if typed.isdigit() and menu:
+            k = int(typed)
+            if 1 <= k <= len(menu):
+                print(f"  start: {menu[k - 1]['node']}"); return str(menu[k - 1]["node"])
+            print(f"  pick 1-{len(menu)}"); continue
         try:
             return walk.resolve_start(typed, net, steps)
         except WalkError as err:
@@ -135,7 +155,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         elif args.walk:
             path = tuple(walk.resolve_node(n, net) for n in args.walk.split(",") if n.strip()); walk.check_walk(path, net); seed = None
         else:
-            start = walk.resolve_start(args.start, net, args.steps) if args.start else ask_start(net, args.steps)
+            start = walk.resolve_start(args.start, net, args.steps) if args.start else ask_start(net, out, args.steps)
             if args.walker == "team" and args.steps == 3:
                 path, seed, p_steps, step_arms = walk.team_walk(start, args.arm, args.seed, out, out / "video" / "_walker")
                 walk.check_walk(path, net)                  # every step must be a physical edge (our hard gate)
