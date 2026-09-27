@@ -35,6 +35,12 @@
 #       counts, the share expected if the directions were unrelated, and Fisher's exact test in the legend;
 #     - search, click-to-highlight neighbours, metabolite-class selector, edge-type check boxes, class outlines
 #       ("bubbles", as in 15a / 15b), collapse / expand classes. Proteins are circles, metabolites triangles.
+#     - PRESENTATION TOOLBAR (default view, one row): story buttons (joint page: Muscle T2D / Blood T2D / Blood ageing from
+#       step 22; set the story's tissue + protein only and show a COMPACT view: its altered proteins, page nodes linked to
+#       >= 2 of them (grey partners) and the edges among them (blood stories: top 60 by |z|, "all N" shows every one), re-laid out by a 1.5 s barnesHut run; the story's slide title
+#       replaces the page title; All restores the filters, the layout positions and the titles), arm buttons, colour by exercise response /
+#       disease direction (the story's set, not the T2D consensus) / study vs physical (step 22 palette), arm-specific edges,
+#       PTM marks (P / G, as in the step 22 figures), find, reset. Every other control sits in the "Advanced" drawer.
 #   And for each network a Cytoscape.js JSON file (.cyjs, with node positions) plus one Cytoscape style
 #   file with three styles (EE, RE, difference), and plain node / edge tables.
 #
@@ -61,6 +67,7 @@
 #   $HACK_OUT/01b_metab_nodes_{EE,RE}.csv, 06_metabolite_edges.csv, 10_layout_metabolites.csv  metabolites
 #   $HACK_OUT/05_metabolite_protein_links.csv (Rhea reactions), 01c_metabolite_ids.csv (classes)
 #   $DISEASE_SCORES (Amar et al. 2024 disease sets, Venus week 6) for the T2D layers
+#   $HACK_OUT/22_story_networks/<story>_nodes.csv, <story>_slide_text.md (step 22) for the story buttons (joint page; optional)
 #   $HACK_OUT/17_node_cell_stats.csv, 17_modules.csv, 17_module_camera.csv, 17_phospho_site_stats.csv,
 #     17_glygen_protein_annotation.csv   (from 17_filter_stats.R)
 #
@@ -184,8 +191,31 @@ ANN_FIELDS <- list(list(col = "is_kinase", label = "mnet: is a kinase", binary =
                    list(col = "pathways", label = "GlyGen: pathways"), list(col = "reactions", label = "GlyGen: reactions"),
                    list(col = "expression_tissues", label = "GlyGen: normal tissues expressed"), list(col = "publications", label = "GlyGen: publications"))
 
+# Step 22 story subnetworks (joint page presentation toolbar): per story, its altered proteins (study_up / study_down, z),
+# physical partners and measured metabolites that are on the page, the tissue it is about and its slide title line.
+STORY_DIR <- file.path(OUT, "22_story_networks")
+# top: the compact view shows the story's top N altered proteins by |z| (0 = all of them; an "all N" toggle shows every one)
+STORIES <- list(muscle_t2d   = list(label = "Muscle T2D",   tissue = "muscle", up = "higher in T2D",         down = "lower in T2D",          top = 0L),
+                blood_t2d    = list(label = "Blood T2D",    tissue = "blood",  up = "higher with future T2D", down = "lower with future T2D", top = 60L),
+                blood_ageing = list(label = "Blood ageing", tissue = "blood",  up = "higher with age",        down = "lower with age",        top = 60L))
+story_data <- function(nodes) {
+  if (!all(file.exists(file.path(STORY_DIR, paste0(names(STORIES), "_nodes.csv"))))) { message("no step 22 story networks in ", STORY_DIR, "; story buttons skipped"); return(list()) }
+  unname(lapply(names(STORIES), function(s) { S <- STORIES[[s]]
+    N <- fread(file.path(STORY_DIR, paste0(s, "_nodes.csv")))
+    tl <- grep("^## ", readLines(file.path(STORY_DIR, paste0(s, "_slide_text.md"))), value = TRUE)[1]
+    # altered proteins, strongest first; one row per label
+    alt <- N[node_origin %in% c("study_up", "study_down")][order(-abs(z))][!duplicated(label)]
+    hit <- alt[label %in% nodes]; miss <- alt[!label %in% nodes]
+    message(sprintf("story %-12s: %d altered proteins, %d on the page (%d up, %d down), %d missing (e.g. %s)", s, nrow(alt), nrow(hit),
+                    hit[node_origin == "study_up", .N], hit[node_origin == "study_down", .N], nrow(miss), paste(head(miss$label, 5), collapse = ", ")))
+    list(id = s, label = S$label, tissue = S$tissue, up = S$up, down = S$down, top = S$top, title = sub("^## ", "", tl), n_alt = nrow(alt),
+         dir = setNames(lapply(seq_len(nrow(hit)), function(i) c(fifelse(hit$node_origin[i] == "study_up", 1, -1), signif(hit$z[i], 3))), hit$label),
+         partner = I(setdiff(N[node_origin == "physical_partner" & label %in% nodes, label], alt$label)),
+         metab = I(N[node_origin == "metabolite" & is_measured %in% TRUE & label %in% nodes, unique(label)])) }))
+}
+
 # Assemble the page data for one network as a JSON string (parsed by the page's JavaScript).
-page_data <- function(P, net, types) {
+page_data <- function(P, net, types, stories = list()) {
   nodes <- P$N$node
   # vectors: node -> {EE: {key: v}, RE: {key: v}}
   v <- VEC[node %in% nodes]
@@ -219,7 +249,7 @@ page_data <- function(P, net, types) {
     Filter(Negate(is.null), list(oh = if (any(x$set == "ohman_2021")) c(signif(x[set == "ohman_2021", logFC], 4), signif(x[set == "ohman_2021", p], 3)) else NULL,
                                  ch = if (any(x$set == "chae_2018")) signif(x[set == "chae_2018", logFC], 4) else NULL)))
   jsonlite::toJSON(list(net = net, vecs = vecs, stats = stats, phos = phos, mods = mods, ann = ann, omes = I(omes), t2d = t2d,
-                        annFields = ANN_FIELDS, types = I(types)), auto_unbox = TRUE, digits = NA, na = "null")
+                        annFields = ANN_FIELDS, types = I(types), stories = stories), auto_unbox = TRUE, digits = NA, na = "null")
 }
 
 
@@ -230,9 +260,19 @@ function(el, x, cfg) {
   var net = document.getElementById("graph" + el.id).chart;
   var nodes = net.body.data.nodes, edges = net.body.data.edges;
   var TIS = ["adipose", "blood", "muscle"], TIMES = ["0.5h", "4h", "24h"], OMES = {rna: "RNA", prot: "protein", metab: "metabolites"};
-  var st = { tags: {mp: 1, kp: 0, N: 1, O: 1, OG: 1, unk: 0, xt: 1}, pins: {}, omes: {}, tis: {adipose: 1, blood: 1, muscle: 1}, times: {"0.5h": 1, "4h": 1, "24h": 1}, arm: "EE", thr: 0.05, colour: "response", spec: false, specTop: 25,
+  var st = { tags: {mp: 0, kp: 0, N: 0, O: 0, OG: 0, unk: 0, xt: 0}, pins: {}, story: null, colStory: D.stories.length ? D.stories[0].id : null, saved: null, marks: false, omes: {}, tis: {adipose: 1, blood: 1, muscle: 1}, times: {"0.5h": 1, "4h": 1, "24h": 1}, arm: "EE", thr: 0.05, colour: "response", spec: false, specTop: 25,
              focus: null, collapsed: false, hulls: S.hulls.length > 0, typeOn: {}, module: "" };
   D.omes.forEach(function (o) { st.omes[o] = 1; }); D.types.forEach(function (t) { st.typeOn[t] = true; });
+  // step 22 stories (joint page only): id -> {dir: {node: [+1 up / -1 down, z]}, pset / mset: physical partners / measured metabolites}
+  var STY = {}; D.stories.forEach(function (s) { s.pset = {}; s.partner.forEach(function (i) { s.pset[i] = 1; }); s.mset = {}; s.metab.forEach(function (i) { s.mset[i] = 1; }); STY[s.id] = s;
+    var byZ = Object.keys(s.dir).sort(function (a, b) { return Math.abs(s.dir[b][1]) - Math.abs(s.dir[a][1]); });
+    s.core = {}; (s.top > 0 ? byZ.slice(0, s.top) : byZ).forEach(function (i) { s.core[i] = 1; });
+    var linkOf = function (core) { var nb = {}, out = {}; edges.get().forEach(function (e) { [[e.from, e.to], [e.to, e.from]].forEach(function (x) { if (core[x[1]] && !s.dir[x[0]]) (nb[x[0]] = nb[x[0]] || {})[x[1]] = 1; }); });
+      Object.keys(nb).forEach(function (i) { if (Object.keys(nb[i]).length >= 2) out[i] = 1; }); return out; };
+    s.link = linkOf(s.dir); s.linkCore = linkOf(s.core); });
+  // compact story view: node positions as drawn from the layout (restored by All), the physics timer
+  var ORIG = net.getPositions(), relax = null; st.allStory = false;
+  var SPAL = { up: "#D7301F", down: "#2B6CB0", partner: "#A6A6A6", metab: "#2CA25F", none: "#F2F2F2", P: "#E66100", G: "#7B3294" };
   var DASH = { solid: false, neg: [5, 5], mm: [10, 5], mp: [2, 4] };
   var T2DCOL = {"lower in T2D in both studies": "#5E3C99", "higher in T2D in both studies": "#E66100", "not validated in both studies": "#E6E6E6"};
   var TYPE_COL = {"protein - protein": "#8C8C8C", "metabolite - metabolite": "#1B7837", "metabolite - protein": "#8C510A"};
@@ -313,39 +353,52 @@ function(el, x, cfg) {
   // ---------- toolbar ----------
   var bar = document.createElement("div"); bar.className = "hk-bar";
   var cb = function (cls, val, lab, chk) { return "<label><input type='checkbox' class='" + cls + "' value='" + val + "'" + (chk ? " checked" : "") + "> " + lab + "</label>"; };
+  var tg = function (cls, lab) { return "<button class='hk-tog " + cls + "'>" + lab + "</button>"; };
+  // presentation rows: each control group is one nowrap block, so a label never separates from its control
+  var grp = function (inner) { return "<span class='hk-grp'>" + inner + "</span>"; };
+  var p = "<div class='hk-pres hk-row1'>" + (D.stories.length ? grp("<b>Story</b> " + D.stories.map(function (s) { return "<button class='hk-story' data-s='" + s.id + "'>" + esc(s.label) + "</button>"; }).join("") +
+          "<button class='hk-story' data-s=''>All</button><button class='hk-tog hk-allst' style='display:none'></button>") : "") +
+          grp("<b>Arm</b> " + [["EE", "Endurance"], ["RE", "Resistance"], ["ER", "Difference"]].map(function (a) { return "<button class='hk-armb' data-a='" + a[0] + "'>" + a[1] + "</button>"; }).join("")) +
+          grp("<b>Colour by</b> <select class='hk-pcol'><option value='response'>exercise response</option>" +
+          (D.stories.length ? "<option value='sdir'>disease direction (story set)</option><option value='sphys'>study vs physical</option>" : "") + "<option value='' disabled>other (set in Advanced)</option></select>") +
+          grp(tg("hk-pspec", "Arm-specific edges") + tg("hk-marks", "PTM marks")) + "</div>";
+  var p2 = grp("<b>Find</b> <input class='hk-find' list='" + el.id + "-dl' placeholder='gene or metabolite'>" +
+          "<datalist id='" + el.id + "-dl'>" + nodes.getIds().sort().map(function (i) { return "<option value=\"" + String(i).replace(/"/g, "&quot;") + "\">"; }).join("") + "</datalist>") +
+          grp("<button class='hk-reset'>Reset</button>");
   var h = "<div><b>Omes</b> " + D.omes.map(function (o) { return cb("hk-ome", o, OMES[o], 1); }).join(" ") +
           "<span class='hk-sep'></span><b>Tissues</b> " + TIS.map(function (t) { return cb("hk-tis", t, t, 1); }).join(" ") +
           "<span class='hk-sep'></span><b>Time</b> " + TIMES.map(function (t) { return cb("hk-time", t, t, 1); }).join(" ") +
           "<span class='hk-sep'></span><b>Arm</b> " + ["EE", "RE", "ER"].map(function (a) { return "<label><input type='radio' name='" + el.id + "-arm' class='hk-arm' value='" + a + "'" + (a === "EE" ? " checked" : "") + "> " + ARMLAB[a] + "</label>"; }).join(" ") +
           "<span class='hk-sep'></span><b>adj. p &lt;</b> <input class='hk-thr' type='number' step='0.01' min='0' max='1' value='0.05' style='width:55px'></div>";
   h += "<div><b>Colour nodes by</b> <select class='hk-colour'><option value='response'>exercise response (filtered)</option>" +
-       "<option value='t2d'>T2D change (validated in both Öhman 2021 and Chae 2018)</option>" +
-       "<option value='t2dcmp'>exercise vs T2D direction (compares the selected arm; 'endurance minus resistance' = both arms)</option>" +
+       (D.stories.length ? "<option value='sdir'>story: disease direction (step 22 story set)</option><option value='sphys'>story: study vs physical (step 22 palette)</option>" : "") +
+       "<option value='t2d'>T2D CONSENSUS, not the story set: validated in both Öhman 2021 and Chae 2018 muscle</option>" +
+       "<option value='t2dcmp'>exercise vs T2D CONSENSUS direction (compares the selected arm; 'endurance minus resistance' = both arms)</option>" +
        D.annFields.map(function (f) { return "<option value='ann:" + f.col + "'>" + esc(f.label) + "</option>"; }).join("") + "</select>" +
        "<span class='hk-sep'></span><b>Module</b> <select class='hk-mod'><option value=''>none</option></select>" +
-       "<span class='hk-sep'></span><b>Find</b> <input class='hk-find' list='" + el.id + "-dl' placeholder='gene or metabolite'>" +
-       "<datalist id='" + el.id + "-dl'>" + nodes.getIds().sort().map(function (i) { return "<option value=\"" + String(i).replace(/"/g, "&quot;") + "\">"; }).join("") + "</datalist>";
+       "";
   if (S.classes.length) h += "<span class='hk-sep'></span><b>Class</b> <select class='hk-cls'><option value=''>all</option>" + S.classes.map(function (c) { return "<option>" + esc(c) + "</option>"; }).join("") + "</select>";
-  h += "</div><div><b>PTM tags</b> (any combination) " + cb("hk-tag", "mp", "MoTrPAC phospho (red EE / blue RE / purple both)", 1) + " " +
-       cb("hk-tag", "kp", "known phosphosites", 0) + " " + cb("hk-tag", "N", "N-linked glyco", 1) + " " + cb("hk-tag", "O", "O-linked glyco (GalNAc)", 1) + " " +
-       cb("hk-tag", "OG", "O-GlcNAc", 1) + " " + cb("hk-tag", "unk", "glycosylated, site unknown", 0) + " " + cb("hk-tag", "xt", "phospho = O-glyco residue", 1);
+  h += "</div><div><b>PTM tags</b> (any combination) " + cb("hk-tag", "mp", "MoTrPAC phospho (red EE / blue RE / purple both)", 0) + " " +
+       cb("hk-tag", "kp", "known phosphosites", 0) + " " + cb("hk-tag", "N", "N-linked glyco", 0) + " " + cb("hk-tag", "O", "O-linked glyco (GalNAc)", 0) + " " +
+       cb("hk-tag", "OG", "O-GlcNAc", 0) + " " + cb("hk-tag", "unk", "glycosylated, site unknown", 0) + " " + cb("hk-tag", "xt", "phospho = O-glyco residue", 0);
   h += "</div><div><b>Edges</b> " + D.types.map(function (t) { return cb("hk-type", t, t, 1); }).join(" ") +
        "<span class='hk-sep'></span>" + cb("hk-spec", "1", "arm-specific edges only (red = endurance, blue = resistance)", 0) +
        " strong = top <input class='hk-spectop' type='number' min='1' max='100' step='5' value='25' style='width:45px'>% |w|" +
        (S.hulls.length ? "<span class='hk-sep'></span>" + cb("hk-hull", "1", "class outlines", 1) + " <button class='hk-col'>Collapse classes</button>" : "") +
-       "<span class='hk-sep'></span><button class='hk-reset'>Reset</button></div>";
-  bar.innerHTML = h;
+       "</div>";
+  bar.innerHTML = p + "<div class='hk-pres hk-row2'>" + p2 + "<details class='hk-adv'><summary>Advanced (omes, tissues, time, adj. p, annotation colours, modules, classes, PTM tags, edges)</summary>" + h + "<div class='hk-notes'></div></details></div>";
   var legend = document.createElement("div"); legend.className = "hk-legend";
   var legendBox = document.createElement("div"); legendBox.className = "hk-legbox";
   var panel = document.createElement("div"); panel.className = "hk-panel";
   var help = document.createElement("div"); help.className = "hk-help";
   help.innerHTML = "Filters recompute node colours, significance outlines and edge weights (dot products over the selected dimensions only) · click a node to highlight it and its neighbours, empty space to clear · hover for values" + (S.classes.length ? " · double-click a collapsed class to open it" : "");
   el.parentNode.insertBefore(bar, el); el.parentNode.appendChild(legend); el.parentNode.appendChild(panel); el.parentNode.appendChild(help);
-  var q = function (s) { return bar.querySelector(s); };
+  var q = function (s) { return bar.querySelector(s); }, notes = q(".hk-notes");
   // the network and its legend side by side: the legend panel sits to the right of the canvas, never over it
   var wrap = document.createElement("div"); wrap.className = "hk-wrap"; el.parentNode.insertBefore(wrap, el); wrap.appendChild(el); wrap.appendChild(legendBox);
   el.style.flex = "1 1 auto"; el.style.minWidth = "0"; el.style.width = "auto";
   wrap.parentNode.insertBefore(legend, wrap);   // the selection summary goes above the network, clear of the zoom buttons
+  var caption = document.createElement("div"); caption.className = "hk-caption"; wrap.parentNode.insertBefore(caption, wrap);   // the story's title line
   setTimeout(function () { net.setSize("100%", "760px"); net.redraw(); net.fit(); }, 60);
   // ---------- classes: collapse / outlines ----------
   function openAll() { S.classes.forEach(function (c) { var id = "class: " + c; if (net.isCluster(id)) net.openCluster(id); }); }
@@ -378,13 +431,15 @@ function(el, x, cfg) {
           if (p.kind === "sqh") ctx.setLineDash([2, 1.5]); ctx.fillRect(hx - 4.5, hy - 4.5, 9, 9); ctx.strokeRect(hx - 4.5, hy - 4.5, 9, 9); ctx.setLineDash([]);
           if (p.kind === "sqo") { ctx.fillStyle = "#FFFFFF"; ctx.beginPath(); ctx.arc(hx, hy, 2, 0, 2 * Math.PI); ctx.fill(); } }
         else if (p.kind === "star") { ctx.fillStyle = "#FFD700"; star(ctx, hx, hy, 6.5); ctx.fill(); ctx.stroke(); }
+        else if (p.kind === "L") { ctx.fillStyle = p.fill; ctx.beginPath(); ctx.arc(hx, hy, 6, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+          ctx.fillStyle = "#FFFFFF"; ctx.font = "bold 8px Helvetica"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.txt, hx, hy + 0.4); }
         else if (p.kind === "more") { ctx.fillStyle = "#222"; ctx.font = "bold 8px Helvetica"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("+" + p.n, hx, hy); }
         if (p.n > 1 && p.kind !== "more") { ctx.fillStyle = "#222"; ctx.font = "7px Helvetica"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(p.n, pos[id].x + c * (r + 27), pos[id].y + sn * (r + 27)); }
       });
       ctx.restore(); });
   });
   net.on("beforeDrawing", function (ctx) { if (!st.hulls || st.collapsed) return;
-    S.hulls.forEach(function (g) { var ids = nodes.getIds({ filter: function (n) { return n.hull === g.key; } }); if (!ids.length) return;
+    S.hulls.forEach(function (g) { var ids = nodes.getIds({ filter: function (n) { return n.hull === g.key && !n.hidden; } }); if (!ids.length) return;
       var p = net.getPositions(ids), pts = ids.map(function (i) { return { x: p[i].x, y: p[i].y }; }), hp = hull(pts);
       var path = function () { ctx.beginPath(); ctx.moveTo(hp[0].x, hp[0].y); hp.forEach(function (v) { ctx.lineTo(v.x, v.y); }); ctx.closePath(); };
       ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round";
@@ -415,7 +470,7 @@ function(el, x, cfg) {
     nAll.forEach(function (n) { var v = null;
       if (st.colour === "response") v = response(n.id);
       else if (st.colour === "t2d") { var tt = D.t2d[n.id]; v = (tt && Array.isArray(tt.oh) && tt.oh.length === 2) ? tt.oh[0] : null; }
-      else if (st.colour === "t2dcmp") v = null;
+      else if (st.colour === "t2dcmp" || st.colour === "sdir" || st.colour === "sphys") v = null;
       else if (st.colour === "phospho") { var pc = phosCells(n.id); v = (D.phos[n.id] ? pc : null); }
       else { var f = st.colour.substr(4), a = D.ann[n.id]; v = a ? a[f] : null; }
       val[n.id] = v; if (typeof v === "number") vals.push(v); });
@@ -423,6 +478,9 @@ function(el, x, cfg) {
     var smax = Math.max.apply(null, Object.keys(strength).map(function (k) { return strength[k]; }).concat([1e-9]));
     // focus = the clicked node(s) + neighbours over VISIBLE edges only (edges filtered out do not count)
     var keep = null; if (st.focus) { keep = {}; st.focus.forEach(function (i) { keep[i] = true; edges.get({ filter: function (e) { return !e.hidden && (e.from === i || e.to === i); } }).forEach(function (e) { keep[e.from] = true; keep[e.to] = true; }); }); }
+    var SC = STY[st.story || st.colStory] || null, cv = st.story ? STY[st.story] : null, full = cv && (st.allStory || !(cv.top > 0));
+    var coreS = cv ? (full ? cv.dir : cv.core) : null, linkS = cv ? (full ? cv.link : cv.linkCore) : null, nIn = cv ? Object.keys(cv.dir).length : 0;
+    var shown = function (i) { return !cv || !!coreS[i] || !!linkS[i]; }, sk2 = { up: 0, down: 0, partner: 0, met: 0, P: 0, G: 0 };
     var thr = st.thr, fset = {}, tally = {}, cmpN = {EE: [0, 0], RE: [0, 0]}, tab = {EE: {"-1-1": 0, "-11": 0, "1-1": 0, "11": 0}, RE: {"-1-1": 0, "-11": 0, "1-1": 0, "11": 0}}; if (st.focus) st.focus.forEach(function (i) { fset[i] = true; });
     // 3. node styles + tooltips
     nodes.update(nAll.map(function (n) {
@@ -444,6 +502,13 @@ function(el, x, cfg) {
                   "T2D-altered, no exercise response in selection": "#F2E6CF", "not validated in both T2D studies": "#E6E6E6"};
         col = CC[cat]; if (T1.dir !== 0 && cat.indexOf("no exercise") < 0) { border = "#000000"; bw = 2; }
         tally[cat] = (tally[cat] || 0) + 1; }
+      else if (st.colour === "sdir" || st.colour === "sphys") { var sd = SC && SC.dir[n.id], sl;
+        if (sd) { col = sd[0] > 0 ? SPAL.up : SPAL.down; border = "#000000"; bw = 2.6; sl = sd[0] > 0 ? "up" : "down"; }
+        else if (st.colour === "sphys" && SC && SC.pset[n.id]) { col = SPAL.partner; sl = "partner"; }
+        else if ((st.colour === "sphys" && SC && SC.mset[n.id]) || (cv && n.shape === "triangle")) { col = SPAL.metab; sl = "metab"; }
+        else if (cv && linkS[n.id]) { col = SPAL.partner; sl = "partner"; }
+        else { col = SPAL.none; border = "#BBBBBB"; sl = "none"; }
+        if (shown(n.id)) tally[sl] = (tally[sl] || 0) + 1; }
       else if (st.colour === "phospho") { if (v === null) col = "#E6E6E6"; else { var up = v.filter(function (r) { return r[4] < thr && r[2] > 0; }).length, dn = v.filter(function (r) { return r[4] < thr && r[2] < 0; }).length;
           col = up && dn ? "#8C510A" : up ? "#E66100" : dn ? "#5E3C99" : "#FFFFFF"; if (up || dn) { border = "#000000"; bw = 2; } } }
       else { var fld = D.annFields.filter(function (f) { return "ann:" + f.col === st.colour; })[0];
@@ -452,6 +517,9 @@ function(el, x, cfg) {
         else { var bn = BINS.filter(function (b) { return v >= b[0] && v <= b[1]; })[0]; col = bn[3]; tally[bn[2]] = (tally[bn[2]] || 0) + 1; } }
       if (st.colour === "phospho") { var pl = v === null ? "not measured" : col === "#E66100" ? "up" : col === "#5E3C99" ? "down" : col === "#8C510A" ? "up and down" : "measured, none respond"; tally[pl] = (tally[pl] || 0) + 1; }
       if (st.colour === "response") { var rl = v === null ? "no data in selection" : sig.length ? "significant" : "not significant"; tally[rl] = (tally[rl] || 0) + 1; }
+      // story make-up of the shown nodes (short legend): every page metabolite is measured by us (MoTrPAC)
+      if (cv && shown(n.id)) { if (coreS[n.id]) sk2[cv.dir[n.id][0] > 0 ? "up" : "down"]++; else if (n.shape === "triangle") sk2.met++; else sk2.partner++;
+        if (n.shape !== "triangle") { if (phosCells(n.id).some(function (r) { return r[4] < thr; })) sk2.P++; if (D.ann[n.id] && D.ann[n.id].glyco_sites > 0) sk2.G++; } }
       var onF = !keep || keep[n.id], size = 6 + 16 * Math.sqrt((strength[n.id] || 0) / smax);
       // tooltip
       var t = "<b>" + esc(n.id) + "</b> (" + (n.shape === "triangle" ? "metabolite · " + esc(n.group) : "protein") + ")<br><i>" + ARMLAB[st.arm] + ", selection</i>: mean normalised response " + f3(response(n.id));
@@ -460,15 +528,22 @@ function(el, x, cfg) {
         t += "<br><u>MoTrPAC phosphosites</u>: " + D.phos[n.id].length + " measured, " + pcs.length + " respond in selection" + (pcs.length ? "<br>" + pcs.slice(0, 8).map(function (r) { return r[3].site + " (" + r[0] + " " + r[1] + ") logFC " + f3(r[2]) + ", adj. p " + f3(r[4]) + (r[3].kin ? " · kinase " + esc(r[3].kin) : "") + (r[3].xt ? " · also an O-glycosylation site" : ""); }).join("<br>") : ""); }
       var a = D.ann[n.id]; if (a) t += "<br><u>PTM (mnet)</u>: " + a.phosphosites + " phosphosites (" + a.kinase_sites + " with kinase)" + (a.is_kinase ? " · kinase (" + a.substrate_sites + " substrate sites)" : "") + " · " + a.glyco_sites + " glycosylation sites (N " + a.glyco_N_sites + ", O " + a.glyco_O_sites + ")" + (a.crosstalk_residues ? " · " + a.crosstalk_residues + " phospho = O-glyco residues" : "") +
         "<br><u>GlyGen</u>: " + a.glycans + " glycan structures" + (a.glyco_protein_level ? " · glycosylated (protein-level evidence)" : "") + " · " + a.mutations + " mutations · " + a.disease + " diseases · " + a.pathways + " pathways · " + a.publications + " publications";
-      var T2 = t2dOf(n.id); t += "<br><u>T2D</u>: " + esc(T2.src) + (T2.dir !== 0 ? " · exercise direction in selection: endurance " + ["down", "none", "up"][exDir(n.id, "EE") + 1] + ", resistance " + ["down", "none", "up"][exDir(n.id, "RE") + 1] : "");
+      if (SC && SC.dir[n.id]) t += "<br><u>" + esc(SC.label) + " story</u>: " + (SC.dir[n.id][0] > 0 ? SC.up : SC.down) + " (z " + f3(SC.dir[n.id][1]) + ")";
+      else if (SC && SC.pset[n.id]) t += "<br><u>" + esc(SC.label) + " story</u>: physical partner";
+      var T2 = t2dOf(n.id); t += "<br><u>T2D consensus</u>: " + esc(T2.src) + (T2.dir !== 0 ? " · exercise direction in selection: endurance " + ["down", "none", "up"][exDir(n.id, "EE") + 1] + ", resistance " + ["down", "none", "up"][exDir(n.id, "RE") + 1] : "");
       var mm = D.mods.filter(function (m) { return m.members.indexOf(n.id) >= 0; })[0]; if (mm) t += "<br>module " + mm.id;
-      return { id: n.id, size: size, title: t, borderWidth: onF ? bw : 0.5, shapeProperties: { borderDashes: false }, font: { color: onF ? "#1A1A1A" : "rgba(0,0,0,0.06)" },
+      return { id: n.id, size: size, title: t, borderWidth: onF ? bw : 0.5, shapeProperties: { borderDashes: false }, font: { color: onF ? "#1A1A1A" : "rgba(0,0,0,0.06)" }, hidden: !shown(n.id),
                color: { background: onF ? col : "rgba(230,230,230,0.25)", border: onF ? border : "rgba(170,170,170,0.25)", highlight: { background: col, border: "#000000" }, hover: { background: col, border: "#000000" } } };
     }));
     // 3b. PTM tags per protein for the current selection
     var PIN = {EE: "#E41A1C", RE: "#377EB8", both: "#984EA3"}, pinTally = {EE: 0, RE: 0, both: 0, kp: 0, N: 0, O: 0, OG: 0, unk: 0, xt: 0};
     st.pins = {}; st.keep = keep;
+    var markTally = { P: 0, G: 0 };
     nAll.forEach(function (n) { var P = [], a = D.ann[n.id] || null;
+      // PTM marks (as in the step 22 figures): P = a MoTrPAC phosphosite responding in the selection, G = glycosylated (mnet)
+      if (st.marks && n.shape !== "triangle") {
+        if (phosCells(n.id).some(function (r) { return r[4] < thr; })) { P.push({ kind: "L", fill: SPAL.P, txt: "P" }); markTally.P++; }
+        if (a && a.glyco_sites > 0) { P.push({ kind: "L", fill: SPAL.G, txt: "G" }); markTally.G++; } }
       if (st.tags.mp && D.phos[n.id]) { var rs = [];
         D.phos[n.id].forEach(function (s) { var ee = false, re = false, mp = 1;
           on(st.tis).forEach(function (t) { on(st.times).forEach(function (h) { var e = s.c[t + "|EE|" + h], r = s.c[t + "|RE|" + h];
@@ -489,6 +564,7 @@ function(el, x, cfg) {
     st.pinTally = pinTally;
     // 4. edge styles + tooltips
     edges.update(eAll.map(function (e) { var r = W[e.id], vis = visible(e), onF = !st.focus || fset[e.from] || fset[e.to];
+      if (!shown(e.from) || !shown(e.to)) vis = false;
       var c = st.arm === "ER" ? div3(r.w, lim, ["#2166AC", "#D9D9D9", "#B2182B"]) : TYPE_COL[e.etype];
       var d = st.arm === "ER" ? (e.etype === "protein - protein" ? "solid" : e.etype === "metabolite - metabolite" ? "mm" : "mp") : (r.w < 0 ? "neg" : "solid");
       var wd = 0.6 + 5 * Math.min(Math.abs(r.w) / lim, 1);
@@ -523,6 +599,15 @@ function(el, x, cfg) {
              (n ? " (" + Math.round(100 * k / n) + "%). Expected if exercise and T2D directions were unrelated: " + Math.round(100 * expOpp) + "% (" + Math.round(100 * up) + "% go up with exercise, " +
                   Math.round(100 * t2dDown) + "% are lower in T2D); Fisher p " + f3(fisher2(t["-1-1"], t["-11"], t["1-1"], t["11"])) + "." : "") + "</div>"; });
       G += "<div class='hk-ls'>Direction match only (healthy-adult exercise vs T2D-vs-NGT), not evidence of treatment. Use the tissue filter (e.g. muscle only) to match the T2D tissue.</div>";
+    } else if (st.colour === "sdir" || st.colour === "sphys") {
+      G += "<div class='hk-ls'><b>" + esc(SC.label) + "</b> story set (step 22): " + SC.n_alt + " altered proteins, " + Object.keys(SC.dir).length + " on this page" + (st.story ? "" : " (last story chosen; pick one above)") + "</div>" +
+           sw(SPAL.up, "study up (" + SC.up + "), outlined = in our exercise network", tally.up || 0) + sw(SPAL.down, "study down (" + SC.down + "), outlined", tally.down || 0) +
+           (st.colour === "sphys" ? sw(SPAL.partner, "physical partner (STRING physical / Rhea)", tally.partner || 0) +
+             "<div class='hk-row'><span class='hk-tri' style='border-bottom-color:" + SPAL.metab + "'></span>measured metabolite in the story <span class='hk-n'>(" + (tally.metab || 0) + ")</span></div>" : "") +
+           (st.colour === "sdir" && cv ? sw(SPAL.partner, "page node linked to &ge; 2 story proteins", tally.partner || 0) : "") +
+           sw(SPAL.none, "not in this story's set", tally.none || 0) +
+           "<div class='hk-ls'>Every protein on this page is in our exercise network (471 measured genes), so every study protein here is outlined." +
+           (cv ? " Compact view: only the story's proteins and page nodes linked to &ge; 2 of them are shown, laid out afresh; All restores the full layout." : "") + "</div>";
     } else if (st.colour === "phospho") {
       G += "<div class='hk-ls'>fill = MoTrPAC phosphosites responding (adj. p &lt; " + thr + ", " + ARMLAB[st.arm] + ", selected muscle / adipose times)</div>" +
            [["#E66100", "up"], ["#5E3C99", "down"], ["#8C510A", "up and down"], ["#FFFFFF", "measured, none respond"], ["#E6E6E6", "not measured"]].map(function (x) { return sw(x[0], x[1], tally[x[1]] || 0); }).join("");
@@ -532,6 +617,9 @@ function(el, x, cfg) {
     }
     G += "<div class='hk-ls'>circle = protein, triangle = metabolite; size = strength (sum |w|) over the shown edges</div>";
     var T = st.pinTally || {}, pin = function (bg, fg, txt, lab, n, cls) { return "<div class='hk-row'><span class='hk-pin " + (cls || "") + "' style='background:" + bg + ";color:" + fg + "'>" + txt + "</span>" + lab + (n !== undefined ? " <span class='hk-n'>(" + n + ")</span>" : "") + "</div>"; };
+    if (st.marks) G += "<div class='hk-lt'>PTM marks (as in the step 22 figures)</div>" +
+      pin(SPAL.P, "#FFF", "P", "exercise-responsive phosphosite (MoTrPAC, adj. p &lt; " + thr + ", selection)", markTally.P + " proteins") +
+      pin(SPAL.G, "#FFF", "G", "glycosylated (mnet)", markTally.G + " proteins");
     if (on(st.tags).length) {
       G += "<div class='hk-lt'>PTM tags (stalks on proteins)</div>";
       if (st.tags.mp) G += "<div class='hk-ls'>MoTrPAC phosphosites responding (adj. p &lt; " + thr + ", selected tissues / times; one pin per site, up to 6, then +n)</div>" +
@@ -550,8 +638,22 @@ function(el, x, cfg) {
       "<div class='hk-row'><span class='hk-line' style='background:#AAAAAA'></span>strong in both <span class='hk-n'>(" + spTally.both + ")</span> · in neither <span class='hk-n'>(" + spTally.neither + ")</span></div>";
     else G += "<div class='hk-lt'>Edges</div>" + (st.arm === "ER" ? "<div class='hk-ls'>colour = w_EE − w_RE; width = |difference|</div>" + bar3(["#2166AC", "#D9D9D9", "#B2182B"], "−" + f3(lim), "0", "+" + f3(lim), "higher in resistance", "higher in endurance") + "<div class='hk-ls'>solid = protein–protein, long dash = metabolite–metabolite, dotted = metabolite–protein</div>"
          : "<div class='hk-ls'>width = |w| (up to " + f3(lim) + "); dashed = negative weight</div>" + D.types.map(function (t) { return "<div class='hk-row'><span class='hk-line' style='background:" + TYPE_COL[t] + "'></span>" + t + "</div>"; }).join(""));
-    legendBox.innerHTML = G;
-    legend.innerHTML = "<b>Selection</b>: " + ARMLAB[st.arm] + " · " + on(st.omes).map(function (o) { return OMES[o]; }).join(", ") + " · " + on(st.tis).join(", ") + " · " + on(st.times).join(", ") + " · adj. p &lt; " + thr;
+    if (cv) { var swo = function (c, lab, n) { return "<div class='hk-row'><span class='hk-swatch' style='background:" + c + ";border:2px solid #000'></span>" + lab + " <span class='hk-n'>(" + n + ")</span></div>"; };
+      var ks = st.colour === "sdir" || st.colour === "sphys";
+      legendBox.innerHTML = "<div class='hk-lt'>" + esc(cv.label) + "</div>" +
+        (ks ? "" : "<div class='hk-ls'>fill: " + esc(q(".hk-colour").selectedOptions[0].text) + " (key in Advanced)</div>" +
+          (st.colour === "response" ? bar3(st.arm === "ER" ? DIFF : RESP, "−" + f3(vlim), "0", "+" + f3(vlim), st.arm === "ER" ? "higher in resistance" : "down", st.arm === "ER" ? "higher in endurance" : "up") : "")) +
+        swo(SPAL.up, "study up", sk2.up) + swo(SPAL.down, "study down", sk2.down) + "<div class='hk-ls'>outlined = in our exercise network</div>" +
+        sw(SPAL.partner, "physical partner", sk2.partner) +
+        "<div class='hk-row'><span class='hk-tri' style='border-bottom-color:" + SPAL.metab + "'></span>measured metabolite <span class='hk-n'>(" + sk2.met + ")</span></div>" +
+        pin(SPAL.P, "#FFF", "P", "exercise-responsive phosphosite", sk2.P) + pin(SPAL.G, "#FFF", "G", "glycosylated", sk2.G) +
+        (st.spec ? "<div class='hk-row'><span class='hk-line' style='background:#D7301F;height:4px'></span>endurance only · <span class='hk-line' style='background:#2B8CBE;height:4px'></span>resistance only</div>" : "");
+      notes.innerHTML = "<div class='hk-lt'>Full legend and notes (story view)</div>" + G; }
+    else { legendBox.innerHTML = G; notes.innerHTML = ""; }
+    var ab = q(".hk-allst"); if (ab) { var capd = cv && cv.top > 0 && nIn > cv.top; ab.style.display = capd ? "" : "none"; ab.textContent = "all " + nIn; ab.classList.toggle("hk-on", !!(capd && st.allStory)); }
+    caption.textContent = st.story ? STY[st.story].title : ""; caption.style.display = st.story ? "" : "none";
+    ["title", "subtitle"].forEach(function (k) { var d = document.getElementById(k + el.id); if (d) d.style.display = st.story ? "none" : "block"; });
+    legend.innerHTML = (cv ? "<b>Story</b>: " + esc(cv.label) + " (" + (full ? nIn + " altered proteins on the page" : "top " + cv.top + " of " + nIn + " altered proteins on the page, by |z|") + ") · " : "") + "<b>Selection</b>: " + ARMLAB[st.arm] + " · " + on(st.omes).map(function (o) { return OMES[o]; }).join(", ") + " · " + on(st.tis).join(", ") + " · " + on(st.times).join(", ") + " · adj. p &lt; " + thr;
     // 6. modules: significance for the selection, and the selected module's table
     var ms = q(".hk-mod"), cur = ms.value;
     ms.innerHTML = "<option value=''>none</option>" + D.mods.map(function (m) { var best = modCells(m).reduce(function (b, r) { return (!b || r[5] < b[5]) ? r : b; }, null);
@@ -564,6 +666,12 @@ function(el, x, cfg) {
         (rows.length ? "<table><tr><th>tissue</th><th>ome</th><th>time</th><th>members tested</th><th>direction</th><th>z</th><th>FDR</th></tr>" + rows.map(function (r) { return "<tr" + (r[5] < thr ? " class='hk-sig'" : "") + "><td>" + r[0] + "</td><td>" + OMES[r[1]] + "</td><td>" + r[2] + "</td><td>" + r[6] + "</td><td>" + r[4] + "</td><td>" + f3(r[3]) + "</td><td>" + f3(r[5]) + "</td></tr>"; }).join("") + "</table>" : " no tested cell (fewer than 5 members measured in the selected omes / tissues).");
     } else panel.innerHTML = "";
     bar.querySelectorAll(".hk-arm").forEach(function (b) { b.checked = b.value === st.arm; });
+    bar.querySelectorAll(".hk-armb").forEach(function (b) { b.classList.toggle("hk-on", b.dataset.a === st.arm); });
+    bar.querySelectorAll(".hk-story").forEach(function (b) { b.classList.toggle("hk-on", b.dataset.s === (st.story || "")); });
+    bar.querySelectorAll(".hk-ome").forEach(function (c) { c.checked = !!st.omes[c.value]; });
+    bar.querySelectorAll(".hk-tis").forEach(function (c) { c.checked = !!st.tis[c.value]; });
+    var pc = q(".hk-pcol"); pc.value = [].some.call(pc.options, function (o) { return o.value === st.colour && o.value; }) ? st.colour : ""; q(".hk-colour").value = st.colour;
+    q(".hk-spec").checked = st.spec; q(".hk-pspec").classList.toggle("hk-on", st.spec); q(".hk-marks").classList.toggle("hk-on", st.marks);
     if (st.collapsed) clusterAll();
   }
   function modCells(m) { var out = []; on(st.omes).forEach(function (o) { on(st.tis).forEach(function (t) { on(st.times).forEach(function (h) {
@@ -576,6 +684,35 @@ function(el, x, cfg) {
   q(".hk-spectop").onchange = function () { var v = parseFloat(this.value); if (isFinite(v) && v > 0 && v <= 100) { st.specTop = v; apply(); } };
   q(".hk-thr").onchange = function () { var v = parseFloat(this.value); if (v > 0 && v <= 1) { st.thr = v; apply(); } };
   q(".hk-colour").onchange = function () { st.colour = this.value; apply(); };
+  q(".hk-pcol").onchange = function () { if (this.value) { st.colour = this.value; apply(); } };
+  bar.querySelectorAll(".hk-armb").forEach(function (b) { b.onclick = function () { st.arm = b.dataset.a; apply(); }; });
+  q(".hk-pspec").onclick = function () { st.spec = !st.spec; apply(); };
+  q(".hk-marks").onclick = function () { st.marks = !st.marks; apply(); };
+  // story buttons: remember the filters, show the story's tissue and proteins only, highlight its altered proteins, zoom to them;
+  // [All] restores the remembered filters (the filter objects are changed in place: the check boxes' handlers hold them)
+  var copy = function (o) { var c = {}; Object.keys(o).forEach(function (k) { c[k] = o[k]; }); return c; };
+  var put = function (o, v) { Object.keys(o).forEach(function (k) { o[k] = v[k]; }); };
+  // physics off everywhere and every node back at its layout position
+  function restore() { if (relax) { clearTimeout(relax); relax = null; }
+    net.setOptions({ physics: { enabled: false }, nodes: { scaling: { label: { drawThreshold: 9 } } } }); nodes.update(nodes.getIds().map(function (i) { return { id: i, physics: false }; }));
+    Object.keys(ORIG).forEach(function (i) { if (nodes.get(i)) net.moveNode(i, ORIG[i].x, ORIG[i].y); }); }
+  // compact view: barnesHut on the shown nodes only for ~1.5 s (always from the layout positions, fixed seed: reproducible), then freeze and fit
+  function compact() { var ids = nodes.getIds({ filter: function (n) { return !n.hidden; } });
+    nodes.update(ids.map(function (i) { return { id: i, physics: true }; }));
+    net.setOptions({ nodes: { scaling: { label: { drawThreshold: 5 } } }, layout: { randomSeed: 17 }, physics: { enabled: true, solver: "barnesHut", barnesHut: { gravitationalConstant: -1100, centralGravity: 0.9, springLength: 55, springConstant: 0.06, damping: 0.35, avoidOverlap: 0.5 },
+      stabilization: { enabled: true, iterations: 250, fit: false } } });
+    net.stabilize(250);
+    relax = setTimeout(function () { relax = null; net.setOptions({ physics: { enabled: false } }); nodes.update(ids.map(function (i) { return { id: i, physics: false }; }));
+      net.fit({ nodes: ids, animation: { duration: 800 } }); }, 1500); }
+  bar.querySelectorAll(".hk-story").forEach(function (b) { b.onclick = function () { var id = b.dataset.s;
+    st.focus = null; q(".hk-mod").value = ""; net.unselectAll();
+    if (st.collapsed) { st.collapsed = false; openAll(); var cbt = q(".hk-col"); if (cbt) cbt.textContent = "Collapse classes"; }
+    restore(); st.allStory = false;
+    if (id) { if (!st.story) st.saved = { omes: copy(st.omes), tis: copy(st.tis) }; st.story = id; st.colStory = id;
+      Object.keys(st.omes).forEach(function (k) { st.omes[k] = k === "prot" ? 1 : 0; }); Object.keys(st.tis).forEach(function (k) { st.tis[k] = k === STY[id].tissue ? 1 : 0; });
+      apply(); compact(); }
+    else { if (st.saved) { put(st.omes, st.saved.omes); put(st.tis, st.saved.tis); } st.story = null; st.saved = null;
+      apply(); net.fit({ animation: { duration: 800 } }); } }; });
   q(".hk-mod").onchange = function () { var m = D.mods.filter(function (x) { return x.id === q(".hk-mod").value; })[0];
     st.focus = m ? m.members.slice() : null; apply(); if (m) net.fit({ nodes: m.members, animation: { duration: 600 } }); };
   bar.querySelectorAll(".hk-type").forEach(function (c) { c.onchange = function () { st.typeOn[c.value] = c.checked; apply(); }; });
@@ -586,7 +723,8 @@ function(el, x, cfg) {
     st.focus = nodes.getIds({ filter: function (n) { return n.group === c; } }); apply(); net.fit({ nodes: st.focus, animation: { duration: 600 } }); };
   if (q(".hk-hull")) q(".hk-hull").onchange = function () { st.hulls = this.checked; net.redraw(); };
   if (q(".hk-col")) q(".hk-col").onclick = function () { if (st.collapsed) { st.collapsed = false; openAll(); this.textContent = "Collapse classes"; } else { st.collapsed = true; clusterAll(); this.textContent = "Expand classes"; } net.redraw(); };
-  q(".hk-reset").onclick = function () { location.reload(); };
+  if (q(".hk-allst")) q(".hk-allst").onclick = function () { if (!st.story) return; st.allStory = !st.allStory; restore(); apply(); compact(); };
+  q(".hk-reset").onclick = function () { restore(); location.reload(); };
   net.on("click", function (p) { if (p.nodes.length && !net.isCluster(p.nodes[0])) { st.focus = [p.nodes[0]]; apply(); }
     else if (!p.nodes.length && !p.edges.length && st.focus) { st.focus = null; q(".hk-mod").value = ""; apply(); } });
   net.on("doubleClick", function (p) { if (p.nodes.length && net.isCluster(p.nodes[0])) net.openCluster(p.nodes[0]); });
@@ -602,6 +740,16 @@ CSS <- tags$style(HTML("
   .hk-bar button { font-size: 12px; margin-right: 3px; padding: 1px 8px; border: 1px solid #999; background: #F7F7F7; border-radius: 3px; cursor: pointer; }
   .hk-bar input.hk-find { width: 170px; font-size: 12px; } .hk-bar select { font-size: 12px; max-width: 330px; } .hk-bar label { margin-right: 5px; }
   .hk-sep { display: inline-block; width: 12px; }
+  .hk-pres { font-size: 14px; padding: 4px 0; } .hk-pres button, .hk-pres select { font-size: 13.5px; padding: 3px 10px; }
+  .hk-row1, .hk-row2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; line-height: 1.6; }
+  .hk-grp { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; } .hk-grp b { margin-right: 2px; } .hk-grp button { margin-right: 0; }
+  .hk-pres select.hk-pcol { max-width: 220px; }
+  .hk-row2 .hk-adv { flex: 1 1 auto; margin: 0; } .hk-row2 .hk-adv[open] { flex-basis: 100%; }
+  .hk-bar button.hk-on { background: #1A1A1A; color: #FFFFFF; border-color: #1A1A1A; }
+  .hk-adv { margin-top: 2px; } .hk-adv summary { cursor: pointer; color: #555; font-size: 12px; }
+  .hk-notes { font-size: 11px; max-width: 760px; margin: 6px 0; padding: 6px 10px; border: 1px solid #DDD; border-radius: 4px; } .hk-notes:empty { display: none; }
+  .hk-caption { font-size: 16px; font-weight: bold; padding: 4px 0 2px; color: #1A1A1A; }
+  .hk-tri { display: inline-block; width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; border-bottom: 12px solid; vertical-align: middle; margin-right: 6px; }
   .hk-legend { font-size: 11.5px; padding: 6px 0 2px; line-height: 1.6; } .hk-help { font-size: 11px; color: #666; padding-top: 4px; }
   .hk-panel { font-size: 12px; padding: 6px 0; } .hk-panel table { border-collapse: collapse; margin-top: 4px; }
   .hk-panel td, .hk-panel th { border: 1px solid #DDD; padding: 2px 8px; text-align: left; } .hk-panel tr.hk-sig td { font-weight: bold; background: #FFF4D6; }
@@ -621,17 +769,17 @@ CSS <- tags$style(HTML("
 "))
 
 # Build and save one interactive page.
-page <- function(P, net, types, classes, hulls, file, title, subtitle) {
+page <- function(P, net, types, classes, hulls, file, title, subtitle, stories = list()) {
   vn <- P$N[, .(id = node, label = node, group = class, shape = fifelse(node_type == "metabolite", "triangle", "dot"),
                 x = x * W, y = (1 - y) * H, physics = FALSE, hull, size = sizeEE, color = colEE)]
   ve <- P$E[, .(id = paste0("e", seq_len(.N)), from = a, to = b, etype = as.character(edge_type), info = gsub("\n", " ", fifelse(is.na(info), "", info)), w_EE_ref = w_EE)]
-  cfg <- list(json = as.character(page_data(P, net, types)), static = list(classes = I(classes), hulls = hulls))
+  cfg <- list(json = as.character(page_data(P, net, types, stories)), static = list(classes = I(classes), hulls = hulls))
   w <- visNetwork(as.data.frame(vn), as.data.frame(ve), width = "100%", height = "760px",
                   main = list(text = title, style = "font-family:Helvetica;font-weight:bold;font-size:17px;text-align:left"),
                   submain = list(text = subtitle, style = "font-family:Helvetica;font-size:12px;color:#555;text-align:left")) |>
     visPhysics(enabled = FALSE) |> visEdges(smooth = FALSE, selectionWidth = 1.5) |>
     visNodes(borderWidth = 0.8, font = list(size = 13, face = "Helvetica"), scaling = list(label = list(enabled = TRUE, min = 13, max = 13, drawThreshold = 9))) |>
-    visInteraction(navigationButtons = TRUE, hover = TRUE, tooltipDelay = 80, hideEdgesOnDrag = TRUE, multiselect = TRUE) |>
+    visInteraction(navigationButtons = FALSE, hover = TRUE, tooltipDelay = 80, hideEdgesOnDrag = TRUE, multiselect = TRUE) |>
     onRender(JS, data = cfg)
   w <- prependContent(w, CSS)
   # a fixed widget ID (visNetwork ignores elementId as an argument), so reruns write byte-identical pages
@@ -685,7 +833,8 @@ PJ <- prepare(JN, JE)
 jcls <- JN[node_type == "metabolite", .N, by = class][order(-N), class]
 page(PJ, "joint", names(TYPE_COL), jcls, lapply(jcls, function(c) list(key = c, label = c)), "17a_joint_network.html",
      "Joint protein-metabolite network: endurance, resistance and their difference",
-     sprintf("%d nodes (%d proteins, %d metabolites) · %d edges: STRING v12 >= 700 and Rhea catalysis / transport (team mnet resource), shared/STRING-linked enzyme + same RefMet super class · layout as figures 15a / 15b", nrow(PJ$N), sum(PJ$N$node_type == "protein"), sum(PJ$N$node_type == "metabolite"), nrow(PJ$E)))
+     sprintf("%d nodes (%d proteins, %d metabolites) · %d edges: STRING v12 >= 700 and Rhea catalysis / transport (team mnet resource), shared/STRING-linked enzyme + same RefMet super class · layout as figures 15a / 15b", nrow(PJ$N), sum(PJ$N$node_type == "protein"), sum(PJ$N$node_type == "metabolite"), nrow(PJ$E)),
+     stories = story_data(PJ$N$node))
 cyto(PJ, "joint", "hackathon joint protein-metabolite network")
 
 # ---- gene network (steps 1, 3, 10) ------------------------------------------------------------------------
