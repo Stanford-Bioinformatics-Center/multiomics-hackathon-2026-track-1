@@ -66,12 +66,17 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       <div id="mv-center"><div class="t"></div><div class="s"></div></div><div id="mv-bars"><div id="mv-now"></div><div id="mv-next"></div></div>`;
     document.body.appendChild(ov);
     ov.querySelector('#mv-brand span').textContent = S.title;
+    // the dancer: a canvas at the right, above the lyric band; its frames are preloaded images
+    if (S.dancer) { const cv = document.createElement('canvas'); cv.id = 'mv-dancer';
+      const h = Math.round(S.height * 0.62), w = Math.round(h * S.dancer.aspect);
+      cv.width = w; cv.height = h; cv.style.cssText = `position:absolute;right:${Math.round(18 * k)}px;bottom:${Math.round(S.height * 0.11)}px;width:${w}px;height:${h}px`;
+      ov.appendChild(cv); }
     // everything the frame function needs
     const P = net.getPositions(S.walk), home = { pos: net.getViewPosition(), scale: net.getScale() };
     const zoom = Math.max(home.scale * 3.0, 0.9);
     const key = (a, b) => a < b ? a + '|' + b : b + '|' + a;
     const walkEdge = {}; net.body.data.edges.get().forEach(e => { walkEdge[key(e.from, e.to)] = e.id; });
-    window.mv = { S, net, P, home, zoom, key, walkEdge, seg: -2 };
+    window.mv = { S, net, P, home, zoom, key, walkEdge, seg: -2, dancerImgs: [] };
     const lerp = (a, b, u) => a + (b - a) * u, ease = u => u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2, clamp = u => Math.max(0, Math.min(1, u));
     // paint the walk's edges up to (and including) step i gold; focus node i
     function enter(i) {
@@ -108,6 +113,15 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       } else { card.style.display = 'none'; center.style.display = 'block';
         center.querySelector('.t').textContent = i < 0 ? S.title : S.walk.join(' → ');
         center.querySelector('.s').textContent = i < 0 ? S.subtitle : 'TEAM 2-PAC · physical links, exercise-weighted'; }
+      // the dancer: its loop advances by BEATS (S.dancer.beats_per_loop per loop), so every step lands on a beat
+      if (S.dancer && M.dancerImgs.length) { const B = S.dancer.beats, nb = B.length;
+        let j = 0; while (j + 1 < nb && B[j + 1] <= t) j++;
+        const span = j + 1 < nb ? B[j + 1] - B[j] : (B[nb - 1] - B[nb - 2]);
+        const pos = j + Math.max(0, Math.min(1, (t - B[j]) / span));
+        const L = S.dancer.beats_per_loop, u = ((pos % L) + L) % L / L;
+        const img = M.dancerImgs[Math.min(M.dancerImgs.length - 1, Math.floor(u * M.dancerImgs.length))];
+        const cv = document.getElementById('mv-dancer'), ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height); }
+      if (i >= n && S.dancer && S.dancer.credit) center.querySelector('.s').innerHTML = 'TEAM 2-PAC · physical links, exercise-weighted<div style="font-size:0.62em;margin-top:0.6em;color:#888">' + S.dancer.credit + '</div>';
       const b = S.bars.findIndex(x => t >= x.start && t < x.end);
       barsBox.style.display = b >= 0 ? 'block' : 'none';
       if (b >= 0) { const now = document.getElementById('mv-now'); now.textContent = S.bars[b].text; now.style.color = S.bars[b].header ? '#F2A900' : '#fff';
@@ -117,6 +131,13 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     return 'ok';
   }, spec);
   if (ok !== 'ok') { console.error('renderer set-up failed: ' + ok); await browser.close(); process.exit(1); }
+  // preload the dancer's frames (file:// images) before the first frame is drawn
+  if (spec.dancer) {
+    const n = await page.evaluate(async (files) => { const imgs = await Promise.all(files.map(f => new Promise((res, rej) => {
+      const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('cannot load ' + f)); im.src = 'file://' + f; })));
+      window.mv.dancerImgs = imgs; return imgs.length; }, spec.dancer.frames);
+    console.log(`  dancer: ${n} frames, ${spec.dancer.beats_per_loop} beats per loop, ${spec.dancer.beats.length} beats`);
+  }
 
   // ---- frames ------------------------------------------------------------------------------------------------------
   const nFrames = Math.ceil(spec.duration * spec.fps); const t0 = Date.now();

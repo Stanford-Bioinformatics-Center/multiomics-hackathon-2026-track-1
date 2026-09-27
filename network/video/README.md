@@ -16,12 +16,13 @@ python3 network/video/01_lyrics_from_walk.py --start CDC37                      
 | # | Stage | Time |
 |---|---|---|
 | 1 | You type a node / feature (gene symbol or metabolite; close matches are suggested) | — |
-| 2 | **Random walk**, 3 steps along the network's physical edges (STRING / Rhea): each step goes to a not-yet-visited neighbour with probability ∝ max(\|w_EE\|, \|w_RE\|), so strongly co-regulated links are likelier; seeded and saved | < 1 s |
+| 2 | **Random walk**, 3 steps, with the **team's walker** (`random_walk/random_walks.R`, Subarna Bhattacharya; see its README): each step goes to a not-yet-visited neighbour with probability set by the chosen arm's edge weights (`--arm EE` endurance, the default, or `RE`); dead ends are redrawn; seeded and saved with the step probabilities. Every step is re-checked against the physical edges. (`--walker builtin`: exvideo's own walker, probability ∝ max(\|w_EE\|, \|w_RE\|)) | ~1 s |
 | 3 | **Lyrics**: the figure 17 facts of the 4 nodes and 3 edges (hub rank, strength per arm, module pathway, strongest exercise response, T2D and ageing directions from Öhman 2021 and UK Biobank, phosphosites, sugars, top partners; per edge the weights, their difference and arm specificity) + **the team's prompt, verbatim** + the team's favourite lyrics as the **style example** → Claude (Claude Code `claude -p`, or `--backend api`) → checked: 4 bars per node in walk order, one retry if malformed | ~25 s |
 | 4 | **Suno**: the Suno-formatted lyrics are copied to the clipboard, the style prompt and title printed, suno.com/create opened. In Suno: *Create → Custom*, paste, set the style, create, download | ~1-2 min (you) |
 | 5 | **The song**: drag the file into the terminal, or press Enter and it picks up the new download in `~/Downloads` | — |
 | 5b | **Sync**: Whisper hears the song; every lyric line is placed where its first word is sung (first run ~45 s per 80 s of song, then cached) | ~45 s |
-| 6 | **The video** (`render/render_walk.js`, Puppeteer + ffmpeg): the figure 17 page full screen with arm-specific edges on (red = endurance only, blue = resistance only); title card; the camera flies node to node, each walked edge turns gold; each node's persona and fact card; the current bar large and the next bar faded; the whole walk at the end; the song underneath → `music_video.mp4` | ~1 s per second of song |
+| 5c | **Beat**: tempo and every beat of the song (spectral-flux onsets, autocorrelation tempo, dynamic-programming beat tracking; numpy); the dancer GIF's steps per loop from its silhouette sway | ~1 s |
+| 6 | **The video** (`render/render_walk.js`, Puppeteer + ffmpeg): the figure 17 page full screen with arm-specific edges on (red = endurance only, blue = resistance only); title card; the camera flies node to node, each walked edge turns gold; each node's persona and fact card; the current bar large and the next bar faded; the whole walk at the end; a **dancing rat** at the side whose loop advances by the song's beats, so every step lands on a beat (credit only on the closing card; `--dancer other.gif`, `--no-dancer`); the song underneath → `music_video.mp4` | ~1 s per second of song |
 
 **Lyrics are synced to the actual vocals** (`--sync whisper`, the default): Whisper (faster-whisper, run locally)
 transcribes the song with a time for every word; the heard words are then aligned to the known lyrics (a global word
@@ -54,6 +55,9 @@ song length, bar timing), `render.py` (renderer set-up, frames → MP4), `errors
 `render/render_walk.js` draws the frames (frame-stepped, so none are dropped). Tests:
 `python3 -m unittest discover -s network/video/tests` (12 tests on a toy network, incl. lyric-to-vocal alignment: walks, the hard gate, reproducible
 random walks, answer checks, the verbatim prompt, Suno text, timing, dragged paths).
+
+**The dancer GIF** (not in the repo): the rat-dance meme (original by @ratomilton, TikTok), transparent GIF from Tenor,
+saved at `~/Desktop/output/hackathon-2026-track1/external/dancer/rat_dance_transparent.gif` (override with `--dancer`).
 
 **One-time set-up:** `bash network/video/setup.sh` (Whisper environment in `network/video/.venv`, renderer packages;
 `make_music_video.py` switches to `.venv` by itself).

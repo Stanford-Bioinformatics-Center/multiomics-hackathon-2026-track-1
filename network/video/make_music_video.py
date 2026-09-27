@@ -55,7 +55,10 @@ except ImportError:
     if _VENV.exists() and os.environ.get("EXVIDEO_REEXEC") != "1":
         os.environ["EXVIDEO_REEXEC"] = "1"; os.execv(str(_VENV), [str(_VENV), str(Path(__file__).resolve()), *sys.argv[1:]])
 sys.path.insert(0, str(HERE))
-from exvideo import align, audio, lyrics, network, render, walk  # noqa: E402
+from exvideo import align, audio, beats, dancer, lyrics, network, render, walk  # noqa: E402
+
+DEFAULT_DANCER = Path(os.environ.get("HACK_EXT_DANCER", str(Path.home() / "Desktop/output/hackathon-2026-track1/external/dancer/rat_dance_transparent.gif")))
+DEFAULT_CREDIT = "Dancing rat: original meme by @ratomilton (TikTok), GIF via Tenor"
 from exvideo.errors import VideoStageError, WalkError  # noqa: E402
 
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
@@ -77,6 +80,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--steps", type=int, default=3, help="random-walk steps (default %(default)s: 4 nodes)")
     ap.add_argument("--seed", type=int, help="random-walk seed (default: random, printed and saved)")
     ap.add_argument("--walk", help="a fixed walk instead, comma-separated (e.g. HYOU1,HSP90B1,CDC37,SRC)")
+    ap.add_argument("--walker", choices=("team", "builtin"), default="team",
+                    help="team (default): the team's random_walk/random_walks.R; builtin: exvideo.walk.random_walk")
+    ap.add_argument("--arm", choices=("EE", "RE"), default="EE", help="team walker: whose edge weights set the step probabilities (default %(default)s)")
     ap.add_argument("--backend", choices=tuple(lyrics.BACKENDS), default="cli", help="how to ask Claude (default %(default)s)")
     ap.add_argument("--model", default=lyrics.DEFAULT_MODEL)
     ap.add_argument("--audio", help="the song file (skip waiting)")
@@ -90,6 +96,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="whisper (default): listen to the song and start every line when its first word is sung; even: spread the lines evenly")
     ap.add_argument("--whisper-model", default="small.en", help="faster-whisper model for --sync whisper (default %(default)s; base.en is faster)")
     ap.add_argument("--sung-headers", action="store_true", help="(--sync even only) the song also sings each section header; time a slot for it")
+    ap.add_argument("--dancer", default=str(DEFAULT_DANCER), help="a looping dancer GIF (transparent background best) drawn at the side, stepping on the beat (default: %(default)s)")
+    ap.add_argument("--no-dancer", action="store_true", help="no dancer")
+    ap.add_argument("--dancer-credit", default=DEFAULT_CREDIT, help="credit for the dancer GIF, shown only on the closing card")
     ap.add_argument("--no-open", action="store_true", help="do not open Suno / the finished video")
     ap.add_argument("--out", default=os.environ.get("HACK_OUT", str(Path.home() / "Desktop/output/hackathon-2026-track1/network")))
     ap.add_argument("--fig", default=os.environ.get("HACK_FIG", str(Path.home() / "Desktop/output/hackathon")))
@@ -103,7 +112,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         width, height = (int(x) for x in args.size.lower().split("x"))
 
         # 1-2. the walk (from saved lyrics, a fixed walk, or a random walk)
-        saved = None
+        saved = None; p_steps = None
         if args.lyrics:
             saved = json.loads(audio.clean_path(args.lyrics).read_text(encoding="utf-8"))
             if not isinstance(saved.get("bars"), list) or not saved.get("walk"):
@@ -114,10 +123,18 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             path = tuple(walk.resolve_node(n, net) for n in args.walk.split(",") if n.strip()); walk.check_walk(path, net); seed = None
         else:
             start = walk.resolve_node(args.start, net) if args.start else ask_start(net)
-            path, seed = walk.random_walk(start, args.steps, net, args.seed)
-        print(f"\n[1/4] walk: {' -> '.join(path)}" + (f"   (seed {seed})" if seed is not None else ""))
+            if args.walker == "team" and args.steps == 3:
+                path, seed, p_steps = walk.team_walk(start, args.arm, args.seed, out, out / "video" / "_walker")
+                walk.check_walk(path, net)                  # every step must be a physical edge (our hard gate)
+                if len(path) < 4:
+                    raise WalkError(f"{start} sits in a piece of the network too small for a 4-node walk")
+            else:
+                path, seed = walk.random_walk(start, args.steps, net, args.seed); p_steps = None
+        print(f"\n[1/4] walk: {' -> '.join(path)}" + (f"   (seed {seed}" + (f", team walker, {args.arm} weights" if p_steps else "") + ")" if seed is not None else ""))
         dest = out / "video" / "_".join(path); dest.mkdir(parents=True, exist_ok=True)
-        (dest / "walk.json").write_text(json.dumps({"walk": list(path), "seed": seed, "steps": len(path) - 1}, indent=2) + "\n")
+        (dest / "walk.json").write_text(json.dumps({"walk": list(path), "seed": seed, "steps": len(path) - 1,
+                                                    "walker": ("team (random_walk/random_walks.R)" if p_steps else "builtin") if seed is not None else "fixed",
+                                                    "arm": args.arm if p_steps else None, "p_step": p_steps}, indent=2) + "\n")
 
         # 3. facts -> prompt -> lyrics
         facts = network.build_facts(path, net, out)
@@ -191,6 +208,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 "subtitle": "a walk through the MoTrPAC exercise network", "walk": list(path), "bars": tl["bars"],
                 "segments": [{**s, "label": f"{ROMAN[i]}. {s['node']}", "persona": lyr["personas"].get(s["node"], ""), "facts": network.fact_card(byn[s["node"]])}
                              for i, s in enumerate(tl["segments"])]}
+        if not args.no_dancer and Path(args.dancer).expanduser().exists():
+            t = time.time(); bt = beats.detect_beats(song)
+            dz = dancer.prepare(Path(args.dancer).expanduser(), dest / "dancer_frames")
+            spec["dancer"] = {**dz, "beats": beats.extend_grid(bt["beats"], total), "credit": args.dancer_credit, "aspect": dz["aspect"]}
+            (dest / "beats.json").write_text(json.dumps(bt, indent=1) + "\n", encoding="utf-8")
+            print(f"      dancer: {bt['bpm']} BPM, {len(bt['beats'])} beats; {dz['steps_per_loop']} steps per GIF loop ({time.time() - t:.0f} s)")
+        elif not args.no_dancer:
+            print(f"      (no dancer: {args.dancer} not found)")
         video = render.render(spec, song, dest)
         print(f"\ndone in {time.time() - t_start:.0f} s: {video}")
         if not args.no_open and shutil.which("open"):
