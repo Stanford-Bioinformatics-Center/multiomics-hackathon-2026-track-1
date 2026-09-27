@@ -1,0 +1,209 @@
+#!/usr/bin/env Rscript
+# =====================================================================================================
+# 17_filter_stats.R — STEP 17 (PART 1): STATISTICS BEHIND THE FILTERABLE INTERACTIVE NETWORKS
+# =====================================================================================================
+#
+# PURPOSE (the question this answers)
+#   The interactive pages (17_interactive_networks.R) let the user filter the networks by ome, tissue, time
+#   point and arm. For every node and every such "cell" the page needs the change and its significance, and
+#   for groups of connected nodes ("modules") it needs a test of whether the group as a whole responds. This
+#   script precomputes both, with the consortium's own statistics and gene-set method.
+#
+# WHAT THIS SCRIPT DOES (plain language)
+#   1. Node statistics: for each gene (the exact transcript / protein used in step 1) and metabolite (the
+#      platform used in step 1b), the log fold change and adjusted p-value in every tissue x ome x time point
+#      for three contrasts (delta-delta, from the MoTrPAC differential analysis): endurance vs control (EE),
+#      resistance vs control (RE), and endurance vs resistance (EE-RE).
+#   2. Modules: communities found from each network's STRUCTURE alone (Louvain on the unweighted edges, fixed
+#      seed; the exercise data are not used), for the joint, gene and metabolite networks; modules with fewer
+#      than 5 members are not tested (MoTrPAC's minimum set size).
+#   3. Module tests: MoTrPAC's run_cameraPR() (limma CAMERA-PR via TMSig; the method behind the package's
+#      published pathway results) with the modules as custom gene sets (gene symbols + metabolite names), on
+#      every tissue x ome x contrast. Each module is split into its genes (tested in RNA and protein) and its
+#      metabolites (tested in metabolomics); a part is tested if at least 5 members, and at least 70% of them
+#      (MoTrPAC's default), are measured in that ome; competitive test against all features of that ome and
+#      tissue; FDR across the modules of one network within each cell.
+#   4. Annotation layers: MoTrPAC phosphosites of our proteins (logFC / adj. p per tissue x arm x time, with
+#      GlyGen knowledge per site: known site, kinase, O-GlcNAc crosstalk), GlyGen kinase -> substrate edges between
+#      our proteins, and GlyGen per-protein annotation counts (needs network/inventory and step 16).
+#
+# HOW TO RUN
+#   After steps 1, 1b, 3, 6, 10, 14, 15:   Rscript network/17_filter_stats.R   (a few minutes; loads all
+#   differential-analysis tables). Then:   Rscript network/17_interactive_networks.R
+#
+# DATA AND PROVENANCE
+#   MotrpacHumanPreSuspensionAnalysis v0.2.4: *_TRNSCRPT_DA, *_PROT_PR_DA, BLOOD_PROT_OL_DA, *_METAB_DA,
+#   run_cameraPR(), CONTRAST_CONVERTER. Feature choices from steps 1 / 1b (provenance tables).
+#
+# TECH STACK:  R 4.4; data.table, igraph (Louvain), MotrpacHumanPreSuspensionAnalysis + TMSig (CAMERA-PR).
+#
+# INPUTS ($HACK_OUT)
+#   01_nodes_feature_provenance.csv, 01b_metab_nodes_provenance.csv, 03_weighted_edges.csv,
+#   06_metabolite_edges.csv, 14_joint_edges.csv
+# OUTPUTS ($HACK_OUT)
+#   17_node_cell_stats.csv   node, node_type, tissue, ome (rna / prot / metab), arm (EE / RE / ER), time, logFC, adj_p
+#   17_modules.csv           network (joint / gene / metabolite), module, node, node_type
+#   17_module_modules.gmt    the modules as gene sets (input to run_cameraPR)
+#   17_module_camera.csv     network, module, tissue, ome, arm, time, n_members_tested, direction, z, p, fdr
+#   17_phospho_site_stats.csv   protein, feature_id, site, tissue, arm, time, logFC, adj_p, known_in_glygen, kinases, crosstalk
+#   17_kinase_edges.csv          kinase, substrate, sites, n_sites, source (GlyGen kinase annotations; both among the 471)
+#   17_glygen_protein_annotation.csv   one row per protein: GlyGen counts (phosphosites, glycosylation, mutations,
+#                                disease, pathways, ...) and crosstalk residues
+#
+# EXPECTED OUTPUT (2026-09-26) AND VALIDATION
+#   Every drawn node has statistics for each of its measured cells; the script stops if a node's chosen feature
+#   is missing from its differential-analysis table, or if the logFC read here differs from the step 1 / 1b
+#   raw logFC for the EE and RE contrasts.
+#
+# KNOWN LIMITS
+#   Modules are structural communities, one reasonable definition among several (data-driven "active modules"
+#   are a possible extension); CAMERA-PR asks whether a module moves MORE than other features of the same ome
+#   (competitive), not whether it moves at all. Multiple testing is corrected across modules within each cell,
+#   not across cells.
+# =====================================================================================================
+
+# Load packages quietly.
+suppressMessages({ library(data.table); library(igraph) })
+
+# Folders (outside the repo).
+OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
+# Fixed seed for the community detection.
+SEED <- 20260926
+# Minimum members per module and ome for a test (MoTrPAC's min_size).
+MIN_SIZE <- 5L
+# Constants shared with steps 1 / 1b.
+TISSUES <- c("adipose", "blood", "muscle")
+TPS <- c("0.5h" = "post_15_30_45_min", "4h" = "post_3.5_4_hr", "24h" = "post_24_hr")
+ARM_OF <- c("EE-CON" = "EE", "RE-CON" = "RE", "EE-RE" = "ER")
+PROT_OBJ <- c(adipose = "ADIPOSE_PROT_PR_DA", blood = "BLOOD_PROT_OL_DA", muscle = "MUSCLE_PROT_PR_DA")
+PKG <- "MotrpacHumanPreSuspensionAnalysis"
+
+# ---- 1. node statistics ---------------------------------------------------------------------------------
+# Helper: one tissue's differential-analysis rows for the three contrasts at the three post-exercise times.
+da_rows <- function(obj) {
+  data(list = obj, package = PKG)
+  x <- as.data.table(get(obj))[contrast_category %in% names(ARM_OF) & Timepoint %in% TPS]
+  x[, .(feature_id = as.character(feature_id), platform = if ("platform" %in% names(x)) as.character(platform) else NA_character_,
+        arm = ARM_OF[as.character(contrast_category)], time = names(TPS)[match(as.character(Timepoint), TPS)], logFC, adj_p = adj_p_value)]
+}
+# Genes: the feature step 1 chose for each tissue x ome.
+prov <- fread(file.path(OUT, "01_nodes_feature_provenance.csv"), colClasses = list(character = "entrez_gene"))
+G <- rbindlist(lapply(TISSUES, function(t) rbindlist(lapply(c("rna", "prot"), function(o) {
+  obj <- if (o == "rna") paste0(toupper(t), "_TRNSCRPT_DA") else PROT_OBJ[[t]]
+  ch <- prov[, .(node = gene_symbol, feature_id = get(paste0("feature_id_", t, "_", o)))][!is.na(feature_id) & feature_id != ""]
+  x <- da_rows(obj)[ch, on = "feature_id", nomatch = 0]
+  # safety check: every chosen feature is in its table
+  stopifnot(all(ch$feature_id %in% x$feature_id))
+  x[, `:=`(tissue = t, ome = o)]
+}))))
+G[, node_type := "protein"]
+# Metabolites: the platform step 1b kept in each tissue.
+mprov <- fread(file.path(OUT, "01b_metab_nodes_provenance.csv"))
+M <- rbindlist(lapply(TISSUES, function(t) {
+  x <- da_rows(paste0(toupper(t), "_METAB_DA"))
+  ch <- mprov[, .(node = metabolite, platform = get(paste0("platform_", t)))][!is.na(platform) & platform != ""]
+  x <- x[ch, on = c(feature_id = "node", "platform"), nomatch = 0]
+  setnames(x, "feature_id", "node")
+  x[, `:=`(tissue = t, ome = "metab", node_type = "metabolite")]
+}))
+S <- rbind(G[, .(node, node_type, tissue, ome, arm, time, logFC, adj_p)], M[, .(node, node_type, tissue, ome, arm, time, logFC, adj_p)])
+# Safety check: the EE / RE logFCs equal the step 1 / 1b raw values used for the embeddings.
+chk <- function(file, id) { r <- fread(file.path(OUT, file)); d <- setdiff(names(r), c("entrez_gene", "gene_symbol", "metabolite"))
+  melt(r[, c(id, d), with = FALSE], id.vars = id, variable.name = "dim", value.name = "raw", na.rm = TRUE) }
+rawE <- rbind(chk("01_nodes_EE_raw_logFC.csv", "gene_symbol")[, node := gene_symbol][, gene_symbol := NULL],
+              chk("01b_metab_nodes_EE_raw_logFC.csv", "metabolite")[, node := metabolite][, metabolite := NULL])
+rawE[, dim := as.character(dim)]
+cmp <- S[arm == "EE", .(node, dim = paste(tissue, ome, time, sep = "_"), logFC)][rawE, on = c("node", "dim"), nomatch = 0]
+stopifnot(nrow(cmp) > 0, isTRUE(all.equal(cmp$logFC, cmp$raw)))
+fwrite(S, file.path(OUT, "17_node_cell_stats.csv"))
+message(sprintf("node statistics: %d rows (%d nodes)", nrow(S), uniqueN(S$node)))
+
+# ---- 2. modules: structural communities of each network ---------------------------------------------------
+w3 <- fread(file.path(OUT, "03_weighted_edges.csv")); w6 <- fread(file.path(OUT, "06_metabolite_edges.csv")); je <- fread(file.path(OUT, "14_joint_edges.csv"))
+nets <- list(joint = je[, .(a = node_a, b = node_b)], gene = w3[, .(a = symbol_a, b = symbol_b)], metabolite = w6[, .(a = metabolite_a, b = metabolite_b)])
+mets <- unique(M$node)
+MOD <- rbindlist(lapply(names(nets), function(n) {
+  g <- graph_from_data_frame(nets[[n]], directed = FALSE)
+  set.seed(SEED); cl <- cluster_louvain(g)
+  m <- data.table(network = n, node = V(g)$name, community = membership(cl))
+  # keep communities with at least MIN_SIZE members; name them by size (largest first)
+  sz <- m[, .N, by = community][N >= MIN_SIZE][order(-N)]
+  m <- m[community %in% sz$community][, module := sprintf("%s_M%02d", n, match(community, sz$community))][, community := NULL]
+  m[, node_type := fifelse(node %in% mets, "metabolite", "protein")]
+}))
+fwrite(MOD, file.path(OUT, "17_modules.csv"))
+message("modules: ", paste(MOD[, .(k = uniqueN(module)), by = network][, sprintf("%s %d", network, k)], collapse = ", "))
+# the modules as a GMT file: each module split into its gene part ("<module>|genes", tested in RNA / protein)
+# and its metabolite part ("<module>|metab", tested in metabolomics), so each part is tested only where it
+# is measured (run_cameraPR keeps a set only if >= 70% of its members are in that ome's background)
+gmt <- file.path(OUT, "17_module_modules.gmt")
+parts <- MOD[, .(set = paste0(module, fifelse(node_type == "protein", "|genes", "|metab")), node)]
+writeLines(parts[, paste(c(set[1], "network module", node), collapse = "\t"), by = set]$V1, gmt)
+
+# ---- 3. module tests: MoTrPAC run_cameraPR with the modules as gene sets -----------------------------------
+cam <- as.data.table(MotrpacHumanPreSuspensionAnalysis::run_cameraPR(
+  selected_omes = c("transcript-rna-seq", "prot-pr", "prot-ol", "metab"), selected_tissues = "all",
+  path_to_gmt = gmt, min_size = MIN_SIZE, overlap_cutoff = 0.7))
+# keep the three contrast families used by the page and translate labels
+cam <- cam[contrast_type %in% c("exercise_with_controls", "Endur_vs_Resist")]
+cam[, contrast_short := as.character(contrast_short)]
+cam[, arm := fcase(grepl("^Endur.*Control", contrast_short), "EE", grepl("^Resist.*Control", contrast_short), "RE",
+                   grepl("^Endur.*Resist", contrast_short), "ER", default = NA_character_)]
+cam[, time := names(TPS)[sapply(contrast_short, function(s) which(sapply(TPS, grepl, x = s))[1])]]
+cam[, ome := c("transcript-rna-seq" = "rna", "prot-pr" = "prot", "prot-ol" = "prot", "metab" = "metab")[as.character(assay)]]
+cam <- cam[!is.na(arm) & !is.na(time)]
+# FDR across the modules of one network within each cell (the package adjusts per collection; redone here per network)
+cam[, `:=`(module = sub("\\|.*$", "", as.character(set)), part = sub("^.*\\|", "", as.character(set)))]
+# a gene part is only meaningful in RNA / protein, a metabolite part only in metabolomics
+cam <- cam[(part == "genes" & ome %in% c("rna", "prot")) | (part == "metab" & ome == "metab")]
+cam[, network := sub("_M[0-9]+$", "", module)]
+cam[, fdr := p.adjust(p_value, "BH"), by = .(network, tissue, ome, arm, time)]
+CAM <- cam[, .(network, module, tissue = as.character(tissue), ome, arm, time, n_members_tested = set_size,
+               direction = as.character(direction), z = z.std, p = p_value, fdr)]
+fwrite(CAM, file.path(OUT, "17_module_camera.csv"))
+message(sprintf("module tests: %d (modules x cells); FDR < 0.05: %d", nrow(CAM), sum(CAM$fdr < 0.05)))
+
+# ---- 4. annotation layers: MoTrPAC phospho, GlyGen phospho / kinases, GlyGen protein annotations ------------
+# (needs network/inventory first: glygen_protein_inventory.py, glygen_motrpac_inventory.R; and step 16 for crosstalk)
+INV <- file.path(OUT, "inventory")
+if (!file.exists(file.path(INV, "protein_inventory.csv"))) stop("run network/inventory/ first (protein_inventory.csv missing)")
+genes <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))[, .(entrez_gene, gene_symbol)]
+data("HUMAN_FEATURE_TO_GENE", package = PKG)
+f2g <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[assay == "prot-ph", .(feature_id = as.character(feature_id), entrez_gene = as.character(entrez_gene))])
+f2g <- genes[f2g, on = "entrez_gene", nomatch = 0]
+# 4a. MoTrPAC phosphosites of our proteins: logFC and adj. p per tissue x arm x time (muscle 0.5/4/24 h, adipose 4 h)
+PH <- rbindlist(lapply(c("muscle", "adipose"), function(t) da_rows(paste0(toupper(t), "_PROT_PH_DA"))[, tissue := t]))
+PH <- f2g[PH, on = "feature_id", nomatch = 0][, platform := NULL]
+PH[, `:=`(acc = sub("_.*$", "", feature_id), sites = sub("^[^_]*_", "", feature_id))]
+# GlyGen knowledge per site: known phosphosite, kinase(s), O-GlcNAc / O-glyco crosstalk residue (single-site features)
+gps <- fread(file.path(INV, "glygen_phosphosites.csv"))
+gps[, key := paste(sub("-.*$", "", glygen_ac), position, substr(residue, 1, 1))]
+kin_by_key <- gps[kinase != "", .(kinases = paste(sort(unique(kinase)), collapse = ";")), by = key]
+PH[, key := fifelse(grepl("^[STY][0-9]+[sty]$", sites), paste(acc, sub("^[STY]([0-9]+).*$", "\\1", sites), substr(sites, 1, 1)), NA_character_)]
+PH[, known_in_glygen := !is.na(key) & key %in% gps$key]
+PH <- kin_by_key[PH, on = "key"]
+xt <- if (file.exists(file.path(OUT, "16_crosstalk_sites.csv"))) fread(file.path(OUT, "16_crosstalk_sites.csv")) else data.table(protein = character(), residue = character())
+PH[, site_label := gsub("([sty])", "", sites)]
+PH[, crosstalk := mapply(function(p, s) any(paste(p, strsplit(s, "(?<=[0-9])(?=[STY])", perl = TRUE)[[1]]) %in% paste(xt$protein, xt$residue)), gene_symbol, site_label)]
+fwrite(PH[, .(protein = gene_symbol, feature_id, site = site_label, tissue, arm, time, logFC, adj_p, known_in_glygen, kinases, crosstalk)],
+       file.path(OUT, "17_phospho_site_stats.csv"))
+message(sprintf("phospho sites: %d features on %d proteins", uniqueN(PH$feature_id), uniqueN(PH$gene_symbol)))
+# 4b. kinase -> substrate edges (GlyGen: UniProtKB + iPTMnet), both proteins among our 471
+KE <- gps[kinase != "" & kinase %in% genes$gene_symbol, .(sites = paste(sort(unique(paste0(substr(residue, 1, 1), position))), collapse = ","),
+                                                          n_sites = uniqueN(position),
+                                                          source = paste(sort(unique(unlist(strsplit(source, ";")))), collapse = ";")),
+          by = .(kinase, substrate = gene_symbol)]
+fwrite(KE, file.path(OUT, "17_kinase_edges.csv"))
+message(sprintf("kinase -> substrate edges among the 471: %d (%d self)", nrow(KE), sum(KE$kinase == KE$substrate)))
+# 4c. GlyGen protein annotations (counts; one row per protein) for the "colour by" selector and tooltips
+P <- fread(file.path(INV, "protein_inventory.csv"))
+ANN <- P[, .(protein = gene_symbol,
+             glygen_phosphosites = phospho_sites_unique, glygen_kinase_sites = phospho_sites_with_kinase,
+             glycosylated = as.integer(gly_sites_unique + gly_protein_level_no_site > 0), glyco_sites = gly_sites_unique,
+             glyco_N_sites = gly_sites_N, glyco_O_sites = gly_sites_O, glycans = glycans_at_sites,
+             mutations = n_snv, disease = n_disease, biomarkers = n_biomarkers, ptm_annotation = n_ptm_annotation,
+             site_annotation = n_site_annotation, enzyme = n_enzyme_annotation, pathways = n_pathway, reactions = n_reactions,
+             expression_tissues = n_expression_tissue, publications = n_publication)]
+ANN <- merge(ANN, xt[, .(crosstalk_residues = .N), by = .(protein)], by = "protein", all.x = TRUE)[is.na(crosstalk_residues), crosstalk_residues := 0L]
+fwrite(ANN, file.path(OUT, "17_glygen_protein_annotation.csv"))
+message(sprintf("GlyGen annotations: %d proteins x %d fields", nrow(ANN), ncol(ANN) - 1))
