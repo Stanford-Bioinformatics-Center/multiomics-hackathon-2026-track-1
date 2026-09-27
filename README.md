@@ -11,7 +11,7 @@ endurance in muscle, resistance in blood — read off one physically gated, exer
 | **Data** | MoTrPAC human acute exercise (RNA, protein, metabolites; adipose, blood, muscle) · STRING v12 and Rhea physical interactions · seven published T2D / insulin-resistance / ageing proteomes incl. UK Biobank |
 | **Method** | every edge = a **physical link** (hard: STRING ≥ 700 or Rhea) weighted by the **dot product of the two molecules' exercise responses** (soft), per arm — see the figure below and [`network/engine`](network/engine) |
 | **Finding** | muscle: endurance reverses the T2D proteome, resistance does not (difference p 0.007), and the T2D proteins form a connected subgraph (p 0.039); blood: resistance reverses the plasma proteins of ageing and of future T2D (UK Biobank, p < 0.001) |
-| **Reproduce** | `bash network/run_all.sh` — ~10 minutes, 25 engine tests + 44 validation checks, 136 outputs byte-identical to the reference run |
+| **Reproduce** | `bash network/run_all.sh` — ~10 minutes, 25 engine tests + 44 validation checks, 139 outputs byte-identical to the reference run |
 | **Read more** | [`network/README.md`](network/README.md): full documentation (snapshot, question, workflow, setup, inputs/outputs, methods, validation, reuse) |
 
 ### How an edge is made: hard (physical) x soft (exercise) weights

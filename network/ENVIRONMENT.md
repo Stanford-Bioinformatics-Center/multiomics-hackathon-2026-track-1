@@ -35,6 +35,8 @@ versions and input checksums should give identical outputs (checked with `networ
 | readxl | 1.4.5 |
 | checkmate | 2.3.4 |
 | testthat | 3.3.2 |
+| pkgload | 1.5.0 |
+| patchwork | 1.3.2 |
 | exnet | 1.0.0 |
 | TMSig | 1.0.0 |
 | fgsea | 1.32.4 |

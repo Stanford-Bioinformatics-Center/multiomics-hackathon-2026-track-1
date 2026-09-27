@@ -65,6 +65,9 @@
 
 # Load packages quietly.
 suppressMessages({ library(data.table); library(igraph); library(ggplot2); library(ggrepel); library(patchwork) })
+# The shared figure style (MoTrPAC landscape-paper look: small Helvetica type, bold lower-case panel tags).
+.args <- commandArgs(trailingOnly = FALSE); .here <- dirname(normalizePath(sub("^--file=", "", grep("^--file=", .args, value = TRUE))))
+source(file.path(.here, "R", "figure_style.R"))
 
 # Folders and inputs (override with environment variables).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
@@ -258,7 +261,7 @@ net_panel <- function(nodes, lay, arm, lim, wlim, title, label_all = TRUE) {
                     box.padding = 0.3, min.segment.length = 0.2, segment.size = 0.2) +
     scale_colour_identity() + scale_shape_identity() + FILL(lim) + scale_linetype_manual(values = c(`FALSE` = "solid", `TRUE` = "22"), guide = "none") +
     scale_linewidth(range = c(0.2, 2.6), limits = c(0, wlim), name = "|edge weight|") +
-    coord_equal(clip = "off") + labs(title = title) + theme_void(base_size = 10) +
+    coord_equal(clip = "off") + labs(title = title) + theme_motrpac_void(8) +
     theme(plot.title = element_text(face = "bold", size = 10), legend.position = "bottom")
 }
 # PTM tags on the proteins, minimal version of the step 17 pages: short stalks fanning clockwise from the upper right
@@ -317,7 +320,7 @@ rev_scatter <- function(tab, zv, title, labs_nodes = character()) {
     geom_text_repel(data = d[node %in% labs_nodes], aes(label = node), size = 2.4, seed = SEED, max.time = 60, max.iter = 1e4, min.segment.length = 0.1) +
     geom_label(data = ann, aes(x = -Inf, y = -Inf, label = lab), hjust = -0.05, vjust = -0.3, size = 3, label.size = 0, fill = "white", alpha = 0.85, inherit.aes = FALSE) +
     facet_wrap(~arm) + labs(x = "T2D z (signed; < 0 = lower in T2D)", y = "mean normalised muscle response", title = title) +
-    theme_bw(base_size = 10) + theme(plot.title = element_text(face = "bold", size = 10))
+    theme_motrpac(8) + theme(plot.title = element_text(face = "bold", size = 10))
 }
 wlim_of <- function(nodes) { es <- E[node_a %in% nodes & node_b %in% nodes]; max(abs(c(es$w_EE, es$w_RE)), 1e-6) }
 lim_of <- function(nodes) max(quantile(abs(c(rE[nodes], rR[nodes])), 0.95, na.rm = TRUE), 1e-6)
@@ -332,35 +335,36 @@ pc <- ggplot(cbar, aes(w, piece, fill = arm)) + geom_col(position = position_dod
   geom_text(data = unique(cbar[, .(piece, p_w_diff)]), aes(x = Inf, y = piece, label = sprintf("p %.2g", p_w_diff)), inherit.aes = FALSE, hjust = 1.05, size = 2.6) +
   scale_fill_manual(values = c(`endurance (w_EE)` = "#D7301F", `resistance (w_RE)` = "#2B8CBE"), name = NULL) +
   labs(x = "mean edge weight in the piece (dot product)", y = NULL, title = "Edge weights per piece (p: w_EE - w_RE vs random connected subgraphs of the same size)") +
-  theme_bw(base_size = 9) + theme(plot.title = element_text(face = "bold", size = 9), legend.position = "bottom")
-row19a <- (net_panel(S1, L1, "EE", lim1, wl1, "Endurance: node fill = muscle response, edge width = w_EE") |
+  theme_motrpac(8) + theme(plot.title = element_text(face = "bold", size = 9), legend.position = "bottom")
+# the network row is ONE tagged panel (both arms + the PTM key), so the key does not take a panel letter
+row19a <- wrap_elements(full = (net_panel(S1, L1, "EE", lim1, wl1, "Endurance: node fill = muscle response, edge width = w_EE") |
            net_panel(S1, L1, "RE", lim1, wl1, "Resistance: node fill = muscle response, edge width = w_RE") | key_panel()) +
-  plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom")
+  plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom"))
 f19a <- row19a /
         (rev_scatter(tab_m, Z[DN], sprintf("All %d T2D-altered network proteins (Öhman p < 0.05): T2D z vs muscle response", length(DN)), S1) | pc) +
   plot_layout(heights = c(1.4, 1)) +
-  plot_annotation(title = "Figure 19a. T2D-altered proteins (Öhman 2021 muscle) in the joint network: their connected pieces, endurance vs resistance",
+  plot_annotation(tag_levels = "a", title = "Fig. 19a | T2D-altered proteins (Öhman 2021 muscle) in the joint network: their connected pieces, endurance vs resistance",
                   subtitle = "Outline: purple = lower in T2D, orange = higher in T2D; dashed edge = negative weight. Pieces = connected components with >= 2 T2D-altered proteins.",
-                  theme = theme(plot.title = element_text(face = "bold")))
+                  theme = theme(plot.title = element_text(face = "bold", size = 10, family = "Helvetica"), plot.subtitle = element_text(size = 7.5, family = "Helvetica", colour = "grey25")))
 ggsave(file.path(FIG, "19a_t2d_small_subgraph.png"), f19a, width = 19, height = 13, dpi = 300, bg = "white"); message("-> ", file.path(FIG, "19a_t2d_small_subgraph.png"))
 
 # 19b — story 2
 L2 <- layout_of(S2); lim2 <- lim_of(S2); wl2 <- wlim_of(S2)
 nd <- function(v, obs, lab, title) ggplot(data.table(v = v), aes(v)) + geom_histogram(bins = 40, fill = "grey75", colour = "grey55") +
-  geom_vline(xintercept = obs, colour = "#D7301F", linewidth = 1) + labs(x = lab, y = "random sets", title = title) + theme_bw(base_size = 9) +
+  geom_vline(xintercept = obs, colour = "#D7301F", linewidth = 1) + labs(x = lab, y = "random sets", title = title) + theme_motrpac(8) +
   theme(plot.title = element_text(face = "bold", size = 9))
 st2 <- ST[story == "2 connector subgraph"]
-row19b <- (net_panel(S2, L2, "EE", lim2, wl2, "Endurance: node fill = muscle response, edge width = w_EE", FALSE) |
+row19b <- wrap_elements(full = (net_panel(S2, L2, "EE", lim2, wl2, "Endurance: node fill = muscle response, edge width = w_EE", FALSE) |
            net_panel(S2, L2, "RE", lim2, wl2, "Resistance: node fill = muscle response, edge width = w_RE", FALSE) | key_panel()) +
-  plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom")
+  plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom"))
 f19b <- row19b /
         (nd(null2, length(S2), "largest connected piece (nodes)", sprintf("Size vs %s degree-matched random seed sets (same connector rule): p %.3g", format(N_PERM, big.mark = ","), st2$p[1])) |
          nd(nd2, wd2, "mean w_EE - w_RE", sprintf("Mean w_EE - w_RE vs random connected subgraphs of %d nodes: p %.3g", length(S2), st2$p[2])) |
          rev_scatter(rt2[, .(rev_EE, p_EE, rev_RE, p_RE)], Z[intersect(S2, DN)], "T2D proteins inside the subgraph: T2D z vs muscle response")) +
   plot_layout(heights = c(1.5, 1)) +
-  plot_annotation(title = "Figure 19b. T2D-altered proteins plus connector nodes (linked to >= 2 of them): the largest connected subgraph, endurance vs resistance",
+  plot_annotation(tag_levels = "a", title = "Fig. 19b | T2D-altered proteins plus connector nodes (linked to >= 2 of them): the largest connected subgraph, endurance vs resistance",
                   subtitle = sprintf("%d nodes: %d T2D-altered proteins (outline purple = lower, orange = higher in T2D) and %d connectors (black outline); circles = proteins, triangles = metabolites.",
-                                     length(S2), length(intersect(S2, DN)), length(CONN)), theme = theme(plot.title = element_text(face = "bold")))
+                                     length(S2), length(intersect(S2, DN)), length(CONN)), theme = theme(plot.title = element_text(face = "bold", size = 10, family = "Helvetica"), plot.subtitle = element_text(size = 7.5, family = "Helvetica", colour = "grey25")))
 ggsave(file.path(FIG, "19b_t2d_connector_subgraph.png"), f19b, width = 19, height = 14, dpi = 300, bg = "white"); message("-> ", file.path(FIG, "19b_t2d_connector_subgraph.png"))
 
 # 19c — story 3: forest of reversal tests (all tissues; Chae as sensitivity), the 68-protein scatter, responding phosphosites
@@ -372,7 +376,7 @@ pf <- ggplot(fr, aes(v, lab, colour = arm)) + geom_vline(xintercept = 0, colour 
   geom_text(aes(label = sprintf("p %.2g", p)), position = position_dodge(0.6), vjust = -0.8, size = 2.2, show.legend = FALSE) +
   scale_colour_manual(values = c(endurance = "#D7301F", resistance = "#2B8CBE", `endurance - resistance` = "#222222"), name = NULL) +
   labs(x = "reversal (-Spearman of T2D z vs response); difference = endurance - resistance", y = NULL, title = "Reversal per T2D set, node set and tissue (p: T2D z permuted)") +
-  theme_bw(base_size = 9) + theme(plot.title = element_text(face = "bold", size = 9), legend.position = "bottom")
+  theme_motrpac(8) + theme(plot.title = element_text(face = "bold", size = 9), legend.position = "bottom")
 sigp <- unique(CELL[node %in% D471 & tissue == "muscle" & arm %in% c("EE", "RE") & adj_p < ALPHA, node])
 psc <- rev_scatter(t3, Z[D471], sprintf("All %d T2D-altered proteins among the 471 (Öhman p < 0.05): T2D z vs muscle response (labels: a muscle cell with adj. p < 0.05)", length(D471)), sigp)
 PS[, time := factor(time, levels = c("0.5h", "4h", "24h"))][, gl := sprintf("%s %s", protein, site)][, armlab := ARMLAB[arm]]
@@ -382,12 +386,12 @@ pp <- ggplot(PS, aes(time, gl)) + geom_point(aes(fill = logFC, size = pmin(-log1
   scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B", name = "logFC", limits = c(-1, 1) * max(abs(PS$logFC)), oob = scales::squish) +
   scale_size(range = c(0.6, 5), limits = c(0, 4), name = "-log10 adj. p\n(capped at 4)") + facet_wrap(~armlab) +
   labs(x = "time after exercise", y = NULL, title = sprintf("Muscle phosphosites of these proteins that respond after either arm (%d sites on %d proteins; ring = adj. p < 0.05)", uniqueN(PS$gl), uniqueN(PS$protein))) +
-  theme_bw(base_size = 8) + theme(plot.title = element_text(face = "bold", size = 9), axis.text.y = element_text(size = 5.5))
+  theme_motrpac(8) + theme(plot.title = element_text(face = "bold", size = 9), axis.text.y = element_text(size = 5.5))
 f19c <- (pf / psc + plot_layout(heights = c(1, 1))) | pp
 f19c <- f19c + plot_layout(widths = c(1.25, 1)) +
-  plot_annotation(title = "Figure 19c. T2D-altered proteins (Öhman 2021 muscle) among the 471, protein by protein: endurance vs resistance",
+  plot_annotation(tag_levels = "a", title = "Fig. 19c | T2D-altered proteins (Öhman 2021 muscle) among the 471, protein by protein: endurance vs resistance",
                   subtitle = "Reversal > 0 = exercise moves the protein opposite to T2D. Muscle = tissue of the T2D data; blood and adipose secondary; Chae 2018 (independent cohort, significant proteins only) = sensitivity.",
-                  theme = theme(plot.title = element_text(face = "bold")))
+                  theme = theme(plot.title = element_text(face = "bold", size = 10, family = "Helvetica"), plot.subtitle = element_text(size = 7.5, family = "Helvetica", colour = "grey25")))
 ggsave(file.path(FIG, "19c_t2d_protein_level.png"), f19c, width = 20, height = 13, dpi = 300, bg = "white"); message("-> ", file.path(FIG, "19c_t2d_protein_level.png"))
 
 # ---- 8. report ----------------------------------------------------------------------------------------------

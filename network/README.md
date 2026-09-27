@@ -24,7 +24,7 @@ molecules and relationships each kind of exercise moves, in which tissue, and ho
 | Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine"; the brief asks each team to pick one disease: ours is type 2 diabetes, T2D) |
 | Team | Team 2-PAC — see *Contributors and roles* (section 8) |
 | Intended users | judges and Track 1 teams; exercise, diabetes and network biologists who want a reusable, documented, fully reproducible endurance-vs-resistance network |
-| Status | **complete and reproducible**: one command (`bash network/run_all.sh`, ~10 min) rebuilds every table, figure and interactive page, runs 44 validation checks + 25 engine tests, and confirms all 136 outputs are byte-identical to the reference run |
+| Status | **complete and reproducible**: one command (`bash network/run_all.sh`, ~10 min) rebuilds every table, figure and interactive page, runs 44 validation checks + 25 engine tests, and confirms all 139 outputs are byte-identical to the reference run |
 
 **Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes, yet most
 comparisons look at one molecule at a time. A network asks whether the *relationships* between molecules change,
@@ -124,7 +124,7 @@ flowchart LR
   W --> C
   S --> F
   C --> F
-  W --> T[Tests: 25 engine tests,<br/>44 validation checks,<br/>136-file reproducibility manifest]
+  W --> T[Tests: 25 engine tests,<br/>44 validation checks,<br/>139-file reproducibility manifest]
 ```
 
 | Stage | Steps | What happens |
@@ -136,7 +136,7 @@ flowchart LR
 | Figures | 10, 11, 14, 15, 16 | both arms in one layout, edge differences, metabolite class bubbles, PTM tags (MoTrPAC phosphosites, glycosylation) |
 | Interactive | 17 | browser pages of all three networks: filters (omes, tissues, times, arms), modules with pathway names and CAMERA-PR tests, PTM and T2D layers, **arm-specific edges**, Cytoscape export |
 | Disease | 18, 19, 20, 21 | disease-module approaches (18); three T2D stories (19); the same tests on every tissue-matched disease / ageing set (20); Figure 1 (21) |
-| Proof | 99v, 99m | 44 validation checks and headline numbers; fingerprints of all 136 outputs vs the reference run |
+| Proof | 99v, 99m | 44 validation checks and headline numbers; fingerprints of all 139 outputs vs the reference run |
 
 ## 4. Setup
 
@@ -1030,7 +1030,7 @@ and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to
 
 ## 7. Validation
 
-**Three layers of proof, all run by `bash network/run_all.sh`:** (1) the **engine tests** (25; step 14t, below); (2) `network/99_validate_outputs.R`, **44 hard checks** plus the headline numbers; (3) the **reproducibility manifest** (136 outputs, byte for byte). The validator's checks cover: table
+**Three layers of proof, all run by `bash network/run_all.sh`:** (1) the **engine tests** (25; step 14t, below); (2) `network/99_validate_outputs.R`, **44 hard checks** plus the headline numbers; (3) the **reproducibility manifest** (139 outputs, byte for byte). The validator's checks cover: table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
@@ -1071,9 +1071,9 @@ from them:
 Rscript network/engine/run_tests.R      # expected: "defensive: ............. pipeline: ... toy: ........." and DONE
 ```
 
-**Reproducibility check (2026-09-26).** `network/99_manifest.R` fingerprints every output (136 files: all
+**Reproducibility check (2026-09-26).** `network/99_manifest.R` fingerprints every output (139 files: all
 tables, figures, the PDF and the interactive pages) and compares them with a reference run. Two complete runs of
-`network/run_all.sh` from step 0 gave **all byte-identical files** (136 of 136 on 2026-09-26, after the final changes). What makes this hold: fixed seeds for every
+`network/run_all.sh` from step 0 gave **all byte-identical files** (139 of 139 on 2026-09-26, after the final changes). What makes this hold: fixed seeds for every
 layout, community detection and label placement (with a fixed iteration budget, since ggrepel's default 0.5-s time
 limit made label positions depend on CPU load), fixed widget IDs in the HTML pages, a fixed build date for the
 LaTeX PDF (`SOURCE_DATE_EPOCH`), and cached online inputs (step 1c lookups, Rhea, GlyGen) fingerprinted in

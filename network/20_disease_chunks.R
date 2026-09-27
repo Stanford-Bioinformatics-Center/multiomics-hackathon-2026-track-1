@@ -67,6 +67,9 @@
 
 # Load packages quietly.
 suppressMessages({ library(data.table); library(readxl); library(limma); library(igraph); library(ggplot2); library(ggrepel); library(patchwork) })
+# The shared figure style (MoTrPAC landscape-paper look: small Helvetica type, bold lower-case panel tags).
+.args <- commandArgs(trailingOnly = FALSE); .here <- dirname(normalizePath(sub("^--file=", "", grep("^--file=", .args, value = TRUE))))
+source(file.path(.here, "R", "figure_style.R"))
 
 # Folders and inputs (override with environment variables).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
@@ -224,9 +227,9 @@ f20a <- ggplot(fr, aes(v, lab, colour = arm)) + geom_vline(xintercept = 0, colou
   geom_text(aes(label = sprintf("p %.2g", p)), position = position_dodge(0.6), vjust = -0.85, size = 2.4, show.legend = FALSE) +
   scale_colour_manual(values = ARMCOL, name = NULL) + facet_grid(chunk ~ ., scales = "free_y", space = "free_y") +
   labs(x = "reversal = -Spearman(disease z, exercise response) over the altered proteins / sites (> 0: opposite to the disease)", y = NULL,
-       title = "Figure 20a. Endurance vs resistance against every disease set (tissue-matched; p: disease z permuted, 10,000 draws)",
+       title = "Fig. 20a | Endurance vs resistance against every disease set (tissue-matched; p: disease z permuted, 10,000 draws)",
        subtitle = "Old T2D = Amar et al. 2024 sets; new T2D = Kjærgaard 2025 (muscle protein and phosphosite), Needham 2024 (insulin-resistant muscle), Larsen 2023 (adipose);\nageing = Ubaida-Mohien 2019. Pooled sets (Stouffer's z per protein across cohorts) are post hoc.") +
-  theme_bw(base_size = 10) + theme(plot.title = element_text(face = "bold"), legend.position = "bottom", strip.text.y = element_text(angle = 0))
+  theme_motrpac(8) + theme(plot.title = element_text(face = "bold"), legend.position = "bottom", strip.text.y = element_text(angle = 0))
 ggsave(file.path(FIG, "20a_all_disease_tests.png"), f20a, width = 16, height = 10, dpi = 300, bg = "white"); message("-> ", file.path(FIG, "20a_all_disease_tests.png"))
 
 # Story figures (20b new T2D, 20c ageing): the scatter behind the chosen test, and the altered network proteins with their
@@ -270,7 +273,7 @@ net_panel <- function(nodes, Zs, alt, arm, lim, wlim, title) {
     geom_text_repel(data = nd, aes(x, y, label = node, fontface = ifelse(node %in% alt, "bold", "plain")), size = 2.4, seed = SEED, max.time = 60, max.iter = 1e4, box.padding = 0.3, min.segment.length = 0.2, segment.size = 0.2) +
     scale_colour_identity() + scale_shape_identity() + scale_linetype_manual(values = c(`FALSE` = "solid", `TRUE` = "22"), guide = "none") +
     scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0, limits = c(-lim, lim), oob = scales::squish, name = "mean normalised\nresponse (set's tissue)") +
-    scale_linewidth(range = c(0.2, 2.6), limits = c(0, wlim), name = "|edge weight|") + coord_equal(clip = "off") + labs(title = title) + theme_void(base_size = 10) +
+    scale_linewidth(range = c(0.2, 2.6), limits = c(0, wlim), name = "|edge weight|") + coord_equal(clip = "off") + labs(title = title) + theme_motrpac_void(8) +
     theme(plot.title = element_text(face = "bold", size = 10), legend.position = "bottom") }
 rev_scatter <- function(tab, zv, title, labs_nodes, xlab, ylab = "mean normalised muscle response") {
   d <- rbind(data.table(node = names(zv), z = zv, r = rE[names(zv)], arm = ARMLAB[["EE"]]), data.table(node = names(zv), z = zv, r = rR[names(zv)], arm = ARMLAB[["RE"]]))[is.finite(r)]
@@ -279,7 +282,7 @@ rev_scatter <- function(tab, zv, title, labs_nodes, xlab, ylab = "mean normalise
     geom_point(aes(colour = z < 0), size = 1.8, alpha = 0.85) + scale_colour_manual(values = c(`TRUE` = COL_LOW, `FALSE` = COL_HIGH), guide = "none") +
     geom_text_repel(data = d[node %in% labs_nodes], aes(label = node), size = 2.3, seed = SEED, max.time = 60, max.iter = 1e4, min.segment.length = 0.1) +
     geom_label(data = ann, aes(x = -Inf, y = -Inf, label = lab), hjust = -0.05, vjust = -0.3, size = 3, label.size = 0, fill = "white", alpha = 0.85, inherit.aes = FALSE) +
-    facet_wrap(~arm) + labs(x = xlab, y = ylab, title = title) + theme_bw(base_size = 10) + theme(plot.title = element_text(face = "bold", size = 10)) }
+    facet_wrap(~arm) + labs(x = xlab, y = ylab, title = title) + theme_motrpac(8) + theme(plot.title = element_text(face = "bold", size = 10)) }
 CELL <- fread(file.path(OUT, "17_node_cell_stats.csv"))
 story_fig <- function(chunk_name, set_name, file, fig_title, xlab) {
   m <- META[set == set_name]; d <- DS[set == set_name]; alt <- if (m$sig_only) d else d[p < m$alpha]
@@ -294,33 +297,36 @@ story_fig <- function(chunk_name, set_name, file, fig_title, xlab) {
   pfc <- ggplot(frc, aes(v, lab, colour = arm)) + geom_vline(xintercept = 0, colour = "grey60") + geom_point(size = 2.8, position = position_dodge(0.6)) +
     geom_text(aes(label = sprintf("p %.2g", p)), position = position_dodge(0.6), vjust = -0.85, size = 2.4, show.legend = FALSE) +
     scale_colour_manual(values = ARMCOL, name = NULL) + labs(x = "reversal (> 0: opposite to the disease)", y = NULL, title = sprintf("All %s sets", chunk_name)) +
-    theme_bw(base_size = 9) + theme(plot.title = element_text(face = "bold", size = 9), legend.position = "bottom")
+    theme_motrpac(8) + theme(plot.title = element_text(face = "bold", size = 9), legend.position = "bottom")
   DN <- intersect(alt$gene, PROT); S2 <- lcc_nodes(with_connectors(DN)); sg <- SG[set == set_name]
   # Rule: a connector subgraph that is not beyond chance and too large to read (> 40 nodes) is replaced by the altered
   # proteins' own connected pieces (edges among altered proteins only, pieces with >= 2 proteins).
   pieces <- nrow(sg) && sg$p_size >= ALPHA && length(S2) > 40
   if (pieces) { cm <- components(induced_subgraph(gJ, DN)); S2 <- names(cm$membership)[cm$membership %in% which(cm$csize >= 2)] }
-  big <- length(S2) > 60                                          # still too large to read: keep only the largest connected piece
-  if (big) S2 <- lcc_nodes(S2)
+  big <- length(S2) > 60                                          # still too large to read: keep the 50 most strongly
+  if (big) { top <- head(DN[order(-abs(Zs[DN]))], 50)              # altered proteins and their own connected pieces (>= 2)
+    cm <- components(induced_subgraph(gJ, top)); S2 <- names(cm$membership)[cm$membership %in% which(cm$csize >= 2)] }
   es <- E[node_a %in% S2 & node_b %in% S2]; wl <- max(abs(c(es$w_EE, es$w_RE)), 1e-6); lim <- max(quantile(abs(c(rE[S2], rR[S2])), 0.95, na.rm = TRUE), 1e-6)
   sub <- if (nrow(sg)) sprintf("Connector subgraph: %d altered network proteins + nodes linked to >= 2 of them; largest piece %d nodes (size vs degree-matched random seeds p %.2g; w_EE %.3f vs w_RE %.3f, difference p %.2g).%s",
                                sg$n_altered_network, sg$size, sg$p_size, sg$w_EE, sg$w_RE, sg$p_w_diff,
-                               if (pieces) sprintf(" Not beyond chance and too large to read, so the network shows the altered proteins' own connected pieces%s (%d nodes).", if (big) ", largest piece only" else "", length(S2)) else " The network shows that subgraph.") else ""
-  row <- (net_panel(S2, Zs, alt$gene, "EE", lim, wl, "Endurance: node fill = muscle response, edge width = w_EE") | net_panel(S2, Zs, alt$gene, "RE", lim, wl, "Resistance: node fill = muscle response, edge width = w_RE") | key_panel()) +
-    plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom")
+                               if (pieces) sprintf(" Not beyond chance and too large to read, so the network shows the altered proteins' own connected pieces%s (%d nodes).", if (big) " (the 50 most strongly altered proteins)" else "", length(S2)) else " The network shows that subgraph.") else ""
+  # the network row is ONE tagged panel (both arms + the PTM key), so the key does not take a panel letter
+  row <- wrap_elements(full = (net_panel(S2, Zs, alt$gene, "EE", lim, wl, sprintf("Endurance: node fill = %s response, edge width = w_EE", tlab)) |
+                               net_panel(S2, Zs, alt$gene, "RE", lim, wl, sprintf("Resistance: node fill = %s response, edge width = w_RE", tlab)) | key_panel()) +
+    plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom"))
   f <- ((psc | pfc) + plot_layout(widths = c(1.4, 1))) / row + plot_layout(heights = c(1, 1.3)) +
-    plot_annotation(title = fig_title, subtitle = paste(strwrap(paste0("Outline / bold: purple = lower, orange = higher in the disease (or with age); black = connector. ", sub), 230), collapse = "\n"), theme = theme(plot.title = element_text(face = "bold")))
+    plot_annotation(tag_levels = "a", title = fig_title, subtitle = paste(strwrap(paste0("Outline / bold: purple = lower, orange = higher in the disease (or with age); black = connector. ", sub), 230), collapse = "\n"), theme = theme(plot.title = element_text(face = "bold", size = 10, family = "Helvetica"), plot.subtitle = element_text(size = 7.5, family = "Helvetica", colour = "grey25")))
   ggsave(file.path(FIG, file), f, width = 19, height = 14, dpi = 300, bg = "white"); message("-> ", file.path(FIG, file)) }
 # The chosen story of each chunk (rule above), plus the supporting muscle sets of the story arc.
 xl <- function(set) if (grepl("age", set)) "age z (signed; < 0 = lower with age)" else "T2D z (signed; < 0 = lower in T2D / at lower risk)"
 story_fig("new T2D", STORY[chunk == "new T2D", set], "20b_new_t2d_story.png",
-          sprintf("Figure 20b. New T2D, chosen story: %s, endurance vs resistance", META[set == STORY[chunk == "new T2D", set], label]), xl(STORY[chunk == "new T2D", set]))
+          sprintf("Fig. 20b | New T2D, chosen story: %s, endurance vs resistance", META[set == STORY[chunk == "new T2D", set], label]), xl(STORY[chunk == "new T2D", set]))
 story_fig("ageing", STORY[chunk == "ageing", set], "20c_ageing_story.png",
-          sprintf("Figure 20c. Ageing, chosen story: %s, endurance vs resistance", META[set == STORY[chunk == "ageing", set], label]), xl(STORY[chunk == "ageing", set]))
+          sprintf("Fig. 20c | Ageing, chosen story: %s, endurance vs resistance", META[set == STORY[chunk == "ageing", set], label]), xl(STORY[chunk == "ageing", set]))
 story_fig("new T2D", "kjaergaard_2025_prot_pooled", "20d_new_t2d_muscle_pooled.png",
-          "Figure 20d. New T2D in muscle (Kjærgaard 2025, both cohorts pooled; post hoc): endurance vs resistance", xl("t2d"))
+          "Fig. 20d | New T2D in muscle (Kjærgaard 2025, both cohorts pooled; post hoc): endurance vs resistance", xl("t2d"))
 story_fig("ageing", "ubaida_mohien_2019_age", "20e_ageing_muscle.png",
-          "Figure 20e. Muscle ageing (Ubaida-Mohien 2019): age-associated muscle proteins, endurance vs resistance", xl("age"))
+          "Fig. 20e | Muscle ageing (Ubaida-Mohien 2019): age-associated muscle proteins, endurance vs resistance", xl("age"))
 
 # ---- 6. report --------------------------------------------------------------------------------------------------
 f3 <- function(x) formatC(x, digits = 3, format = "fg"); fp <- function(x) formatC(x, digits = 2, format = "g")

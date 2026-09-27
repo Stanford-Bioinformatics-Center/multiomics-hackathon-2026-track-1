@@ -44,6 +44,20 @@ theme_motrpac_void <- function(base = 8) {
 #' @param width,height `numeric(1)` size in mm (journal figure widths: 89 single, 183 double column).
 save_figure <- function(plot, path, width = 183, height = 120) {
   ggsave(paste0(path, ".png"), plot, width = width, height = height, units = "mm", dpi = 300, bg = "white")
-  ggsave(paste0(path, ".pdf"), plot, width = width, height = height, units = "mm", device = cairo_pdf, bg = "white")
+  # (the base pdf device: deterministic apart from its date stamps, which fix_pdf_dates() pins; cairo_pdf varies run to run)
+  ggsave(paste0(path, ".pdf"), plot, width = width, height = height, units = "mm", device = grDevices::pdf, bg = "white", useDingbats = FALSE)
+  fix_pdf_dates(paste0(path, ".pdf"))
   message("-> ", path, ".png / .pdf")
+}
+
+#' Make a PDF byte-identical across reruns: the PDF device writes the current time into /CreationDate and
+#' /ModDate ("D:YYYYMMDDHHMMSS..."); overwrite those 14 digits in place with the fixed build date
+#' (SOURCE_DATE_EPOCH, as run_all.sh sets it). Same length, so the PDF's internal byte offsets stay valid.
+#' @param file `character(1)` path of the PDF.
+fix_pdf_dates <- function(file) {
+  stamp <- format(as.POSIXct(as.numeric(Sys.getenv("SOURCE_DATE_EPOCH", "1790380800")), origin = "1970-01-01", tz = "UTC"), "%Y%m%d%H%M%S")
+  b <- readBin(file, "raw", file.info(file)$size); key <- charToRaw("Date (D:"); new <- charToRaw(stamp)
+  hits <- which(vapply(seq_len(length(b) - length(key) - 14), function(i) all(b[i:(i + length(key) - 1)] == key), logical(1)))
+  for (h in hits) b[(h + length(key)):(h + length(key) + 13)] <- new
+  writeBin(b, file)
 }

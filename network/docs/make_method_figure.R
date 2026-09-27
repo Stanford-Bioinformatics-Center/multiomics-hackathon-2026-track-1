@@ -44,7 +44,7 @@ ea <- seg(E[, .(a, b, source)])
 pa <- ggplot() +
   geom_segment(data = ea, aes(x1, y1, xend = x2, yend = y2, linetype = source), colour = "grey30", linewidth = 0.6) +
   geom_segment(aes(x = -0.9, y = 1.75, xend = 0, yend = 1.0), colour = "#D7301F", linewidth = 0.5, linetype = "22") +
-  annotate("text", x = -0.45, y = 1.38, label = "✕", colour = "#D7301F", size = 4, fontface = "bold") +
+  annotate("point", x = -0.45, y = 1.38, shape = 4, size = 3.2, stroke = 1.3, colour = "#D7301F") +   # a cross (a plotted symbol, so every device draws it)
   annotate("text", x = -1.28, y = 0.38, hjust = 0, size = 2.3, colour = "#D7301F", label = "A and E respond alike\n(dot product 0.57)\nbut no physical link:\nNO edge") +
   nodes_layer() + scale_linetype_manual(values = c(STRING = "solid", Rhea = "11"), name = "physical database") + LIM +
   labs(title = "Hard layer: does an edge exist?", subtitle = "STRING protein-protein (score >= 700) or Rhea enzyme-metabolite links") +

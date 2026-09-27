@@ -14,7 +14,7 @@ approach) · **GitHub** (documentation & integrity, technical complexity).
 | 7 | Replication | Fig. 1e, 20d | "Same gap in the independent Kjærgaard cohorts (pooled, post hoc — we say so)." | integrity |
 | 8 | The blood side | Fig. 1c-d | "In plasma it flips: resistance reverses the proteins of ageing and future T2D (UK Biobank, p < 0.001)." | novelty, impact |
 | 9 | Honest limits | README roadblocks | "Direction matches, one acute bout, healthy adults — not treatment. What didn't work, and why we dropped it." | integrity |
-| 10 | Reproducible, not a black box | run_all + tests + manifest | "One command, 10 minutes: 25 engine tests, 44 checks, 136 outputs byte-identical." | documentation, complexity |
+| 10 | Reproducible, not a black box | run_all + tests + manifest | "One command, 10 minutes: 25 engine tests, 44 checks, 139 outputs byte-identical." | documentation, complexity |
 | 11 | Team + next steps | Contributors table, roadmap | "Who did what; blood-cell-composition control and training data next." | collaboration |
 
 Live demo (slide 5): open `17a_joint_network.html` → tick "arm-specific edges only" → click SRC (the hub) → switch the
