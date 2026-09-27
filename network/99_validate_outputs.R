@@ -265,6 +265,14 @@ check(nrow(nt19[set == "ohman_2021" & nodes == "all 471" & tissue == "muscle" & 
 note("step19_T2D_muscle_471_p_diff", signif(nt19[set == "ohman_2021" & nodes == "all 471" & tissue == "muscle", p_diff], 2), 0.0088)
 note("step19_story2_nodes", st19[grepl("^largest connected piece \\(T2D proteins \\+", test), observed], 42)
 
+# Step 20: disease chunks — every set tested, p-values well-formed, one story per chunk
+t20 <- rd("20_tests.csv"); s20 <- rd("20_stories.csv")
+check(uniqueN(t20$set) == 11 && all(t20[!is.na(p_diff), p_EE > 0 & p_EE <= 1 & p_RE > 0 & p_RE <= 1 & p_diff > 0 & p_diff <= 1]),
+      "step 20: 11 disease sets (9 published + 2 pooled); permutation p-values in (0, 1]")
+check(setequal(s20$chunk, c("old T2D", "new T2D", "ageing")), "step 20: one chosen story per chunk (old T2D, new T2D, ageing)")
+note("step20_newT2D_pooled_p_diff", signif(t20[set == "kjaergaard_2025_prot_pooled", p_diff], 2), 0.0073)
+note("step20_ageing_p_diff", signif(t20[set == "ubaida_mohien_2019_age", p_diff], 2), 0.08)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))

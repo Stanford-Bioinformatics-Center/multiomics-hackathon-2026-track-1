@@ -67,6 +67,8 @@ flowchart LR
   I --> U
   Q --> T[Step 19<br/>T2D stories: pieces, connector subgraph,<br/>protein level + PTM tags<br/>EE vs RE, permutation tests]
   T --> U
+  Q --> V[Step 20<br/>disease chunks: old T2D, new T2D, ageing<br/>same tests, story per chunk]
+  V --> U
   P --> U[User: which relationships differ<br/>between the arms]
   F --> U
 ```
@@ -168,7 +170,7 @@ default `~/Desktop/output/hackathon`).
 
 ```bash
 bash network/run_all.sh                     # every step in order, then validation (section 7) and the reproducibility manifest
-bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 18bc 19 99v 99m)
+bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 18bc 19 20f 20 99v 99m)
 REFRESH_ONLINE=1 bash network/run_all.sh    # also redo the web lookups of step 1c
 ```
 
@@ -204,6 +206,8 @@ Rscript network/18_disease_modules.R          # disease filter vs overlay module
 Rscript network/18_option_c_graphical_modules.R  # option C: paper-style repfdr modules + direction concordance -> figure 18c
 Rscript network/18_option_bc_hybrid.R         # hybrid B + C: structural modules + paper-style disease test -> figure 18d
 Rscript network/19_t2d_stories.R              # three T2D stories, endurance vs resistance -> figures 19a / 19b / 19c
+bash network/20_fetch_disease_sets.sh         # once: published disease tables (Kjærgaard 2025, Needham 2024, Larsen 2023)
+Rscript network/20_disease_chunks.R           # best story per chunk (old T2D, new T2D, ageing) -> figures 20a / 20b / 20c
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
@@ -246,6 +250,7 @@ Rscript network/99_manifest.R                 # fingerprints every output and co
 | 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
 | 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
 | 19 | `19_t2d_node_tests.csv`, `19_t2d_subgraph_tests.csv`, `19_t2d_components.csv`, `19_t2d_phosphosites.csv`, `19_t2d_story_nodes.csv`, `reports/19_t2d_stories.md`; `$HACK_FIG/19a_t2d_small_subgraph.png`, `19b_t2d_connector_subgraph.png`, `19c_t2d_protein_level.png` (not committed) | reversal tests per T2D set × node set × tissue; subgraph tests per story; story-1 pieces; responding muscle phosphosites of the T2D proteins; every story node with T2D values, responses per tissue and best muscle cell; the three figures (minimal PTM tags as in step 17) |
+| 20 | `20_disease_scores.csv`, `20_tests.csv`, `20_subgraph_tests.csv`, `20_stories.csv`, `reports/20_disease_chunks.md`; `$HACK_FIG/20a_all_disease_tests.png`, `20b_new_t2d_story.png`, `20c_ageing_story.png` (not committed) | disease direction per set × protein / site; reversal tests per set; connector subgraph tests; the chosen story per chunk; the three figures |
 | 18 | `18_t2d_class_summary.csv`, `18_t2d_species.csv`, `18_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
@@ -844,6 +849,35 @@ abundance, so the phosphosite tags cannot be oriented to T2D. Direction matches 
 adults and T2D are not evidence of treatment. Tables: `19_t2d_node_tests.csv`, `19_t2d_subgraph_tests.csv`,
 `19_t2d_components.csv`, `19_t2d_phosphosites.csv`, `19_t2d_story_nodes.csv`; report `reports/19_t2d_stories.md`.
 
+**Step 20 — the best endurance-vs-resistance story per disease chunk (figures 20a / 20b / 20c).** Three chunks of
+published human disease data from tissues we measure, each run through the **same** pre-specified tests as step 19,
+with the story per chunk chosen by a fixed rule (smallest endurance − resistance p among the chunk's primary sets).
+**Old T2D:** Amar et al. 2024 muscle sets (Öhman 2021, Chae 2018). **New T2D:** Kjærgaard et al. 2025 (*Cell*; T2D
+vs normal glucose tolerance, muscle proteome and phosphoproteome, discovery 77 + validation 46 people; supplementary
+Table S1), Needham et al. 2024 (*Cell Metab*; insulin-resistant vs insulin-sensitive muscle proteome, Table S3C; their
+phosphosite table has no direction for this contrast and is not used), Larsen et al. 2023 (*Sci Adv*; subcutaneous
+adipose, T2D vs lean before training, regenerated from the authors' cleaned matrix with their limma model; the matrix
+is already batch-corrected, so the batch term is dropped). **Ageing:** Ubaida-Mohien et al. 2019 (*eLife*; vastus
+lateralis proteome, healthy adults aged 20–87; proteins associated with age). Tests: **A** reversal per arm and
+EE − RE over the altered proteins in the matching tissue (muscle or adipose), and for phosphosite sets over the
+altered sites matched to MoTrPAC muscle phosphosites (protein + residue, singly phosphorylated forms); **B** the
+connector subgraph (as step 19). Downloads: `20_fetch_disease_sets.sh` (Elsevier supplementary files; the Larsen
+repository at a pinned commit; cached, fingerprinted by step 0).
+
+| Chunk | Story (chosen by the rule) | Endurance vs resistance | Other sets in the chunk |
+|---|---|---|---|
+| **Old T2D** | Öhman 2021, protein level (muscle, 68 proteins) | endurance reverses T2D (0.31, p 0.012), resistance does not (−0.07); **difference p 0.007**; connector subgraph more connected than chance (p 0.042) | Chae 2018: same direction, n.s. |
+| **New T2D** | Kjærgaard 2025, both cohorts pooled per protein (Stouffer's z; **post hoc**), protein level (muscle, 37 proteins) | **difference 0.38, p 0.0073** — the gap comes from **resistance moving proteins in the T2D direction** (−0.30, p 0.067), endurance near 0 (0.08) | discovery alone 0.45 (p 0.039) but validation alone 0.04 (p 0.80); Needham insulin-resistant: resistance 0.31 (p 0.078), endurance 0.08, difference −0.23 (p 0.20); Larsen adipose and both phosphosite sets n.s.; no connector subgraph beyond chance |
+| **Ageing** | Ubaida-Mohien 2019, protein level (muscle, 124 proteins) | endurance 0.09 vs resistance −0.08, **difference p 0.08 (trend, n.s.)**; connector subgraph not beyond chance (p 1.0) | — |
+
+Across the T2D chunks the endurance − resistance gap has the same sign and size in the old sets and in the pooled
+new cohorts; pooling all three T2D muscle cohorts (Öhman + Kjærgaard × 2; post hoc) gives 0.36 (p 0.014).
+**Read with care.** The pooled sets were added after the Kjærgaard discovery result was not reproduced by its
+validation cohort; they are labelled post hoc everywhere. Only ~30 Kjærgaard phosphosites match MoTrPAC muscle
+phosphosites, so the site-level tests have little power. Direction matches between acute exercise in healthy
+adults and a disease (or age) are not evidence of treatment. Tables: `20_disease_scores.csv`,
+`20_tests.csv`, `20_subgraph_tests.csv`, `20_stories.csv`; report `reports/20_disease_chunks.md`.
+
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
 figures). Each network (mnet inputs — joint: 353 nodes / 704 edges, class-grouped layout of 15a / 15b; genes:
@@ -980,7 +1014,12 @@ also needs a noise-only reference (roadmap).
   *Nucleic Acids Res* 2023;51:D638–D646 · Bansal P et al. Rhea, the reaction knowledgebase in 2022. *Nucleic Acids
   Res* 2022;50:D693–D700 · Türei D et al. Integrated intra- and intercellular signaling knowledge for multicellular
   omics analysis (OmniPath). *Mol Syst Biol* 2021;17:e9923 · York WS et al. GlyGen: computational and informatics
-  resources for glycoscience. *Glycobiology* 2020;30:72–73.
+  resources for glycoscience. *Glycobiology* 2020;30:72–73 · Kjærgaard J et al. Personalized molecular signatures
+  of insulin resistance and type 2 diabetes. *Cell* 2025;188:4106–4122 · Needham EJ et al. Personalized
+  phosphoproteomics of skeletal muscle insulin resistance and exercise links MINDY1 to insulin action. *Cell Metab*
+  2024;36:2542–2559 · Larsen JK et al. High-throughput proteomics uncovers exercise training and type 2
+  diabetes–induced changes in human white adipose tissue. *Sci Adv* 2023;9:eadi7548 · Ubaida-Mohien C et al.
+  Discovery proteomics in aging human skeletal muscle. *eLife* 2019;8:e49874.
 
 ### 7b. Preliminary biological observations (descriptive, NOT tested)
 
@@ -1082,6 +1121,8 @@ network/
   18_option_c_graphical_modules.R  step 18c option C: modules + disease links as in Amar et al. 2024 (repfdr, graphical sets), figure 18c
   18_option_bc_hybrid.R          step 18bc hybrid: option-B modules + option-C disease test, figure 18d
   19_t2d_stories.R               step 19  three T2D stories on the 68 T2D-altered proteins (pieces, connector subgraph, protein level + PTM tags): EE vs RE, figures 19a-c
+  20_fetch_disease_sets.sh       step 20f downloads the published disease tables (Elsevier supplementary files; Larsen repo at a pinned commit)
+  20_disease_chunks.R            step 20  best EE-vs-RE story per disease chunk (old T2D, new T2D, ageing), figures 20a-c
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)

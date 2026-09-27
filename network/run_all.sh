@@ -13,7 +13,9 @@
 #   HACK_EXT [~/Desktop/output/hackathon-2026-track1/external/rhea]  Rhea cache
 #   MNET_DIR [~/Desktop/output/hackathon/resources/mo_annotation]   the team's mnet resource (edges, PTM)
 #   EDGE_SOURCE [mnet]  ("legacy" = the first curated STRING file + direct Rhea)
-#   DISEASE_SCORES [~/Desktop/output/week_6/_shared/disease_scores.csv.gz]  Amar et al. 2024 disease sets (steps 17i, 18d, 19)
+#   DISEASE_SCORES [~/Desktop/output/week_6/_shared/disease_scores.csv.gz]  Amar et al. 2024 disease sets (steps 17i, 18d, 19, 20)
+#   DISEASE_EXT [~/Desktop/output/hackathon-2026-track1/external/disease]  published disease tables (step 20f / 20)
+#   UBAIDA [Amar et al. repository copy of Ubaida-Mohien 2019]  muscle ageing proteome (step 20)
 # ONLINE STEPS AND CACHES: step 1c queries RefMet / UniChem / PubChem (web services change over time), so it
 #   is skipped when its output exists unless REFRESH_ONLINE=1; step 5 downloads Rhea once into HACK_EXT; the
 #   inventory queries GlyGen once per protein and caches the answers (and GlyGen files) under
@@ -66,6 +68,8 @@ STEPS=(
   "18c|Rscript $HERE/18_option_c_graphical_modules.R"
   "18bc|Rscript $HERE/18_option_bc_hybrid.R"
   "19|Rscript $HERE/19_t2d_stories.R"       # three T2D stories: endurance vs resistance (figures 19a-c)
+  "20f|bash $HERE/20_fetch_disease_sets.sh" # published disease tables (online; cached)
+  "20|Rscript $HERE/20_disease_chunks.R"    # best story per disease chunk: old T2D, new T2D, ageing (figures 20a-c)
   "99v|Rscript $HERE/99_validate_outputs.R"
   "99m|Rscript $HERE/99_manifest.R"
 )
@@ -79,6 +83,8 @@ for s in "${STEPS[@]}"; do
   if [ "$running" = 1 ]; then
     if [ "$label" = "01c" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "$HACK_OUT/01c_metabolite_ids.csv" ]; then
       echo "[01c] skipped: cached web lookups in 01c_metabolite_ids.csv (REFRESH_ONLINE=1 to redo)"
+    elif [ "$label" = "20f" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "${DISEASE_EXT:-$HOME/Desktop/output/hackathon-2026-track1/external/disease}/kjaergaard_2025_cell/mmc1.xlsx" ]; then
+      echo "[20f] skipped: cached disease tables in DISEASE_EXT (REFRESH_ONLINE=1 to redo)"
     else
       start=$(date +%s)
       if ! $cmd > "$HACK_OUT/logs/$label.log" 2>&1; then
