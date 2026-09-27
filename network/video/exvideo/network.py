@@ -85,9 +85,24 @@ def build_facts(walk: Sequence[str], net: Network, out: Path) -> Dict[str, Any]:
     phos = [r for r in read_csv(out / "17_phospho_site_stats.csv") if r["protein"] in walk and r["arm"] in ("EE", "RE")]
     gly = {r["protein"]: r for r in read_csv(out / "17_glygen_protein_annotation.csv") if r["protein"] in walk}
     dz = {(r["set"], r["gene"]): r for r in read_csv(out / "20_disease_scores.csv") if r["set"] in DISEASE_SETS and r["gene"] in walk and not r["site"]}
-    # neighbours by name, for the "who is on my line" facts
-    def partners(n: str) -> List[str]:
-        return [e.other(n) for e in sorted(net.neighbours(n), key=lambda e: -max(abs(e.w_ee), abs(e.w_re)))]
+    # What the VIDEO SHOWS of a node's links (the figure 17 page in arm-specific mode, render_walk.js): only the
+    # arm-specific edges are drawn (bold red = strong after endurance only, blue = resistance only; every other edge is a
+    # faint thin grey line), plus the walk's own edges in gold. Link COUNTS are the red + blue links only (Vidal,
+    # 2026-09-27); the gold walk links are listed for the hand-offs but not counted. The full joint-network degree is not
+    # given to the model, so the lyrics never count links the viewer cannot see.
+    walk_pairs = {frozenset(p) for p in zip(walk, walk[1:])}
+
+    def arm_of(e: Edge) -> str:
+        hE, hR = e.w_ee >= tau, e.w_re >= tau
+        return "both" if hE and hR else "EE" if hE else "RE" if hR else "neither"
+
+    def on_screen(n: str) -> Dict[str, Any]:
+        es = net.neighbours(n)
+        ee = sorted((e for e in es if arm_of(e) == "EE"), key=lambda e: -e.w_ee)
+        re_ = sorted((e for e in es if arm_of(e) == "RE"), key=lambda e: -e.w_re)
+        walked = [e.other(n) for e in es if frozenset((n, e.other(n))) in walk_pairs]
+        return {"red_blue_count": len(ee) + len(re_), "endurance_only_links_red": [e.other(n) for e in ee][:8],
+                "resistance_only_links_blue": [e.other(n) for e in re_][:8], "walk_links_gold_not_counted": walked}
 
     def best_cell(node: str, arm: str) -> Optional[Dict[str, Any]]:
         """The node's most significant exercise response in one arm (adj. p < ALPHA), or None."""
@@ -111,8 +126,8 @@ def build_facts(walk: Sequence[str], net: Network, out: Path) -> Dict[str, Any]:
     for n in walk:
         nd = net.nodes[n]; m = module.get(n); mn = mname.get(m or "", {}); g = gly.get(n, {})
         node_facts.append({
-            "node": n, "type": nd["node_type"], "class": nd.get("class") or None, "degree": int(nd["degree"]),
-            "top_partners": partners(n)[:8],
+            "node": n, "type": nd["node_type"], "class": nd.get("class") or None,
+            "links_on_screen": on_screen(n),
             "strength_endurance": r3(float(nd["strength_EE"])), "strength_resistance": r3(float(nd["strength_RE"])),
             "hub_rank_in_network": ranked.index(n) + 1, "network_size": len(net.nodes),
             "mean_response_endurance": r3(num(nd["resp_EE"])), "mean_response_resistance": r3(num(nd["resp_RE"])),
@@ -132,6 +147,11 @@ def build_facts(walk: Sequence[str], net: Network, out: Path) -> Dict[str, Any]:
                            "weight_endurance": r3(e.w_ee), "weight_resistance": r3(e.w_re), "weight_difference_EE_minus_RE": r3(e.w_ee - e.w_re),
                            "strong_in": spec, "strong_threshold_abs_w": r3(tau)})
     return {"walk": list(walk),
+            "links_note": ("links_on_screen is what the video shows. red_blue_count counts the RED (strong after endurance only) and "
+                           "BLUE (strong after resistance only) links, the only links drawn bold; when a line counts a node's links, "
+                           "use red_blue_count and nothing else. The walk's own links (gold) are for the hand-off to the next node, "
+                           "not for counting. The network has other, faint links that are not shown: never state a node's total "
+                           "number of links or partners."),
             "about": ("Joint network of the MoTrPAC acute-exercise response (471 genes/proteins, 450 metabolites; adipose, blood, "
                       "muscle). An edge exists only if STRING (score >= 700) or Rhea physically links the two molecules; its weight "
                       "per arm is the dot product of their normalised exercise responses (positive = they respond together)."),
@@ -140,7 +160,8 @@ def build_facts(walk: Sequence[str], net: Network, out: Path) -> Dict[str, Any]:
 
 def fact_card(node_fact: Dict[str, Any]) -> List[str]:
     """Three short on-screen lines about a node, from its facts (for the video's fact card)."""
-    f = node_fact; lines = [f"hub rank {f['hub_rank_in_network']} of {f['network_size']} · {f['degree']} links"]
+    f = node_fact; k = f["links_on_screen"]["red_blue_count"]
+    lines = [f"hub rank {f['hub_rank_in_network']} of {f['network_size']} · {k} red/blue link{'s' if k != 1 else ''}"]
     lines.append(f"strength: endurance {f['strength_endurance']} · resistance {f['strength_resistance']}")
     d = f.get("disease_and_ageing") or {}
     ukb = [(k.split(",")[1].split("(")[0].strip(), v["z"]) for k, v in d.items() if k.startswith("UK Biobank")]

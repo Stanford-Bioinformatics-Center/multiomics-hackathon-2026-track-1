@@ -51,6 +51,9 @@ def story_markers(out: Path, net: Network, per_story: int = 6) -> List[Dict[str,
     meta = {r["set"]: r for r in _rows(out / "20_disease_sets.csv")}
     ds = _rows(out / "20_disease_scores.csv")
     resp_rows = {a: _rows(out / f"01_nodes_{a}.csv") for a in ("EE", "RE")}
+    # red/blue links: the arm-specific edges the video draws bold (the figure 17 rule, as in network.build_facts)
+    pool = sorted(abs(w) for e in net.edges.values() for w in (e.w_ee, e.w_re)); tau = pool[int(0.75 * (len(pool) - 1))] if pool else 0.0
+    red_blue = lambda n: sum(1 for e in net.neighbours(n) if (e.w_ee >= tau) != (e.w_re >= tau))
     picked = []
     for story, s, tissue, arm in STORIES:
         if s not in meta:
@@ -64,7 +67,7 @@ def story_markers(out: Path, net: Network, per_story: int = 6) -> List[Dict[str,
             continue
         sz = statistics.pstdev(z for _, z in alt) or 1.0; sr = statistics.pstdev(resp[g] for g, _ in alt) or 1.0
         ranked = sorted(({"story": story, "set": s, "node": g, "z": z, "response": resp[g], "arm": arm, "tissue": tissue,
-                          "score": -(z / sz) * (resp[g] / sr), "links": len(net.neighbours(g))}
+                          "score": -(z / sz) * (resp[g] / sr), "links": red_blue(g)}
                          for g, z in alt if g in ok), key=lambda d: -d["score"])
         picked += [d for d in ranked if d["score"] > 0][:per_story]
     return picked
@@ -88,7 +91,7 @@ def describe(e: Dict[str, object]) -> str:
         way = "up" if d["z"] > 0 else "down"
         tis = "muscle" if d["tissue"] == "muscle" else "blood"
         parts.append(f"{d['story']}: {way} in disease (z {d['z']:+.0f}), {ARM_NAME[d['arm']]} pushes it back in {tis}")
-    return f"{e['node']:<9} {e['links']} link{'s' if e['links'] != 1 else ''} · " + "; ".join(parts)
+    return f"{e['node']:<9} {e['links']} red/blue link{'s' if e['links'] != 1 else ''} · " + "; ".join(parts)
 
 
 def write_menu(entries: List[Dict[str, object]], path: Path) -> None:
