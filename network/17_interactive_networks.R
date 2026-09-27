@@ -230,7 +230,7 @@ function(el, x, cfg) {
   var net = document.getElementById("graph" + el.id).chart;
   var nodes = net.body.data.nodes, edges = net.body.data.edges;
   var TIS = ["adipose", "blood", "muscle"], TIMES = ["0.5h", "4h", "24h"], OMES = {rna: "RNA", prot: "protein", metab: "metabolites"};
-  var st = { tags: {mp: 1, kp: 0, N: 1, O: 1, OG: 1, unk: 0, xt: 1}, pins: {}, omes: {}, tis: {adipose: 1, blood: 1, muscle: 1}, times: {"0.5h": 1, "4h": 1, "24h": 1}, arm: "EE", thr: 0.05, colour: "response",
+  var st = { tags: {mp: 1, kp: 0, N: 1, O: 1, OG: 1, unk: 0, xt: 1}, pins: {}, omes: {}, tis: {adipose: 1, blood: 1, muscle: 1}, times: {"0.5h": 1, "4h": 1, "24h": 1}, arm: "EE", thr: 0.05, colour: "response", spec: false, specTop: 25,
              focus: null, collapsed: false, hulls: S.hulls.length > 0, typeOn: {}, module: "" };
   D.omes.forEach(function (o) { st.omes[o] = 1; }); D.types.forEach(function (t) { st.typeOn[t] = true; });
   var DASH = { solid: false, neg: [5, 5], mm: [10, 5], mp: [2, 4] };
@@ -330,6 +330,8 @@ function(el, x, cfg) {
        cb("hk-tag", "kp", "known phosphosites", 0) + " " + cb("hk-tag", "N", "N-linked glyco", 1) + " " + cb("hk-tag", "O", "O-linked glyco (GalNAc)", 1) + " " +
        cb("hk-tag", "OG", "O-GlcNAc", 1) + " " + cb("hk-tag", "unk", "glycosylated, site unknown", 0) + " " + cb("hk-tag", "xt", "phospho = O-glyco residue", 1);
   h += "</div><div><b>Edges</b> " + D.types.map(function (t) { return cb("hk-type", t, t, 1); }).join(" ") +
+       "<span class='hk-sep'></span>" + cb("hk-spec", "1", "arm-specific edges only (red = endurance, blue = resistance)", 0) +
+       " strong = top <input class='hk-spectop' type='number' min='1' max='100' step='5' value='25' style='width:45px'>% |w|" +
        (S.hulls.length ? "<span class='hk-sep'></span>" + cb("hk-hull", "1", "class outlines", 1) + " <button class='hk-col'>Collapse classes</button>" : "") +
        "<span class='hk-sep'></span><button class='hk-reset'>Reset</button></div>";
   bar.innerHTML = h;
@@ -399,6 +401,14 @@ function(el, x, cfg) {
       W[e.id] = { w: w, wE: a[0], wR: b[0], n: a[1] }; });
     var visible = function (e) { return st.typeOn[e.etype] && W[e.id].n > 0; };
     var wl = eAll.filter(visible).map(function (e) { return W[e.id].w; }), lim = q95(wl);
+    // 1b. arm-specific edges (same rule as the engine's arm_specific_edges()): "strong" = |w| in the top N% of all
+    // visible edges' weights, pooled over BOTH arms (one shared bar); endurance-specific = strong after endurance
+    // only (w_EE >= tau > w_RE), resistance-specific = strong after resistance only; positive weights only.
+    var spTau = null, spTally = { EE: 0, RE: 0, both: 0, neither: 0 };
+    if (st.spec) { var pool = []; eAll.filter(visible).forEach(function (e) { pool.push(Math.abs(W[e.id].wE), Math.abs(W[e.id].wR)); });
+      pool.sort(function (x, y) { return x - y; }); spTau = pool.length ? pool[Math.floor((1 - st.specTop / 100) * (pool.length - 1))] : Infinity;
+      eAll.forEach(function (e) { var r = W[e.id], hE = r.wE >= spTau, hR = r.wR >= spTau;
+        r.spec = hE && hR ? "both" : hE ? "EE" : hR ? "RE" : "neither"; if (visible(e)) spTally[r.spec]++; }); }
     eAll.forEach(function (e) { if (visible(e)) { var a = Math.abs(W[e.id].w); strength[e.from] = (strength[e.from] || 0) + a; strength[e.to] = (strength[e.to] || 0) + a; } });
     // 2. node values for the colour mode
     var nAll = nodes.get(), val = {}, vals = [];
@@ -481,9 +491,13 @@ function(el, x, cfg) {
     edges.update(eAll.map(function (e) { var r = W[e.id], vis = visible(e), onF = !st.focus || fset[e.from] || fset[e.to];
       var c = st.arm === "ER" ? div3(r.w, lim, ["#2166AC", "#D9D9D9", "#B2182B"]) : TYPE_COL[e.etype];
       var d = st.arm === "ER" ? (e.etype === "protein - protein" ? "solid" : e.etype === "metabolite - metabolite" ? "mm" : "mp") : (r.w < 0 ? "neg" : "solid");
-      return { id: e.id, hidden: !vis, width: 0.6 + 5 * Math.min(Math.abs(r.w) / lim, 1), dashes: DASH[d],
+      var wd = 0.6 + 5 * Math.min(Math.abs(r.w) / lim, 1);
+      // arm-specific mode: red = endurance only, blue = resistance only; shared or weak edges fade to grey
+      if (st.spec) { c = { EE: "#D7301F", RE: "#2B8CBE", both: "rgba(150,150,150,0.35)", neither: "rgba(190,190,190,0.25)" }[r.spec];
+        d = "solid"; wd = (r.spec === "EE" || r.spec === "RE") ? 3.6 : 0.7; }
+      return { id: e.id, hidden: !vis, width: wd, dashes: DASH[d],
                color: { color: onF ? c : "rgba(200,200,200,0.12)", highlight: c, hover: c, opacity: onF ? 0.85 : 1 },
-               title: "<b>" + esc(e.from) + " — " + esc(e.to) + "</b><br>" + e.etype + "<br>selection (" + r.n + " terms): w_EE " + f3(r.wE) + " · w_RE " + f3(r.wR) + " · w_EE − w_RE " + f3(r.wE - r.wR) + (e.info ? "<br>" + e.info : "") }; }));
+               title: "<b>" + esc(e.from) + " — " + esc(e.to) + "</b><br>" + e.etype + "<br>selection (" + r.n + " terms): w_EE " + f3(r.wE) + " · w_RE " + f3(r.wR) + " · w_EE − w_RE " + f3(r.wE - r.wR) + (st.spec ? "<br>arm-specific (strong = |w| &ge; " + f3(spTau) + "): " + { EE: "<b style='color:#D7301F'>endurance only</b>", RE: "<b style='color:#2B8CBE'>resistance only</b>", both: "strong in both arms", neither: "strong in neither arm" }[r.spec] : "") + (e.info ? "<br>" + e.info : "") }; }));
     // 5. legend: rebuilt for whatever is shown (node colour mode, outline, edges, sizes, arrows), with counts
     var sw = function (c, lab, n, shape) { return "<div class='hk-row'><span class='hk-swatch' style='background:" + c + (shape === "ring" ? ";border:3px solid #000;background:#FFF" : "") + "'></span>" + lab + (n !== undefined ? " <span class='hk-n'>(" + n + ")</span>" : "") + "</div>"; };
     var bar3 = function (pal, lo, mid, hi, loLab, hiLab) { return "<div class='hk-bar3' style='background:linear-gradient(90deg," + pal.join(",") + ")'></div><div class='hk-ticks'><span>" + lo + "</span><span>" + mid + "</span><span>" + hi + "</span></div><div class='hk-ticks hk-sub'><span>" + loLab + "</span><span>" + hiLab + "</span></div>"; };
@@ -530,7 +544,11 @@ function(el, x, cfg) {
         (st.tags.unk ? pin("#FFFFFF", "#0072BC", "", "glycosylated, site unknown (GlyGen protein-level)", T.unk + " proteins", "hk-sq hk-dash") : "");
       if (st.tags.xt) G += "<div class='hk-row'><span class='hk-star'>★</span>a MoTrPAC phosphosite that is also an O-glycosylation site <span class='hk-n'>(" + T.xt + " proteins)</span></div>";
     }
-    G += "<div class='hk-lt'>Edges</div>" + (st.arm === "ER" ? "<div class='hk-ls'>colour = w_EE − w_RE; width = |difference|</div>" + bar3(["#2166AC", "#D9D9D9", "#B2182B"], "−" + f3(lim), "0", "+" + f3(lim), "higher in resistance", "higher in endurance") + "<div class='hk-ls'>solid = protein–protein, long dash = metabolite–metabolite, dotted = metabolite–protein</div>"
+    if (st.spec) G += "<div class='hk-lt'>Edges: arm-specific</div><div class='hk-ls'>strong = |w| in the top " + st.specTop + "% of both arms' weights (|w| &ge; " + f3(spTau) + ", this selection)</div>" +
+      "<div class='hk-row'><span class='hk-line' style='background:#D7301F;height:4px'></span>strong after endurance only <span class='hk-n'>(" + spTally.EE + ")</span></div>" +
+      "<div class='hk-row'><span class='hk-line' style='background:#2B8CBE;height:4px'></span>strong after resistance only <span class='hk-n'>(" + spTally.RE + ")</span></div>" +
+      "<div class='hk-row'><span class='hk-line' style='background:#AAAAAA'></span>strong in both <span class='hk-n'>(" + spTally.both + ")</span> · in neither <span class='hk-n'>(" + spTally.neither + ")</span></div>";
+    else G += "<div class='hk-lt'>Edges</div>" + (st.arm === "ER" ? "<div class='hk-ls'>colour = w_EE − w_RE; width = |difference|</div>" + bar3(["#2166AC", "#D9D9D9", "#B2182B"], "−" + f3(lim), "0", "+" + f3(lim), "higher in resistance", "higher in endurance") + "<div class='hk-ls'>solid = protein–protein, long dash = metabolite–metabolite, dotted = metabolite–protein</div>"
          : "<div class='hk-ls'>width = |w| (up to " + f3(lim) + "); dashed = negative weight</div>" + D.types.map(function (t) { return "<div class='hk-row'><span class='hk-line' style='background:" + TYPE_COL[t] + "'></span>" + t + "</div>"; }).join(""));
     legendBox.innerHTML = G;
     legend.innerHTML = "<b>Selection</b>: " + ARMLAB[st.arm] + " · " + on(st.omes).map(function (o) { return OMES[o]; }).join(", ") + " · " + on(st.tis).join(", ") + " · " + on(st.times).join(", ") + " · adj. p &lt; " + thr;
@@ -554,6 +572,8 @@ function(el, x, cfg) {
   var chk = function (cls, obj) { bar.querySelectorAll(cls).forEach(function (c) { c.onchange = function () { obj[c.value] = c.checked ? 1 : 0; apply(); }; }); };
   chk(".hk-ome", st.omes); chk(".hk-tis", st.tis); chk(".hk-time", st.times); chk(".hk-tag", st.tags);
   bar.querySelectorAll(".hk-arm").forEach(function (r) { r.onchange = function () { st.arm = r.value; apply(); }; });
+  q(".hk-spec").onchange = function () { st.spec = this.checked; apply(); };
+  q(".hk-spectop").onchange = function () { var v = parseFloat(this.value); if (isFinite(v) && v > 0 && v <= 100) { st.specTop = v; apply(); } };
   q(".hk-thr").onchange = function () { var v = parseFloat(this.value); if (v > 0 && v <= 1) { st.thr = v; apply(); } };
   q(".hk-colour").onchange = function () { st.colour = this.value; apply(); };
   q(".hk-mod").onchange = function () { var m = D.mods.filter(function (x) { return x.id === q(".hk-mod").value; })[0];
