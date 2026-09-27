@@ -354,15 +354,17 @@ function(el, x, cfg) {
   var bar = document.createElement("div"); bar.className = "hk-bar";
   var cb = function (cls, val, lab, chk) { return "<label><input type='checkbox' class='" + cls + "' value='" + val + "'" + (chk ? " checked" : "") + "> " + lab + "</label>"; };
   var tg = function (cls, lab) { return "<button class='hk-tog " + cls + "'>" + lab + "</button>"; };
-  var p = "<div class='hk-pres'>" + (D.stories.length ? "<b>Story</b> " + D.stories.map(function (s) { return "<button class='hk-story' data-s='" + s.id + "'>" + esc(s.label) + "</button>"; }).join("") +
-          "<button class='hk-story' data-s=''>All</button><button class='hk-tog hk-allst' style='display:none'></button><span class='hk-sep'></span>" : "") +
-          "<b>Arm</b> " + [["EE", "Endurance"], ["RE", "Resistance"], ["ER", "Difference"]].map(function (a) { return "<button class='hk-armb' data-a='" + a[0] + "'>" + a[1] + "</button>"; }).join("") +
-          "<span class='hk-sep'></span><b>Colour by</b> <select class='hk-pcol'><option value='response'>exercise response</option>" +
-          (D.stories.length ? "<option value='sdir'>disease direction (story set)</option><option value='sphys'>study vs physical</option>" : "") + "<option value='' disabled>other (set in Advanced)</option></select>" +
-          "<span class='hk-sep'></span>" + tg("hk-pspec", "Arm-specific edges only") + tg("hk-marks", "PTM marks") +
-          "<span class='hk-sep'></span><b>Find</b> <input class='hk-find' list='" + el.id + "-dl' placeholder='gene or metabolite'>" +
-          "<datalist id='" + el.id + "-dl'>" + nodes.getIds().sort().map(function (i) { return "<option value=\"" + String(i).replace(/"/g, "&quot;") + "\">"; }).join("") + "</datalist>" +
-          "<span class='hk-sep'></span><button class='hk-reset'>Reset</button></div>";
+  // presentation rows: each control group is one nowrap block, so a label never separates from its control
+  var grp = function (inner) { return "<span class='hk-grp'>" + inner + "</span>"; };
+  var p = "<div class='hk-pres hk-row1'>" + (D.stories.length ? grp("<b>Story</b> " + D.stories.map(function (s) { return "<button class='hk-story' data-s='" + s.id + "'>" + esc(s.label) + "</button>"; }).join("") +
+          "<button class='hk-story' data-s=''>All</button><button class='hk-tog hk-allst' style='display:none'></button>") : "") +
+          grp("<b>Arm</b> " + [["EE", "Endurance"], ["RE", "Resistance"], ["ER", "Difference"]].map(function (a) { return "<button class='hk-armb' data-a='" + a[0] + "'>" + a[1] + "</button>"; }).join("")) +
+          grp("<b>Colour by</b> <select class='hk-pcol'><option value='response'>exercise response</option>" +
+          (D.stories.length ? "<option value='sdir'>disease direction (story set)</option><option value='sphys'>study vs physical</option>" : "") + "<option value='' disabled>other (set in Advanced)</option></select>") +
+          grp(tg("hk-pspec", "Arm-specific edges") + tg("hk-marks", "PTM marks")) + "</div>";
+  var p2 = grp("<b>Find</b> <input class='hk-find' list='" + el.id + "-dl' placeholder='gene or metabolite'>" +
+          "<datalist id='" + el.id + "-dl'>" + nodes.getIds().sort().map(function (i) { return "<option value=\"" + String(i).replace(/"/g, "&quot;") + "\">"; }).join("") + "</datalist>") +
+          grp("<button class='hk-reset'>Reset</button>");
   var h = "<div><b>Omes</b> " + D.omes.map(function (o) { return cb("hk-ome", o, OMES[o], 1); }).join(" ") +
           "<span class='hk-sep'></span><b>Tissues</b> " + TIS.map(function (t) { return cb("hk-tis", t, t, 1); }).join(" ") +
           "<span class='hk-sep'></span><b>Time</b> " + TIMES.map(function (t) { return cb("hk-time", t, t, 1); }).join(" ") +
@@ -384,7 +386,7 @@ function(el, x, cfg) {
        " strong = top <input class='hk-spectop' type='number' min='1' max='100' step='5' value='25' style='width:45px'>% |w|" +
        (S.hulls.length ? "<span class='hk-sep'></span>" + cb("hk-hull", "1", "class outlines", 1) + " <button class='hk-col'>Collapse classes</button>" : "") +
        "</div>";
-  bar.innerHTML = p + "<details class='hk-adv'><summary>Advanced (omes, tissues, time, adj. p, annotation colours, modules, classes, PTM tags, edges)</summary>" + h + "<div class='hk-notes'></div></details>";
+  bar.innerHTML = p + "<div class='hk-pres hk-row2'>" + p2 + "<details class='hk-adv'><summary>Advanced (omes, tissues, time, adj. p, annotation colours, modules, classes, PTM tags, edges)</summary>" + h + "<div class='hk-notes'></div></details></div>";
   var legend = document.createElement("div"); legend.className = "hk-legend";
   var legendBox = document.createElement("div"); legendBox.className = "hk-legbox";
   var panel = document.createElement("div"); panel.className = "hk-panel";
@@ -739,6 +741,10 @@ CSS <- tags$style(HTML("
   .hk-bar input.hk-find { width: 170px; font-size: 12px; } .hk-bar select { font-size: 12px; max-width: 330px; } .hk-bar label { margin-right: 5px; }
   .hk-sep { display: inline-block; width: 12px; }
   .hk-pres { font-size: 14px; padding: 4px 0; } .hk-pres button, .hk-pres select { font-size: 13.5px; padding: 3px 10px; }
+  .hk-row1, .hk-row2 { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; line-height: 1.6; }
+  .hk-grp { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; } .hk-grp b { margin-right: 2px; } .hk-grp button { margin-right: 0; }
+  .hk-pres select.hk-pcol { max-width: 220px; }
+  .hk-row2 .hk-adv { flex: 1 1 auto; margin: 0; } .hk-row2 .hk-adv[open] { flex-basis: 100%; }
   .hk-bar button.hk-on { background: #1A1A1A; color: #FFFFFF; border-color: #1A1A1A; }
   .hk-adv { margin-top: 2px; } .hk-adv summary { cursor: pointer; color: #555; font-size: 12px; }
   .hk-notes { font-size: 11px; max-width: 760px; margin: 6px 0; padding: 6px 10px; border: 1px solid #DDD; border-radius: 4px; } .hk-notes:empty { display: none; }
