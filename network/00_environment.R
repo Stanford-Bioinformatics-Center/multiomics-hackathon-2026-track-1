@@ -41,7 +41,7 @@ tool_version <- function(cmd, args) tryCatch(system2(cmd, args, stdout = TRUE, s
 pdflatex_bin <- function() { p <- Sys.which("pdflatex"); if (nzchar(p)) return(p)
   r <- tryCatch(tinytex::tinytex_root(), error = function(e) ""); c(list.files(file.path(r, "bin"), pattern = "^pdflatex$", recursive = TRUE, full.names = TRUE), "pdflatex")[1] }
 KEY_PKGS <- c("data.table", "igraph", "ggplot2", "ggrepel", "ggforce", "ggnewscale", "scales", "nanoparquet", "jsonlite", "visNetwork",
-              "htmlwidgets", "htmltools", "rmarkdown", "tinytex", "limma", "readxl", "checkmate", "testthat", "exnet", "TMSig", "fgsea", "MotrpacHumanPreSuspensionAnalysis",
+              "htmlwidgets", "htmltools", "rmarkdown", "tinytex", "limma", "readxl", "checkmate", "testthat", "pkgload", "patchwork", "exnet", "TMSig", "fgsea", "MotrpacHumanPreSuspensionAnalysis",
               "MotrpacHumanPreSuspensionData", "MotrpacHumanPreSuspension", "Matrix")
 pk <- data.table(package = KEY_PKGS, version = sapply(KEY_PKGS, function(p) tryCatch(as.character(packageVersion(p)), error = function(e) "NOT INSTALLED")))
 tools <- data.table(tool = c("R", "Python", "pandoc", "TinyTeX (pdflatex)", "platform"),

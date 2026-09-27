@@ -1,115 +1,142 @@
-# Exercise network: endurance vs resistance
+# Exercise network: endurance vs resistance, in the context of disease
+
+> **Team 2-PAC · Stanford Multi-omics Hackathon 2026 · Track 1 "Exercise as Medicine"**
+> **Headline:** endurance and resistance exercise move disease-linked proteins back toward healthy **in different
+> tissues** — endurance in **muscle** (T2D proteome), resistance in **blood** (the plasma proteins of ageing and of
+> future T2D, UK Biobank) — read off one physically gated, exercise-weighted multi-omic network.
+
+![Fig. 1](docs/figures/fig1_story.png)
 
 ## 1. Project snapshot
 
-**One line:** two molecular networks built from the MoTrPAC human acute-exercise results, one for
-endurance and one for resistance exercise, over the same genes, so we can ask whether the two kinds of
-exercise wire the body's molecular response more similarly or more differently.
+**One line:** a molecular network of 471 genes/proteins and 450 metabolites built from the MoTrPAC human
+acute-exercise results, where **physical interaction databases decide whether two molecules are connected** and
+**the exercise responses decide how strongly**, separately for endurance and resistance exercise — then tested
+against published human disease and ageing proteomes.
 
-This project helps **exercise biologists and hackathon collaborators** compare **endurance and
-resistance exercise** using **MoTrPAC multi-omics results (RNA, protein, metabolites in adipose, blood
-and muscle) and the STRING interaction database**, so they can **see which molecular relationships
-differ between the two, and how confidently**.
+This project helps **exercise and network biologists** compare **endurance and resistance exercise in the context
+of disease** using **MoTrPAC multi-omics results (RNA, protein, metabolites; adipose, blood, muscle), STRING / Rhea
+physical interactions and seven published disease / ageing proteomes**, so they can **see which disease-linked
+molecules and relationships each kind of exercise moves, in which tissue, and how confidently**.
 
 | | |
 |---|---|
-| Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine") |
-| Team | Vidal Arroyo (Stanford) — *TODO: add teammates and roles* |
-| Intended users | Track 1 team and judges; exercise and network biologists who want a reusable, documented EE-vs-RE network |
-| Status | Gene and metabolite networks built and validated (36 checks); hub report computed, no hubs removed; figures of both networks and of their edge differences (steps 10, 11); joint protein + metabolite network with its figures (step 14) and a version with metabolites grouped by class (step 15); sample annotation of that network with MoTrPAC phospho, GlyGen glycosylation and their site-level crosstalk (step 16); interactive, filterable versions of all three networks (omes / tissues / times / arms, module statistics, MoTrPAC phospho + GlyGen annotation layers, kinase edges) plus Cytoscape files (step 17); normalisation options compared (step 12); descriptive statistics (step 13) and preliminary T2D lipid observations (step 18, section 7b). A bootstrap test of arm differences was built and has been removed for now; differences are shown, not tested. Disease layer not started |
+| Hackathon | Stanford Multi-omics Hackathon 2026, Track 1 ("Exercise as Medicine"; the brief asks each team to pick one disease: ours is type 2 diabetes, T2D) |
+| Team | Team 2-PAC — see *Contributors and roles* (section 8) |
+| Intended users | judges and Track 1 teams; exercise, diabetes and network biologists who want a reusable, documented, fully reproducible endurance-vs-resistance network |
+| Status | **complete and reproducible**: one command (`bash network/run_all.sh`, ~10 min) rebuilds every table, figure and interactive page, runs 44 validation checks + 25 engine tests, and confirms all 136 outputs are byte-identical to the reference run |
 
-**Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes,
-yet most comparisons look at single molecules. A network view asks whether the *relationships* between
-molecules change, which is closer to how exercise is thought to act on disease pathways.
+**Why it matters.** Endurance and resistance exercise are prescribed for different health outcomes, yet most
+comparisons look at one molecule at a time. A network asks whether the *relationships* between molecules change,
+and the disease tests ask whether each kind of exercise pushes the molecules a disease disturbs back toward normal.
 
 ## 2. Research question
 
-- **Question:** across adipose, blood and muscle, and across RNA and protein, is the acute molecular
-  response to endurance exercise wired more similarly or more differently from the response to
-  resistance exercise, and which connections differ?
-- **Approach:** an honest representation of both. Nothing is designed to make the two networks look
-  alike: each arm's values come from its own comparison with the control group, and both are measured
-  in one shared unit. (Testing differences against measurement noise is paused; see roadmap.)
-- **Scope:** human pre-suspension (pre-COVID) adults, first acute bout, 0.5 / 4 / 24 h after exercise;
-  genes measured as RNA and protein in all three tissues (471 genes); metabolites measured in all
-  three tissues (450), connected through shared enzymes (Rhea).
-- **Success means:** (a) both networks and their per-edge differences are built transparently from
-  exercise-independent edges; (b) later, differences are tested against measurement noise and the overall
-  similarity (r = 0.45 for genes) is compared with a noise-only reference (*not yet done*, see roadmap);
-  (c) anyone can rerun the pipeline and get the numbers in section 7.
+- **Question:** do endurance and resistance exercise differ in how they move the molecules and molecular
+  relationships that are disturbed in type 2 diabetes (and in ageing, its main risk factor)? In which tissue?
+- **Hypothesis:** the two arms act on different parts of the network, so their "disease-reversing" effects should
+  differ by tissue and by disease signature.
+- **Scope:** MoTrPAC human pre-suspension adults, first acute bout, 0.5 / 4 / 24 h; 471 genes measured as RNA and
+  protein in adipose, blood and muscle, and 450 metabolites. Disease data only from tissues we measure (muscle,
+  adipose, blood/plasma): T2D (Amar et al. 2024 sets; Kjærgaard 2025; Needham 2024; Larsen 2023; UK Biobank incident
+  T2D) and ageing (Ubaida-Mohien 2019 muscle; UK Biobank plasma age).
+- **Success means:** (a) every edge is traceable to a physical database and every weight to the exercise data (no
+  black box; figure below); (b) each disease comparison is tissue-matched, pre-specified and tested against a
+  permutation null, with post-hoc steps labelled; (c) anyone can rerun the pipeline and get the numbers in section 7.
+
+**The answer (three-part story; Fig. 1, figures 19-21, tables in section 6 steps 19-20):**
+
+| | Evidence | Endurance | Resistance | Endurance − resistance |
+|---|---|---|---|---|
+| **1. Discovery (muscle)** | 68 muscle proteins altered in T2D (Öhman 2021, Amar et al. 2024 sets) | **reverses T2D** (0.31, p 0.012) | no (−0.07, p 0.56) | **+0.38, p 0.007** |
+| | their network neighbourhood: T2D proteins + connectors (42 nodes) | | | more connected than chance, **p 0.039** |
+| **2. Replication (muscle)** | Kjærgaard 2025, two cohorts pooled (123 people; post hoc) | 0.08 | moves proteins **toward** T2D (−0.30, p 0.067) | **+0.38, p 0.007** |
+| **3. Blood** | 297 plasma proteins linked to future T2D (UK Biobank, Gadd 2024) | 0.01 (p 0.90) | **reverses** (0.38, p < 0.001) | **−0.38, p < 0.001** |
+| | 293 plasma proteins associated with age (UK Biobank, Sun 2023) | 0.15 (p 0.013) | **reverses** (0.47, p < 0.001) | **−0.32, p < 0.001** |
+| Boundary | insulin-resistant, non-diabetic muscle (Needham 2024) | 0.08 | 0.31 (p 0.078) | −0.23 (n.s.) |
+| | ageing muscle (Ubaida-Mohien 2019) | 0.09 | −0.08 | +0.17 (p 0.08, trend) |
+
+"Reversal" = −Spearman(disease z, exercise response) over the disease-altered proteins, in the tissue the disease
+data come from; > 0 means exercise moves proteins that are lower in the disease up and those higher down.
+Permutation p (10,000 draws; the disease labels are shuffled). **These are direction matches between one acute
+bout in healthy adults and disease / age signatures, not evidence that either kind of exercise treats or
+prevents T2D** (the Track 1 brief says the same).
 
 ## 3. Workflow
 
-```mermaid
-flowchart LR
-  A[MoTrPAC results<br/>RNA, protein, metabolites<br/>adipose, blood, muscle] --> B[Step 1 / 1b<br/>node vectors per arm<br/>471 genes x 18, 450 metabolites x 9]
-  S[mnet resource: STRING v12<br/>score >= 700] --> C[Step 2<br/>edges: El-Kebir 2015 rules<br/>434 edges, same for both arms]
-  B --> D[Step 3<br/>edge weight = dot product<br/>of the two genes' vectors, per arm]
-  C --> D
-  B --> F[Step 1c / 1d<br/>metabolite IDs ChEBI<br/>and class counts]
-  D --> P[Steps 10, 11<br/>figures: EE vs RE layers;<br/>edge differences w_EE - w_RE]
-  R[Rhea reactions<br/>enzyme-substrate] --> G[Step 5<br/>metabolite-protein links<br/>to our 471 genes]
-  F --> G
-  G --> H[Step 6<br/>metabolite networks EE / RE<br/>shared protein + same class]
-  B --> H
-  D --> K[Step 7<br/>hubs = highest summed<br/>edge weight]
-  H --> K
-  H --> P
-  D --> J[Step 14<br/>joint protein + metabolite network<br/>Rhea cross-edges, doubled metabolite vector]
-  H --> J
-  G --> J
-  J --> Q[Step 15<br/>joint network with metabolites<br/>grouped into named class bubbles]
-  Q --> U
-  Q --> A[Step 16<br/>15b annotated: phospho 16a, glycosylation 16b,<br/>both + site-level crosstalk 16c]
-  A --> U
-  Q --> I[Step 17<br/>interactive pages + Cytoscape files<br/>search, highlight, filter, EE / RE / difference]
-  P --> I
-  I --> U
-  Q --> T[Step 19<br/>T2D stories: pieces, connector subgraph,<br/>protein level + PTM tags<br/>EE vs RE, permutation tests]
-  T --> U
-  Q --> V[Step 20<br/>disease chunks: old T2D, new T2D, ageing<br/>same tests, story per chunk]
-  V --> U
-  P --> U[User: which relationships differ<br/>between the arms]
-  F --> U
+### The one idea to understand: hard edges x soft weights
+
+![How an edge is made](docs/figures/fig_method_hard_soft_edges.png)
+
+Every edge of every network is made by one rule, implemented once in the **exnet engine** (`network/engine/`,
+tested) and reproduced exactly by the pipeline:
+
+```
+edge(u, v) exists   <=>  a PHYSICAL database links u and v        (hard:  STRING v12 score >= 700 for protein pairs,
+                                                                           Rhea reactions for enzyme-metabolite pairs)
+w_arm(u, v)         =    sum over dimensions d of  z_u,d · z_v,d   (soft:  the dot product of the two molecules'
+                                                                           normalised exercise responses in that arm)
+w_diff              =    w_EE − w_RE                               (the comparison between the arms)
 ```
 
-1. **Nodes (step 1, genes; step 1b, metabolites).** Each gene gets two vectors, one per arm: how it
-   changed after exercise (vs controls) in each tissue, layer and time. 18 numbers for genes (3 tissues
-   × RNA/protein × 3 times), 9 for metabolites (3 tissues × 3 times).
-2. **Edges (step 2).** STRING decides *whether* two genes are connected. This does not use the exercise
-   data, so both arms have the same 434 edges (mnet STRING v12 ≥ 700; 431 with the legacy file).
-3. **Weights (step 3).** The exercise data decides *how strong* each edge is in each arm: the dot
-   product of the two genes' vectors.
-5. **Metabolite identifiers (steps 1c, 1d).** ChEBI and other database IDs and class counts.
-6. **Metabolite networks (steps 5, 6).** Rhea links each metabolite to the proteins (among our 471
-   genes) that use it as an enzyme substrate or product. Two metabolites are connected if they share
-   such a protein (or two such proteins interact in STRING) AND the same RefMet super class; edge weights
-   are dot products of their 9-number
-   vectors, per arm. Same edges in both arms, as for genes.
-7. **Hub report (step 7).** The **hub** is the node with the highest summed edge weight (strength = sum of |w|,
-   per arm; team definition 2026-09-26): SRC in the gene and joint networks (1.62 endurance, 2.09 resistance),
-   inosine in the metabolite network. Strength hubs above the Tukey fence and degree-based hubs are also listed.
-   Nothing is removed.
-8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
-   side, to choose the approach.
-9. **Descriptive and exploratory tables (steps 13, 18).** Statistics of the log fold changes per ome
-   and arm (LaTeX PDF), and T2D-relevant lipid classes per arm with the clinical NEFA check (section 7b).
-10. **Figures (steps 10, 11).** The EE and RE networks stacked in one identical layout (10a genes, 10b
-   metabolites), and one network per data type whose edges show the difference w_EE − w_RE (11a, 11b).
-11. **Joint network (step 14).** Genes/proteins and metabolites in one network: the gene edges (step 3),
-   the metabolite edges (step 6) and the Rhea metabolite–protein links (step 5) as cross-edges. Each
-   cross-edge weight is one dot product of the metabolite's embedding doubled to 18 values (so it
-   multiplies RNA and protein equally) with the gene's 18-value embedding. Figures 14a (EE above RE) and
-   14b (w_EE − w_RE); proteins are circles, metabolites triangles.
-12. **Metabolite classes on the joint network (step 15).** The step 14 network redrawn with metabolites of
-   the same RefMet super class pulled together into an outlined, named group ("bubble"). As in step 14,
-   15a shows the two arms separately and 15b their difference.
-12b. **Annotated networks (step 16).** Figure 15b with protein circles recoloured by MoTrPAC phosphosite
-   response (16a) or GlyGen glycosylation (16b), and both at once with site-level phospho / O-GlcNAc crosstalk
-   marked (16c): a sample of what those data layers would add.
-13. **Interactive networks (step 17).** The joint, gene and metabolite networks as browser pages you can
-   navigate like Cytoscape (search, neighbour highlight, filters, EE / RE / difference views, collapsible
-   classes, tooltips), plus Cytoscape import files for teammates who use Cytoscape.
+- **Hard (panel a):** the physical layer does not look at exercise at all, so both arms have exactly the same edges;
+  two molecules that respond alike but have no physical link are **never** connected (A and E in the figure).
+- **Soft (panels b, c):** each molecule has one vector per arm — its normalised log fold change in each tissue x ome x
+  time (16 values for genes; 9 for metabolites, doubled into the RNA and protein slots for metabolite–protein edges).
+  The dot product is large and positive when the two respond strongly in the same direction, negative when they
+  respond in opposite directions, and near zero when either barely responds.
+- **Result (panel d):** one weighted network per arm on the same edges, so every difference between the arms is a
+  difference in exercise response, not in wiring. Figure 17 can show the **arm-specific edges**: strong after
+  endurance only (red) or resistance only (blue).
+- **Why this design:** physical links keep the network biologically interpretable and independent of the data it is
+  weighted by (no circularity); the dot product is the standard node-embedding similarity (Hamilton, Ying & Leskovec
+  2017) applied to measured, not learned, vectors; one shared normalisation per ome puts both arms on the same scale.
+
+### Pipeline
+
+```mermaid
+flowchart LR
+  subgraph DATA[Data]
+    M[MoTrPAC acute exercise<br/>RNA, protein, metabolites<br/>adipose, blood, muscle]
+    P[Physical interactions<br/>STRING v12 >= 700, Rhea<br/>team mnet resource]
+    D[Disease and ageing proteomes<br/>Amar 2024 T2D sets, Kjaergaard 2025,<br/>Needham 2024, Larsen 2023,<br/>UK Biobank age and incident T2D]
+  end
+  subgraph ENGINE[Network engine - exnet]
+    N[Steps 1 / 1b<br/>response vectors per arm<br/>SOFT]
+    E[Steps 2 / 5 / 6<br/>physical edges<br/>HARD]
+    W[Steps 3 / 14<br/>edge weight = dot product<br/>joint network: 353 nodes, 704 edges]
+  end
+  subgraph EXPLORE[Explore]
+    V[Steps 10-16<br/>figures, classes, PTM tags]
+    I[Step 17<br/>interactive pages, modules,<br/>arm-specific edges, Cytoscape]
+  end
+  subgraph DISEASE[Disease]
+    S[Step 19<br/>T2D stories: pieces,<br/>connector subgraph, protein level]
+    C[Step 20<br/>same tests on every<br/>disease / ageing set]
+    F[Step 21<br/>Figure 1]
+  end
+  M --> N --> W
+  P --> E --> W
+  W --> V --> I
+  W --> S
+  D --> S
+  D --> C
+  W --> C
+  S --> F
+  C --> F
+  W --> T[Tests: 25 engine tests,<br/>44 validation checks,<br/>136-file reproducibility manifest]
+```
+
+| Stage | Steps | What happens |
+|---|---|---|
+| Soft layer | 1, 1b | each gene (18 values) and metabolite (9 values) gets one normalised response vector per arm |
+| Hard layer | 2, 5, 6 | STRING (≥ 700, El-Kebir 2015 cleaning) for protein pairs; Rhea for metabolite–protein links; metabolites linked through shared / interacting enzymes of the same class |
+| Weights | 3, 6, 14 | dot products per arm; the joint network (353 nodes, 704 edges) combines all three edge types; **step 14t** runs the engine's tests, including exact reproduction of these weights |
+| Hubs, QC | 7, 8, 12, 13 | hubs = highest summed edge weight (SRC); rule experiments, normalisation comparison, descriptive statistics |
+| Figures | 10, 11, 14, 15, 16 | both arms in one layout, edge differences, metabolite class bubbles, PTM tags (MoTrPAC phosphosites, glycosylation) |
+| Interactive | 17 | browser pages of all three networks: filters (omes, tissues, times, arms), modules with pathway names and CAMERA-PR tests, PTM and T2D layers, **arm-specific edges**, Cytoscape export |
+| Disease | 18, 19, 20, 21 | disease-module approaches (18); three T2D stories (19); the same tests on every tissue-matched disease / ageing set (20); Figure 1 (21) |
+| Proof | 99v, 99m | 44 validation checks and headline numbers; fingerprints of all 136 outputs vs the reference run |
 
 ## 4. Setup
 
@@ -128,6 +155,9 @@ flowchart LR
 | `curl`, `rmarkdown`, `tinytex` | 7.0.0, 2.30, 0.58 | step 0 (GlyGen release lookup), pandoc detection, step 13 PDF |
 | `visNetwork`, `htmlwidgets`, `htmltools`, `jsonlite` + pandoc | 2.1.4, 1.6.4, 0.5.9, 2.0.0 | step 17 (interactive pages; pandoc ships with RStudio / Positron / Quarto) |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
+| `readxl` | 1.4.5 | step 20 (the published disease tables are Excel supplements) |
+| `patchwork`, `scales` | 1.3.2, 1.4.0 | multi-panel figures (steps 19-21, method figure) |
+| `checkmate`, `testthat`, `pkgload` | 2.3.4, 3.3.2, 1.5.0 | the **exnet engine** (`network/engine/`): typed input assertions, its 25 tests, loading it from source |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
 | TinyTeX (R `tinytex`) | via `tinytex::install_tinytex()` | step 13 (compiles the LaTeX table to PDF) |
 | Internet | — | first run only: step 1c (RefMet / UniChem / PubChem), step 5 (Rhea download), inventory (GlyGen API); all cached afterwards |
@@ -144,7 +174,10 @@ BiocManager::install(version = "3.20")                      # R 4.4; see the MoT
 if (!require("pak", quietly = TRUE)) install.packages("pak")
 pak::pak("MoTrPAC/MotrpacHumanPreSuspensionAnalysis")       # github.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis
 install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "ggrepel", "ggforce", "ggnewscale",
-                   "visNetwork", "htmlwidgets", "htmltools", "jsonlite", "curl", "rmarkdown", "tinytex"))
+                   "visNetwork", "htmlwidgets", "htmltools", "jsonlite", "curl", "rmarkdown", "tinytex",
+                   "readxl", "patchwork", "scales", "checkmate", "testthat", "pkgload"))
+# optional: install the engine as a package (the pipeline loads it from source, so this is not required)
+# install.packages("network/engine", repos = NULL, type = "source")
 BiocManager::install(c("limma", "TMSig"))                   # module tests in step 17
 tinytex::install_tinytex()                                  # step 13 PDF (once)
 ```
@@ -158,6 +191,8 @@ tinytex::install_tinytex()                                  # step 13 PDF (once)
 | STRING network (legacy) | first curated file supplied by the team: `Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet` (received 2026-09-26; STRING release not recorded in the file); used only with `EDGE_SOURCE=legacy` and by step 8 | `STRING_PARQUET` (default `~/Downloads/<that file>`) |
 | GlyGen (inventory, steps 16-17) | api.glygen.org and data.glygen.org, release 2.11.1, accessed 2026-09-26; answers cached under `$HACK_OUT/inventory/` | — |
 | Rhea (step 5) | downloaded automatically from ftp.expasy.org/databases/rhea/ on first run (release 142) | `HACK_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/rhea`) |
+| Published disease / ageing tables (step 20) | supplementary files of Kjærgaard 2025 (*Cell*), Needham 2024 (*Cell Metab*), Sun 2023 (*Nature*, UK Biobank), Gadd 2024 (*Nat Aging*, UK Biobank) from the publishers' public file servers, and Larsen 2023 (*Sci Adv*) from the authors' GitHub at a pinned commit; fetched once by `20_fetch_disease_sets.sh` (2026-09-26) | `DISEASE_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/disease`) |
+| Amar et al. 2024 disease sets (steps 17-20) | processed in the Venus project week 6 from the paper's repository (motrpac-rat-training-mitochondria); Ubaida-Mohien 2019 read from the same repository | `DISEASE_SCORES`, `UBAIDA` |
 | Results folder | created by step 1 | `HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`) |
 
 Code and results are kept in separate trees: nothing is written inside the repo. That includes the
@@ -166,11 +201,11 @@ default `~/Desktop/output/hackathon`).
 
 ## 5. Inputs, outputs and quick start
 
-**Quick start — one command** (from the repo root; about 2.5 minutes with the caches in place):
+**Quick start — one command** (from the repo root; about 10 minutes with the caches in place):
 
 ```bash
 bash network/run_all.sh                     # every step in order, then validation (section 7) and the reproducibility manifest
-bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 18bc 19 20f 20 99v 99m)
+bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 07 14t M 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 18bc 19 20f 20 21 99v 99m)
 REFRESH_ONLINE=1 bash network/run_all.sh    # also redo the web lookups of step 1c
 ```
 
@@ -194,6 +229,8 @@ Rscript network/11_plot_edge_difference.R     # figures: one network per data ty
 Rscript network/12_normalization_comparison.R # four normalisations side by side (report only) -> $HACK_FIG
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
+Rscript network/engine/run_tests.R            # engine tests (toy example, bad inputs, exact reproduction of step 14)
+Rscript network/docs/make_method_figure.R     # the method figure (hard x soft edges) -> network/docs/figures
 Rscript network/15_joint_network_classes.R    # joint network, metabolites grouped by class, figures 15a / 15b -> $HACK_FIG
 python3 network/inventory/glygen_protein_inventory.py   # GlyGen per-protein counts (API, cached)
 Rscript network/inventory/glygen_motrpac_inventory.R    # MoTrPAC phospho + GlyGen coverage tables
@@ -206,8 +243,9 @@ Rscript network/18_disease_modules.R          # disease filter vs overlay module
 Rscript network/18_option_c_graphical_modules.R  # option C: paper-style repfdr modules + direction concordance -> figure 18c
 Rscript network/18_option_bc_hybrid.R         # hybrid B + C: structural modules + paper-style disease test -> figure 18d
 Rscript network/19_t2d_stories.R              # three T2D stories, endurance vs resistance -> figures 19a / 19b / 19c
-bash network/20_fetch_disease_sets.sh         # once: published disease tables (Kjærgaard 2025, Needham 2024, Larsen 2023)
-Rscript network/20_disease_chunks.R           # best story per chunk (old T2D, new T2D, ageing) -> figures 20a / 20b / 20c
+bash network/20_fetch_disease_sets.sh         # once: published disease tables (Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024)
+Rscript network/20_disease_chunks.R           # best story per chunk (old T2D, new T2D, ageing) -> figures 20a-e
+Rscript network/21_story_figure.R             # Figure 1: the whole story on one page -> $HACK_FIG, network/docs/figures
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
@@ -250,7 +288,9 @@ Rscript network/99_manifest.R                 # fingerprints every output and co
 | 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
 | 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
 | 19 | `19_t2d_node_tests.csv`, `19_t2d_subgraph_tests.csv`, `19_t2d_components.csv`, `19_t2d_phosphosites.csv`, `19_t2d_story_nodes.csv`, `reports/19_t2d_stories.md`; `$HACK_FIG/19a_t2d_small_subgraph.png`, `19b_t2d_connector_subgraph.png`, `19c_t2d_protein_level.png` (not committed) | reversal tests per T2D set × node set × tissue; subgraph tests per story; story-1 pieces; responding muscle phosphosites of the T2D proteins; every story node with T2D values, responses per tissue and best muscle cell; the three figures (minimal PTM tags as in step 17) |
-| 20 | `20_disease_scores.csv`, `20_tests.csv`, `20_subgraph_tests.csv`, `20_stories.csv`, `reports/20_disease_chunks.md`; `$HACK_FIG/20a_all_disease_tests.png`, `20b_new_t2d_story.png`, `20c_ageing_story.png` (not committed) | disease direction per set × protein / site; reversal tests per set; connector subgraph tests; the chosen story per chunk; the three figures |
+| 20 | `20_disease_scores.csv`, `20_tests.csv`, `20_subgraph_tests.csv`, `20_stories.csv`, `reports/20_disease_chunks.md`; `$HACK_FIG/20a_all_disease_tests.png`, `20b_new_t2d_story.png`, `20c_ageing_story.png`, `20d_new_t2d_muscle_pooled.png`, `20e_ageing_muscle.png` (not committed) | disease direction per set x protein / site; reversal tests per set; connector subgraph tests; the chosen story per chunk; the five figures |
+| 21 | `$HACK_FIG/fig1_story.png` / `.pdf`; `network/docs/figures/fig1_story.png` (committed) | Figure 1, the whole story on one page |
+| M | `network/docs/figures/fig_method_hard_soft_edges.png` / `.pdf` (committed) | the method figure, computed by the engine from its toy example |
 | 18 | `18_t2d_class_summary.csv`, `18_t2d_species.csv`, `18_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
@@ -849,36 +889,65 @@ abundance, so the phosphosite tags cannot be oriented to T2D. Direction matches 
 adults and T2D are not evidence of treatment. Tables: `19_t2d_node_tests.csv`, `19_t2d_subgraph_tests.csv`,
 `19_t2d_components.csv`, `19_t2d_phosphosites.csv`, `19_t2d_story_nodes.csv`; report `reports/19_t2d_stories.md`.
 
-**Step 20 — the best endurance-vs-resistance story per disease chunk (figures 20a / 20b / 20c).** Three chunks of
-published human disease data from tissues we measure, each run through the **same** pre-specified tests as step 19,
+**Step 20 — the best endurance-vs-resistance story per disease chunk (figures 20a-e).** Three chunks of published
+human disease / ageing data from tissues we measure, each run through the **same** pre-specified tests as step 19,
 with the story per chunk chosen by a fixed rule (smallest endurance − resistance p among the chunk's primary sets).
-**Old T2D:** Amar et al. 2024 muscle sets (Öhman 2021, Chae 2018). **New T2D:** Kjærgaard et al. 2025 (*Cell*; T2D
-vs normal glucose tolerance, muscle proteome and phosphoproteome, discovery 77 + validation 46 people; supplementary
-Table S1), Needham et al. 2024 (*Cell Metab*; insulin-resistant vs insulin-sensitive muscle proteome, Table S3C; their
-phosphosite table has no direction for this contrast and is not used), Larsen et al. 2023 (*Sci Adv*; subcutaneous
-adipose, T2D vs lean before training, regenerated from the authors' cleaned matrix with their limma model; the matrix
-is already batch-corrected, so the batch term is dropped). **Ageing:** Ubaida-Mohien et al. 2019 (*eLife*; vastus
-lateralis proteome, healthy adults aged 20–87; proteins associated with age). Tests: **A** reversal per arm and
-EE − RE over the altered proteins in the matching tissue (muscle or adipose), and for phosphosite sets over the
-altered sites matched to MoTrPAC muscle phosphosites (protein + residue, singly phosphorylated forms); **B** the
-connector subgraph (as step 19). Downloads: `20_fetch_disease_sets.sh` (Elsevier supplementary files; the Larsen
-repository at a pinned commit; cached, fingerprinted by step 0).
+**Old T2D:** Amar et al. 2024 muscle sets (Öhman 2021, Chae 2018). **New T2D:** Kjærgaard et al. 2025 (*Cell*; T2D vs
+normal glucose tolerance, muscle proteome and phosphoproteome, discovery 77 + validation 46 people; Table S1),
+Needham et al. 2024 (*Cell Metab*; insulin-resistant vs -sensitive muscle proteome, Table S3C; its phosphosite table
+has no direction for this contrast and is not used), Larsen et al. 2023 (*Sci Adv*; subcutaneous adipose, T2D vs lean,
+regenerated from the authors' cleaned matrix with their limma model; the matrix is already batch-corrected, so the
+batch term is dropped) and the **UK Biobank** plasma proteome (Gadd et al. 2024, *Nat Aging*: age-adjusted Cox hazard
+ratio of each of 1,468 Olink proteins for **incident T2D**, 47,600 people; z from the confidence interval). **Ageing:**
+Ubaida-Mohien et al. 2019 (*eLife*; vastus lateralis proteome, adults aged 20–87) and, scaled up, the **UK Biobank**
+plasma proteome (Sun et al. 2023, *Nature*, Supplementary Table 5: each protein's association with **age**, ~54,000
+people, 2,729 proteins; z = beta / SE). Readout = the tissue the disease data come from: muscle, adipose, or — for
+the UK Biobank plasma sets — our **blood protein** cells, which are the same Olink platform. "Altered" = p < 0.05, or
+the paper's own Bonferroni threshold for the UK Biobank sets (1.7e-5 age, 3.1e-6 incident T2D), where p < 0.05 would
+flag nearly every protein at n ~ 50,000. Tests: **A** reversal per arm and EE − RE over the altered proteins (and, for
+phosphosite sets, over the altered sites matched to MoTrPAC muscle phosphosites); **B** the connector subgraph.
+Downloads: `20_fetch_disease_sets.sh` (publishers' public servers; the Larsen repository at a pinned commit; cached,
+fingerprinted by step 0).
 
 | Chunk | Story (chosen by the rule) | Endurance vs resistance | Other sets in the chunk |
 |---|---|---|---|
-| **Old T2D** | Öhman 2021, protein level (muscle, 68 proteins) | endurance reverses T2D (0.31, p 0.012), resistance does not (−0.07); **difference p 0.007**; connector subgraph more connected than chance (p 0.042) | Chae 2018: same direction, n.s. |
-| **New T2D** | Kjærgaard 2025, both cohorts pooled per protein (Stouffer's z; **post hoc**), protein level (muscle, 37 proteins) | **difference 0.38, p 0.0073** — the gap comes from **resistance moving proteins in the T2D direction** (−0.30, p 0.067), endurance near 0 (0.08) | discovery alone 0.45 (p 0.039) but validation alone 0.04 (p 0.80); Needham insulin-resistant: resistance 0.31 (p 0.078), endurance 0.08, difference −0.23 (p 0.20); Larsen adipose and both phosphosite sets n.s.; no connector subgraph beyond chance |
-| **Ageing** | Ubaida-Mohien 2019, protein level (muscle, 124 proteins) | endurance 0.09 vs resistance −0.08, **difference p 0.08 (trend, n.s.)**; connector subgraph not beyond chance (p 1.0) | — |
+| **Old T2D** | Öhman 2021, muscle protein (68 proteins) | endurance reverses T2D (0.31, p 0.012), resistance does not (−0.07); **difference p 0.007**; connector subgraph more connected than chance (p 0.042) | Chae 2018: same direction, n.s. |
+| **New T2D** | **UK Biobank incident T2D, plasma protein** (297 proteins; blood readout) | **resistance reverses** (0.38, p < 0.001), endurance does not (0.01, p 0.90); **difference −0.38, p < 0.001** | muscle: Kjærgaard both cohorts pooled (post hoc) +0.38, p 0.0073 (resistance moves proteins toward T2D, −0.30); discovery alone p 0.039, validation alone p 0.80; Needham insulin-resistant: resistance 0.31 (p 0.078), difference n.s.; Larsen adipose and both phosphosite sets n.s. |
+| **Ageing** | **UK Biobank age, plasma protein** (293 proteins; blood readout) | **resistance reverses** (0.47, p < 0.001), endurance less (0.15, p 0.013); **difference −0.32, p < 0.001** | muscle ageing (Ubaida-Mohien): endurance 0.09 vs resistance −0.08, difference p 0.08 (trend) |
 
-Across the T2D chunks the endurance − resistance gap has the same sign and size in the old sets and in the pooled
-new cohorts; pooling all three T2D muscle cohorts (Öhman + Kjærgaard × 2; post hoc) gives 0.36 (p 0.014).
-**Read with care.** The pooled sets were added after the Kjærgaard discovery result was not reproduced by its
-validation cohort; they are labelled post hoc everywhere. Only ~30 Kjærgaard phosphosites match MoTrPAC muscle
-phosphosites, so the site-level tests have little power. Direction matches between acute exercise in healthy
-adults and a disease (or age) are not evidence of treatment. Tables: `20_disease_scores.csv`,
-`20_tests.csv`, `20_subgraph_tests.csv`, `20_stories.csv`; report `reports/20_disease_chunks.md`.
+**The pattern across tissues.** Tissue-matched, the arm that moves disease-linked proteins back differs by tissue:
+endurance in muscle (T2D proteome; replicated in sign and size by the pooled Kjærgaard cohorts), resistance in blood
+(the plasma proteins of future T2D and of ageing, UK Biobank). Pooling all three T2D muscle cohorts (post hoc)
+gives +0.36 (p 0.014). **Read with care.** Pooled sets were added after the Kjærgaard discovery result was not
+reproduced by its validation cohort and are labelled post hoc everywhere. The blood comparison relates plasma
+associations measured at rest in a population to the acute exercise response in blood; a uniform shift of all
+plasma proteins (e.g. plasma-volume change) cannot drive a rank correlation, but shifts in blood cell composition
+could contribute. Only ~30 Kjærgaard phosphosites match MoTrPAC muscle phosphosites, so the site-level tests have little
+power. Direction matches between acute exercise in healthy adults and disease / age are not evidence of treatment.
+Tables: `20_disease_scores.csv`, `20_tests.csv`, `20_subgraph_tests.csv`, `20_stories.csv`; report
+`reports/20_disease_chunks.md`.
 
-**Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
+**Step 21 — Figure 1.** One page in the MoTrPAC landscape-paper style (`network/R/figure_style.R`: small Helvetica
+type, lower-case bold panel tags, descriptive titles; claims live in the text and captions): (a) the muscle discovery,
+(b) the T2D connector subgraph coloured by arm-specific edges (the engine's rule), (c, d) the UK Biobank blood tests,
+(e) every tissue-matched test grouped by readout tissue. No new statistics: every number comes from steps 14, 19, 20.
+
+**The network engine (`network/engine/`, R package `exnet`).** The rule "physical link decides whether, dot product
+decides how strong" is implemented once, as a small, typed, tested package: three S4 classes with validity rules —
+`Embedding` (one arm's response vectors; names unique, no infinite values, missing values only as whole empty
+dimensions), `PhysicalEdges` (undirected, no self-loops or duplicates, every edge names its database) and
+`WeightedNetwork` (w_diff must equal w_EE − w_RE) — the builders `embedding()`, `physical_edges()`, `double_embedding()`
+(metabolite vectors into the gene dimension space, leaving dimensions no gene has empty), `bind_embeddings()`,
+`build_network()`, `combine_networks()`, and the readers `edge_table()`, `node_strength()` and
+`arm_specific_edges()`. Every public function asserts its inputs (checkmate) and raises **classed errors**
+(`exnet_input_error`, `exnet_arm_error`, `exnet_dimension_error`, `exnet_missing_node_error`) that say what is wrong.
+**25 tests** (`engine/run_tests.R`, run by `run_all.sh` step 14t): a five-protein + one-metabolite toy example whose
+weights were computed by hand (and which drives the method figure), the hard gate, arm-specific edges, node strength,
+every bad-input path, and a regression test showing the engine **reproduces all 704 joint-network edge weights of step
+14 to within 1e-12**. Writing it caught one real subtlety: the doubled metabolite vector has values in the two
+adipose-protein slots that no gene has; the pipeline skipped them implicitly, the engine now does it explicitly.
+
+**Step 17 — interactive networks and Cytoscape files.** (New: an **"arm-specific edges only"** switch colours edges that are strong — top N% of |w| over both arms, adjustable, default 25% — after endurance only red and after resistance only blue, fading edges strong in both or neither, with live counts; joint network at 25%: 39 endurance-only vs 96 resistance-only edges.) Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
 figures). Each network (mnet inputs — joint: 353 nodes / 704 edges, class-grouped layout of 15a / 15b; genes:
 286 / 434, layout of 10a / 11a; metabolites: 40 / 143, layout of 10b / 11b) becomes one self-contained HTML page
@@ -961,7 +1030,7 @@ and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **40 hard checks** (table
+**Three layers of proof, all run by `bash network/run_all.sh`:** (1) the **engine tests** (25; step 14t, below); (2) `network/99_validate_outputs.R`, **44 hard checks** plus the headline numbers; (3) the **reproducibility manifest** (136 outputs, byte for byte). The validator's checks cover: table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
@@ -978,14 +1047,38 @@ product of the node vectors; normalised values within −1..+1 with each ome's e
 | Gene hubs (Tukey) / hubs by the El-Kebir rule in any network | 13 / 0 |
 | Joint network edges / cor(w_EE, w_RE) of metabolite–protein edges | 704 / 0.232 |
 | Metabolite classes on the joint network | 9 |
+| Hub (highest summed edge weight), joint network | SRC |
+| Muscle T2D (Öhman, all 471): endurance − resistance reversal p | 0.0088 (step 19) |
+| T2D connector subgraph: nodes / connectivity p | 42 / 0.039 (step 19) |
+| New T2D, Kjærgaard pooled (post hoc): p | 0.0073 (step 20) |
+| UK Biobank plasma: resistance reversal, age / incident T2D | 0.47 / 0.38 (step 20) |
 
-**Reproducibility check (2026-09-26).** `network/99_manifest.R` fingerprints every output (96 files: all
+**Small test dataset with expected output (the engine's toy example).** `exnet::toy_example()` holds five proteins
+(A-E) and one metabolite (M) with four response dimensions, five physical edges (four STRING, one Rhea) and
+**hand-computed expected weights**; the test suite checks the engine against them and the method figure is drawn
+from them:
+
+| edge | database | w_EE (by hand) | w_RE (by hand) | arm-specific at tau = 0.3 |
+|---|---|---|---|---|
+| A - B | STRING | 0.6·0.5 + 0.4·0.5 + 0.1·0 + 0·0.1 = **0.50** | **0.38** | both |
+| B - C | STRING | **−0.13** | **−0.12** | neither |
+| A - C | STRING | **−0.13** | **0.10** | neither |
+| C - D | STRING | **−0.19** | **0.38** | resistance-specific |
+| M - D | Rhea (M doubled to 4 values) | **0.46** | **−0.09** | endurance-specific |
+| A - E | none | (0.57, but **no edge**: the hard gate) | — | — |
+
+```bash
+Rscript network/engine/run_tests.R      # expected: "defensive: ............. pipeline: ... toy: ........." and DONE
+```
+
+**Reproducibility check (2026-09-26).** `network/99_manifest.R` fingerprints every output (136 files: all
 tables, figures, the PDF and the interactive pages) and compares them with a reference run. Two complete runs of
-`network/run_all.sh` from step 0 gave **96 of 96 byte-identical files**. What makes this hold: fixed seeds for every
+`network/run_all.sh` from step 0 gave **all byte-identical files** (136 of 136 on 2026-09-26, after the final changes). What makes this hold: fixed seeds for every
 layout, community detection and label placement (with a fixed iteration budget, since ggrepel's default 0.5-s time
 limit made label positions depend on CPU load), fixed widget IDs in the HTML pages, a fixed build date for the
 LaTeX PDF (`SOURCE_DATE_EPOCH`), and cached online inputs (step 1c lookups, Rhea, GlyGen) fingerprinted in
-`network/ENVIRONMENT.md`. **Known failure modes:** a missing `MNET_DIR` or GlyGen cache stops the dependent steps
+`network/ENVIRONMENT.md`. **Known failure modes:** on a fresh clone without the legacy STRING file, step 8 (a legacy-input comparison report)
+is skipped with a message and everything else runs; a missing `MNET_DIR`, `DISEASE_EXT` or GlyGen cache stops the dependent steps
 with a message; refreshing online lookups (`REFRESH_ONLINE=1`) or a new GlyGen / mnet release changes inputs and
 therefore outputs (the manifest shows which); different package versions (see `ENVIRONMENT.md`) can change figure
 rendering even when tables are identical.
@@ -1086,49 +1179,46 @@ benefit; our week-1 disease-mirror work also found the T2D mirror did not surviv
 **Repository layout**
 
 ```
-README.md                  challenge description (organisers)
+README.md                  project landing page (story, figures, how to run) + the organisers' track brief
 LICENSE                    MIT
 network/
-  README.md                this document
-  run_all.sh               one command: every step in order, validation, reproducibility manifest
+  README.md                this document (full documentation, 8-part standard)
+  run_all.sh               ONE command: every step in order, engine tests, validation, reproducibility manifest
   ENVIRONMENT.md           software versions and input fingerprints of the committed results (written by step 0)
+  engine/                  THE NETWORK ENGINE (R package exnet): hard x soft edge rule, typed S4 classes with validity
+    R/                       errors.R (classed errors) · classes.R · build.R (builders) · methods.R (readers) · toy.R
+    tests/testthat/          25 tests: toy example by hand, bad inputs, exact reproduction of the step 14 network
+    run_tests.R              runs the tests from source (run_all.sh step 14t)
+  R/figure_style.R         shared figure theme and palettes (MoTrPAC landscape-paper style)
+  docs/                    make_method_figure.R + figures/ (committed PNGs shown in the READMEs: Fig. 1, method figure)
   00_environment.R         step 0   records versions and fingerprints of external inputs
-  01_node_embeddings.R     step 1   gene nodes
-  01b_metabolite_embeddings.R  step 1b  metabolite nodes
-  01c_metabolite_ids.py    step 1c  metabolite IDs (ChEBI etc.)
+  01_node_embeddings.R     step 1   gene response vectors (SOFT layer)
+  01b_metabolite_embeddings.R  step 1b  metabolite response vectors
+  01c_metabolite_ids.py    step 1c  metabolite IDs (ChEBI etc.; typed Python)
   01d_metabolite_classes.py    step 1d  metabolite class counts
-  02_string_edges.R        step 2   STRING edges
-  03_edge_weights.R        step 3   per-arm edge weights
-  05_rhea_metabolite_protein.R  step 5  metabolite-protein links (Rhea)
+  02_string_edges.R        step 2   STRING edges (HARD layer)
+  03_edge_weights.R        step 3   per-arm edge weights (dot products)
+  05_rhea_metabolite_protein.R  step 5  metabolite-protein links (Rhea; HARD layer)
   06_metabolite_network.R  step 6   metabolite networks
-  07_hub_report.R          step 7   hubs: highest summed edge weight (gene, metabolite, joint networks); runs after 14
-  08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
-  10_plot_arm_networks.R   step 10  figures of the EE vs RE networks (written outside the repo)
-  11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)
-  12_normalization_comparison.R  step 12  four normalisation options compared (report only)
-  13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
-  14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
-  15_joint_network_classes.R     step 15  joint network with metabolites grouped by class (figures 15a / 15b)
-  16_annotated_networks.R        step 16  15b with PTM tags: MoTrPAC phospho (16a), glycosylation (16b), both + crosstalk (16c)
-  17_filter_stats.R              step 17  statistics, modules (CAMERA-PR) and annotation layers for the pages
-  17_interactive_networks.R      step 17  interactive pages of all three networks + Cytoscape files
-  inventory/                     which MoTrPAC phospho + GlyGen (human) data exist for the 471 proteins / 450
-                                 metabolites (planning the next graph layers); README.md has the results
-  neo4j/                         Neo4j graph of the networks for the visualiser: export_neo4j.R, import.cypher,
-                                 queries.cypher, run_local_neo4j.sh, README.md (graph model, key-file map)
-  18_t2d_lipid_classes.R         step 18  T2D-relevant lipid classes per arm (tables behind section 7b)
-  18_disease_modules.R           step 18d disease-filtered vs disease-overlaid modules (Amar 2024 disease sets), figures 18a / 18b
-  18_option_c_graphical_modules.R  step 18c option C: modules + disease links as in Amar et al. 2024 (repfdr, graphical sets), figure 18c
-  18_option_bc_hybrid.R          step 18bc hybrid: option-B modules + option-C disease test, figure 18d
-  19_t2d_stories.R               step 19  three T2D stories on the 68 T2D-altered proteins (pieces, connector subgraph, protein level + PTM tags): EE vs RE, figures 19a-c
-  20_fetch_disease_sets.sh       step 20f downloads the published disease tables (Elsevier supplementary files; Larsen repo at a pinned commit)
-  20_disease_chunks.R            step 20  best EE-vs-RE story per disease chunk (old T2D, new T2D, ageing), figures 20a-c
-  resource/
-    README.md              how to regenerate the feature lists, and their columns
-    export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
-  99_validate_outputs.R    checks (36 hard checks + headline numbers)
+  07_hub_report.R          step 7   hubs: highest summed edge weight (runs after 14)
+  08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments (legacy inputs; skipped without them)
+  10_plot_arm_networks.R … 16_annotated_networks.R   steps 10-16  figures (arms, differences, classes, PTM tags)
+  17_filter_stats.R, 17_interactive_networks.R       step 17  interactive pages, modules, arm-specific edges, Cytoscape
+  18_*.R                   step 18  disease-module approaches (Amar 2024 disease sets), figures 18a-d
+  19_t2d_stories.R         step 19  three T2D stories (pieces, connector subgraph, protein level + PTM tags)
+  20_fetch_disease_sets.sh step 20f downloads the published disease / ageing tables (pinned sources)
+  20_disease_chunks.R      step 20  the same tests on every tissue-matched disease / ageing set, figures 20a-e
+  21_story_figure.R        step 21  Figure 1
+  inventory/, resource/    MoTrPAC phospho + GlyGen inventory; shareable feature lists
+  neo4j/                   Neo4j graph export for the team's visualiser (maintained by teammates)
+  interaction_db/          the team's multi-omic interaction resource build (mnet; STRING + Rhea + PTM)
+  99_validate_outputs.R    44 hard checks + headline numbers
   99_manifest.R            reproducibility: output fingerprints compared with a reference run
 ```
+
+Scripts keep flat, numbered names on purpose: the step number is the run order, and teammates' tools (neo4j/)
+reference these paths. Data and figures are written outside the repository (only the two documentation figures
+are committed).
 
 Every script is commented line by line in plain language, with a header covering what it does, the
 upstream QC, our filtering, methods, references and tools. Outputs are written outside the repo.
@@ -1139,18 +1229,37 @@ Please also cite MoTrPAC, STRING and the methods above.
 
 **Roadmap / next steps**
 
-1. Rerun steps 2–3 (and 10–11) on the second curated STRING file when it arrives.
-2. Reinstate a test of arm differences against measurement noise (the removed bootstrap is in git
-   history), and compute the noise-only reference for r, to answer similar-vs-different.
-3. Consider weighting each dimension by its precision (value / SE) to gain power.
-4. Decide on hub removal (step 7 report); consider expanding Rhea's generic lipid entries to cover
-   lipid species (currently 44 of 450 metabolites are connected).
-5. Add the disease layer: the Track 1 brief asks each team to pick a single disease; this network work
-   is disease-agnostic so far.
+1. Test the blood result against blood cell composition (deconvolution covariates) and against a plasma-volume
+   control; repeat with the resting MoTrPAC baseline instead of the acute response.
+2. Replicate the muscle result in an independent T2D muscle proteome with a full table (the Kjærgaard validation
+   cohort alone did not reproduce it).
+3. Training (not a single bout): the same tests on MoTrPAC's training data when released.
+4. Reinstate a test of arm differences for individual edges against measurement noise (the removed bootstrap is in
+   git history); weight dimensions by precision (value / SE).
+5. Extend the universe beyond the OLINK-limited 471 proteins (most validated T2D muscle proteins are mitochondrial
+   and not in it).
 
-**Contributors and roles:** Vidal Arroyo — analysis design, direction, review. *TODO: add teammates.*
+**Contributors and roles** (from the repository history; teammates, please edit your line)
 
-**Honest roadblocks:** arm differences are currently untested; responses are near their noise level;
-the OLINK panel limits the gene set; the curated STRING file's release and processing are undocumented;
-metabolite edges rest on single shared enzymes, and several metabolite differences are driven by one
-strongly responding metabolite (inosine).
+| Who | Role |
+|---|---|
+| Vidal M. Arroyo (Stanford) | analysis design and direction; network pipeline, engine, disease analyses, figures, documentation |
+| Jimmy Zhen | repository set-up, Track 1 brief (root README), licence |
+| gandhimonil9823 | multi-omic interaction resource (`network/interaction_db`: STRING + Rhea + PTM annotation; the mnet edges the network uses) |
+| Team 2-PAC teammates | Neo4j visualiser (`network/neo4j/`), presentation |
+
+**Honest roadblocks**
+
+- The first disease approach we tried (disease-filtered vs disease-overlaid modules, step 18, including a re-creation
+  of Amar et al. 2024's graphical modules) was underpowered; we kept it documented and moved to tissue-matched tests.
+- The paper's heart and liver disease sets were dropped: comparing them with muscle / blood / adipose exercise
+  responses gives "significant" overlaps even between unrelated tissues.
+- An 8-protein two-study T2D consensus was too small for any test (smallest possible p 0.008); we returned to the
+  68 proteins significant in one study, with the second study as a check.
+- Kjærgaard 2025's validation cohort did not reproduce its discovery result; the pooled analysis is labelled post hoc.
+- Some publishers' servers block scripted downloads (PMC, Zenodo); we used the publishers' file servers and the
+  authors' GitHub at a pinned commit instead.
+- A code review found real bugs (a tyrosine mapping error, unmatched time points in a module control, a step that
+  needed a file only one laptop had); all fixed and re-validated (commit history).
+- Arm differences for individual edges are not tested against measurement noise; responses are near their noise level
+  for many molecules; the OLINK panel limits the protein set.
