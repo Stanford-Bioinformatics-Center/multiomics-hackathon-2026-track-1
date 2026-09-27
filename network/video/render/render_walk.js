@@ -113,13 +113,17 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
       } else { card.style.display = 'none'; center.style.display = 'block';
         center.querySelector('.t').textContent = i < 0 ? S.title : S.walk.join(' → ');
         center.querySelector('.s').textContent = i < 0 ? S.subtitle : 'TEAM 2-PAC · physical links, exercise-weighted'; }
-      // the dancer: its loop advances by BEATS (S.dancer.beats_per_loop per loop), so every step lands on a beat
-      if (S.dancer && M.dancerImgs.length) { const B = S.dancer.beats, nb = B.length;
+      // the dancer, played hit to hit: step k's hit frame is shown exactly on beat k (times steps_per_beat), and the
+      // frames between two hits are spread over the time between them, so the dance follows the song and never drifts
+      if (S.dancer && M.dancerImgs.length) { const B = S.dancer.beats, nb = B.length, D = S.dancer;
         let j = 0; while (j + 1 < nb && B[j + 1] <= t) j++;
+        const half = 0.5 / S.fps;                            // the video frame nearest a beat shows the hit itself
+        if (j + 1 < nb && B[j + 1] - t < half) { j++; }
         const span = j + 1 < nb ? B[j + 1] - B[j] : (B[nb - 1] - B[nb - 2]);
-        const pos = j + Math.max(0, Math.min(1, (t - B[j]) / span));
-        const L = S.dancer.beats_per_loop, u = ((pos % L) + L) % L / L;
-        const img = M.dancerImgs[Math.min(M.dancerImgs.length - 1, Math.floor(u * M.dancerImgs.length))];
+        const pos = Math.abs(t - B[j]) < half ? j : j + Math.max(0, Math.min(1, (t - B[j]) / span));
+        const H = D.hits, K = H.length, N = D.n_frames, s = pos * D.steps_per_beat;
+        const k = Math.floor(s + 1e-9), fr = s - k, a = H[((k % K) + K) % K], b = ((k % K) + K) % K + 1 < K ? H[((k % K) + K) % K + 1] : N;
+        const img = M.dancerImgs[Math.round(a + fr * (b - a)) % N];
         const cv = document.getElementById('mv-dancer'), ctx = cv.getContext('2d'); ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height); }
       if (i >= n && S.dancer && S.dancer.credit) center.querySelector('.s').innerHTML = 'TEAM 2-PAC · physical links, exercise-weighted<div style="font-size:0.62em;margin-top:0.6em;color:#888">' + S.dancer.credit + '</div>';
       const b = S.bars.findIndex(x => t >= x.start && t < x.end);
@@ -136,7 +140,7 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
     const n = await page.evaluate(async (files) => { const imgs = await Promise.all(files.map(f => new Promise((res, rej) => {
       const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('cannot load ' + f)); im.src = 'file://' + f; })));
       window.mv.dancerImgs = imgs; return imgs.length; }, spec.dancer.frames);
-    console.log(`  dancer: ${n} frames, ${spec.dancer.beats_per_loop} beats per loop, ${spec.dancer.beats.length} beats`);
+    console.log(`  dancer: ${n} frames, ${spec.dancer.hits.length} steps per loop, ${spec.dancer.steps_per_beat} step(s) per beat, ${spec.dancer.beats.length} beats`);
   }
 
   // ---- frames ------------------------------------------------------------------------------------------------------

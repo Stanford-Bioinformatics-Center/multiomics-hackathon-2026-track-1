@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from exvideo import align, audio, lyrics, walk  # noqa: E402
+from exvideo import align, audio, dancer, lyrics, walk  # noqa: E402
 from exvideo.errors import InputError, ModelError, WalkError  # noqa: E402
 from exvideo.network import Edge, Network  # noqa: E402
 
@@ -123,6 +123,39 @@ class AlignTests(unittest.TestCase):
         self.assertEqual(tl["intro"], 10.0)
         self.assertEqual(tl["segments"][0]["end"], tl["segments"][1]["start"])
 
+
+class DancerTests(unittest.TestCase):
+    """A synthetic bobbing block: two colour clips with a solid flash frame between; hits must be the bottoms of the bob."""
+
+    @staticmethod
+    def _gif():
+        import numpy as np
+        frames = []
+        for i in range(45):
+            f = np.zeros((60, 30, 4), np.uint8); y = int(round(20 + 8 * np.sin(2 * np.pi * (i - 2.5) / 10)))   # lowest at 5, 15, 25, ...
+            f[y:y + 20, 10:20] = (120, 120, 110, 255) if i < 30 else (130, 70, 65, 255)
+            frames.append(f)
+        flash = np.full((60, 30, 4), (0, 200, 0, 255), np.uint8)
+        return np.stack(frames[:30] + [flash] + frames[30:])
+
+    def test_clips_drop_flash_and_split_on_colour(self):
+        g = dancer.clips(self._gif())
+        self.assertEqual([len(c) for c in g], [30, 15])
+        self.assertNotIn(30, g[0] + g[1])                  # the flash frame is gone
+
+    def test_hits_and_seamless_even_loop(self):
+        a = self._gif()[:30, ..., 3] > 128
+        h = dancer.hits(a)
+        self.assertEqual(h, [5, 15, 25])
+        self.assertEqual(dancer.best_loop(a, h), (0, 2))   # two steps, end pose identical to the start pose
+
+    def test_despill_removes_green_fringe_only(self):
+        import numpy as np
+        px = np.array([[[90, 160, 80, 255], [120, 120, 110, 255], [0, 255, 0, 0]]], np.uint8)
+        out = dancer.despill(px)
+        self.assertEqual(out[0, 0].tolist(), [90, 90, 80, 255])
+        self.assertEqual(out[0, 1].tolist(), [120, 120, 110, 255])
+        self.assertEqual(out[0, 2].tolist(), [0, 255, 0, 0])   # fully transparent pixels untouched
 
 if __name__ == "__main__":
     unittest.main()
