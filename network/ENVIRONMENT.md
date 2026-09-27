@@ -1,6 +1,6 @@
 # Environment and input fingerprints
 
-Recorded by `network/00_environment.R` on 2026-09-26. Re-run it (or `network/run_all.sh`) and compare: the same
+Recorded by `network/00_environment.R` on 2026-09-27. Re-run it (or `network/run_all.sh`) and compare: the same
 versions and input checksums should give identical outputs (checked with `network/99_manifest.R`).
 
 ## Software
@@ -44,6 +44,8 @@ versions and input checksums should give identical outputs (checked with `networ
 | MotrpacHumanPreSuspensionData | 0.0.1.4 |
 | MotrpacHumanPreSuspension | 0.0.1.2 |
 | Matrix | 1.7.5 |
+| repfdr | 1.2.3 |
+| curl | 7.0.0 |
 
 ## External inputs (MD5 fingerprints)
 
@@ -60,7 +62,7 @@ versions and input checksums should give identical outputs (checked with `networ
 | team mnet resource (MNET_DIR) | proteins_ptm.csv | 1,626,004 | 2026-09-26 17:26 | cf772af47e699cd47ea5072b5f54839f |
 | team mnet resource (MNET_DIR) | README.md | 3,233 | 2026-09-26 17:26 | ab6a128f64b73a2d61f7ed98d819c72a |
 | legacy curated STRING file (STRING_PARQUET; used only with EDGE_SOURCE=legacy) | Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet | 585,329 | 2026-09-26 10:30 | 3a1fc7a9776d76553b8ac01cb152fdb3 |
-| Amar et al. 2024 disease proteomics sets, processed in Venus week 6 (DISEASE_SCORES; step 18d) | disease_scores.csv.gz | 995,726 | 2026-09-24 10:22 | d4a098ad84762f24f7f4335579b69420 |
+| Amar et al. 2024 disease proteomics sets, built by step 16d (DISEASE_SCORES; steps 17i-20) | 16d_disease_scores.csv.gz | 995,726 | 2026-09-27 12:10 | d4a098ad84762f24f7f4335579b69420 |
 | published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | MOESM3.xlsx | 7,733,778 | 2026-09-26 22:27 | e993d67cf5833b4c96fcc3780fb137d2 |
 | published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc1.xlsx | 10,851,954 | 2026-09-26 21:28 | f3a74f2cfbe065085921edffd5d39dc9 |
 | published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc2.xlsx | 12,975,402 | 2026-09-26 21:28 | f5c8604836d1b2577b7d7dbbbaa40781 |
@@ -77,7 +79,7 @@ versions and input checksums should give identical outputs (checked with `networ
 | published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc5.xlsx | 29,658,815 | 2026-09-26 21:28 | 89a190b3665c2dd50e2d487e34ff09ae |
 | published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc6.xlsx | 2,099,402 | 2026-09-26 21:28 | 77a87cbabeeda62adf19f127c3f99b33 |
 | published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | MOESM3.xlsx | 34,411,394 | 2026-09-26 22:28 | aeb2acdc5586034e91197658a10a7d70 |
-| Ubaida-Mohien 2019 muscle ageing proteome, Amar et al. repository copy (UBAIDA; step 20) | ubaida_mohien_ 2019_elife_stat.csv | 3,075,476 | 2026-08-05 20:59 | 2b48b6cb930d00dcaed765d3f8a9b74d |
+| Ubaida-Mohien 2019 muscle ageing proteome, Amar et al. repository copy (UBAIDA; step 20) | ubaida_mohien_ 2019_elife_stat.csv | 3,075,476 | 2026-09-27 12:08 | 2b48b6cb930d00dcaed765d3f8a9b74d |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | chebi_pH7_3_mapping.tsv | 3,099,222 | 2026-09-26 13:02 | adf14687a450d8366f9b364101202635 |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | rhea-kegg.reaction.gz | 1,556,033 | 2026-09-26 13:02 | 325907b498cfb6c89aa0fa6ff8605bab |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | rhea-release.properties | 53 | 2026-09-26 13:02 | 210aad03260f7186ef97170962e1666e |
