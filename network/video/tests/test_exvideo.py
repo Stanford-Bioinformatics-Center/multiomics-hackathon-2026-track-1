@@ -219,5 +219,34 @@ class CostumeTests(unittest.TestCase):
         self.assertGreater(len(ends), 0)
         self.assertAlmostEqual(ends.mean() / costume.UP, 24.0, delta=3.0)   # the knot is above the nose (2Pac: in front)
 
+class SunoBanTests(unittest.TestCase):
+    """Suno rejects artist / producer names and producer tags ("producer tag phosphate"): the list is in the prompt,
+    and every answer is checked; only the offending bars are rewritten."""
+
+    def _lyr(self, texts):
+        return {"title": "T", "suno_style": "g-funk", "personas": {"A": "the boss"}, "bars": [{"bar": i + 1, "node": "A", "text": t} for i, t in enumerate(texts)]}
+
+    def test_find_banned_whole_words_and_plurals(self):
+        hits = lyrics.find_banned(self._lyr(["Ten phosphates on file", "my phosphatase and pacman", "Snoop on the line"]), ["phosphate", "snoop", "pac"])
+        self.assertEqual(hits, [("bar 1", "phosphates"), ("bar 3", "Snoop")])
+
+    def test_prompt_carries_the_rules_and_list(self):
+        p = lyrics.build_prompt(["A", "B", "C", "D"], {})
+        self.assertIn("SUNO RULES", p); self.assertIn("phosphate", p.split("SUNO RULES")[1])
+        self.assertTrue(p.startswith(lyrics.PROMPT_TEMPLATE.format(walk="A -> B -> C -> D")))   # the team's words stay verbatim, first
+
+    def test_scrub_rewrites_only_offending_bars(self):
+        walk = ["A"]; old = lyrics.BACKENDS.get("cli")
+        answer = json.dumps({"title": "NEW", "suno_style": "x", "sections": [{"node": "A", "persona": "p", "bars": ["CHANGED 1", "fixed P-tag line", "CHANGED 3", "CHANGED 4"]}]})
+        saved = lyrics.BARS_PER_NODE
+        try:
+            lyrics.BACKENDS["cli"] = lambda prompt, model: answer
+            lyr = self._lyr(["keep one", "a phosphate line", "keep three", "keep four"])
+            out = lyrics.scrub(lyr, walk, "cli", "m")
+        finally:
+            lyrics.BACKENDS["cli"] = old
+        self.assertEqual([b["text"] for b in out["bars"]], ["keep one", "fixed P-tag line", "keep three", "keep four"])
+        self.assertEqual(out["title"], "T")
+
 if __name__ == "__main__":
     unittest.main()

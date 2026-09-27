@@ -25,6 +25,12 @@ the walk can still be finished, so every walk has exactly 4 different nodes (no 
 part 2 needs in `$HACK_OUT/video/<walk>/` and prints the exact part-2 command. Leave the song out of part 2 and it asks
 for it (drag it in) or waits for the next download.
 
+**Suno rejected a word?** ("Your lyrics contain producer tag phosphate - we don't reference specific artists")
+`python3 network/video/fix_lyrics.py <walk folder> phosphate` bans the word from now on (`exvideo/suno_banned.txt`)
+and rewrites only the bars that use it; everything else stays word for word, and the fixed lyrics are printed and put
+on the clipboard. Every new lyric run gets the banned list in its prompt (after the team's words, which stay
+verbatim) and is checked against it before it is shown; offending bars are rewritten automatically.
+
 **Just the rat, on any song:** `rat_dance.py` makes a video of the dancing rat stepping exactly on the beats of whatever
 song you give it (about 7 s for a 90 s song; no Node, no network data):
 
