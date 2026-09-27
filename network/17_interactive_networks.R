@@ -434,7 +434,8 @@ function(el, x, cfg) {
       val[n.id] = v; if (typeof v === "number") vals.push(v); });
     var vlim = q95(vals), vmax = Math.max.apply(null, vals.concat([1]));
     var smax = Math.max.apply(null, Object.keys(strength).map(function (k) { return strength[k]; }).concat([1e-9]));
-    var keep = null; if (st.focus) { keep = {}; st.focus.forEach(function (i) { keep[i] = true; net.getConnectedNodes(i).forEach(function (j) { keep[j] = true; }); }); }
+    // focus = the clicked node(s) + neighbours over VISIBLE edges only (hidden kinase / filtered edges do not count)
+    var keep = null; if (st.focus) { keep = {}; st.focus.forEach(function (i) { keep[i] = true; edges.get({ filter: function (e) { return !e.hidden && (e.from === i || e.to === i); } }).forEach(function (e) { keep[e.from] = true; keep[e.to] = true; }); }); }
     var thr = st.thr, fset = {}, tally = {}, cmpN = {EE: [0, 0], RE: [0, 0]}, tab = {EE: {"-1-1": 0, "-11": 0, "1-1": 0, "11": 0}, RE: {"-1-1": 0, "-11": 0, "1-1": 0, "11": 0}}; if (st.focus) st.focus.forEach(function (i) { fset[i] = true; });
     // 3. node styles + tooltips
     nodes.update(nAll.map(function (n) {
