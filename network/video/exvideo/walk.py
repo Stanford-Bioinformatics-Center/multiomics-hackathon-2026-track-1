@@ -36,6 +36,21 @@ def can_finish(node: str, visited: Sequence[str], left: int, net: Network) -> bo
                for v in (e.other(node) for e in net.neighbours(node)) if v not in visited)
 
 
+def always_finishes(node: str, visited: Sequence[str], left: int, net: Network) -> bool:
+    """Does EVERY walk from `node` (never revisiting a node) reach `left` more steps, whichever way it turns? True only
+    if there is at least one way on and no branch ever runs into a dead end within `left` steps."""
+    if left == 0:
+        return True
+    nxt = [e.other(node) for e in net.neighbours(node) if e.other(node) not in visited]
+    return bool(nxt) and all(always_finishes(v, (*visited, v), left - 1, net) for v in nxt)
+
+
+def robust_starts(net: Network, steps: int = 3) -> List[str]:
+    """The figure 17 nodes from which every walk of `steps` steps (no revisits) goes the full distance: no dead end in
+    any direction (stricter than walkable_starts, which needs only one full walk)."""
+    return [n for n in sorted(net.nodes) if always_finishes(n, (n,), steps, net)]
+
+
 def walkable_starts(net: Network, steps: int = 3) -> List[str]:
     """The figure 17 nodes a walk of `steps` steps to different nodes can start from (315 of the 353 for 3 steps)."""
     return [n for n in sorted(net.nodes) if can_finish(n, (n,), steps, net)]

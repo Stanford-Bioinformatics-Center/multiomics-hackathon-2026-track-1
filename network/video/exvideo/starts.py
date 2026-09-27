@@ -8,7 +8,8 @@ For each story, exactly as step 20 does: the set's "altered" proteins (its own p
 disease z (20_disease_scores.csv), and the exercise response = the mean of the story tissue's cells in the winning
 arm's node vectors (01_nodes_EE / RE.csv). A marker scores high when its disease change is large AND the winning arm
 moves it the OTHER way: score = -(z / sd z) x (response / sd response) over the set's altered proteins (> 0 =
-reversed). Only figure 17 nodes that can start a full 4-node walk are offered. The super list merges the stories: a
+reversed). Only ROBUST starts are offered: figure 17 nodes from which every 3-step walk (never revisiting a node)
+goes the full distance, whichever way it turns (walk.robust_starts). The super list merges the stories: a
 node in several stories is listed once, with every story it belongs to.
 """
 from __future__ import annotations
@@ -20,7 +21,7 @@ from typing import Dict, List
 
 from .errors import InputError
 from .network import Network
-from .walk import walkable_starts
+from .walk import robust_starts
 
 STORIES = [("T2D muscle", "ohman_2021", "muscle", "EE"),
            ("T2D blood", "gadd_2024_ukb_incident_T2D", "blood_prot", "RE"),
@@ -46,7 +47,7 @@ def _tissue_mean(rows: List[Dict[str, str]], tissue: str) -> Dict[str, float]:
 
 def story_markers(out: Path, net: Network, per_story: int = 6) -> List[Dict[str, object]]:
     """The top `per_story` walkable markers of each story (ranked by reversal score)."""
-    ok = set(walkable_starts(net))
+    ok = set(robust_starts(net))
     meta = {r["set"]: r for r in _rows(out / "20_disease_sets.csv")}
     ds = _rows(out / "20_disease_scores.csv")
     resp_rows = {a: _rows(out / f"01_nodes_{a}.csv") for a in ("EE", "RE")}
