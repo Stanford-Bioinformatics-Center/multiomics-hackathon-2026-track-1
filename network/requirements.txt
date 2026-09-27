@@ -13,5 +13,4 @@
 #   curl                                    step 20f (published disease tables)
 #   internet access                         first run only: steps 01c, 05, inv1, 20f (cached afterwards)
 #
-# Not part of the main pipeline: network/interaction_db (own requirements.txt / pyproject.toml) and
-# network/video (Node; package.json).
+# Not part of the main pipeline: network/interaction_db (own requirements.txt / pyproject.toml).

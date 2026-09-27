@@ -357,8 +357,6 @@ Reading tips:
 - **Say "more likely in endurance / resistance"**, not "stronger". The weights are signed, and an
   unlikely step can be a strongly negative relationship.
 
-**Turn a walk into lyrics:** the music video does this (`network/video/01_lyrics_from_walk.py`, which calls
-this walker; see `network/video/README.md`).
 
 ## 12. Validation
 

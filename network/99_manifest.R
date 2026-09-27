@@ -20,9 +20,6 @@ FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
 # every file under the two output folders, minus the excluded ones
 # (tables: every file; figures folder: only PNG, PDF, HTML and TeX files)
 f_out <- list.files(OUT, recursive = TRUE, full.names = TRUE)
-# (the music video folder is left out: its lyrics are written by a language model and its songs come from Suno, so reruns
-#  differ by design; every input of a video is saved next to it instead — see network/video/README.md)
-f_out <- f_out[!grepl(paste0("^", OUT, "/video/"), f_out, fixed = FALSE)]
 f_fig <- list.files(FIG, recursive = TRUE, full.names = TRUE, pattern = "\\.(png|pdf|html|tex)$")
 # Folders and file types that are skipped (logs, caches, archives, the teammates' neo4j export, the manifest itself).
 skip <- "(/logs/|/00_environment/|/glygen_cache/|/glygen_files/|/archive|/neo4j_import/|99_manifest|\\.(log|aux)$|/\\.DS_Store$)"

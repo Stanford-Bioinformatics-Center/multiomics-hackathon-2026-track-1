@@ -9,7 +9,7 @@
 #   Rscript network/requirements.R --check    # install nothing; only report missing / different versions
 # LIST MADE FROM: every library() / require() / pkg:: call in the scripts run_all.sh runs, the files they
 #   source (R/figure_style.R, engine/), and the engine's DESCRIPTION. Not included: network/interaction_db
-#   (its own requirements.txt) and network/video (Node; package.json) — run_all.sh does not use them.
+#   (its own requirements.txt) — run_all.sh does not use it.
 # ALSO NEEDED (not R packages; see network/requirements.txt): Python >= 3.9 (standard library only), curl,
 #   pandoc (steps 17i; ships with RStudio / Positron / Quarto), TinyTeX (step 13; installed below if missing).
 # =====================================================================================================

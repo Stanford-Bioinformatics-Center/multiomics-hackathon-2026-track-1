@@ -1,7 +1,0 @@
-{
-  "name": "exvideo-render",
-  "private": true,
-  "description": "Team 2-PAC music video: frame-by-frame fly-through of the figure 17 network page (puppeteer)",
-  "license": "MIT",
-  "dependencies": { "puppeteer": "23.11.1" }
-}

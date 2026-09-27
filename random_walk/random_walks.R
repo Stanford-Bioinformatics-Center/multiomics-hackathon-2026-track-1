@@ -39,7 +39,7 @@
 #      than 4 nodes.
 #      revisit = TRUE gives a plain random walk instead (it may step back,
 #      e.g. A -> B -> A -> B).
-#      Two additions (2026-09-27, for the music video):
+#      Additions (2026-09-27):
 #      - arm = "coin": a fair coin flip at EVERY step picks endurance or
 #        resistance weights for that step (the weights still favour the
 #        likely paths; the coin mixes the two arms).
@@ -219,7 +219,7 @@ can_finish <- function(node, visited, left, nbr = NBR) {
 #     call.
 #   within: NULL (default) = the whole network; or a set of node names the walk
 #     must stay inside (every node of the walk is one of them; used by the
-#     music video to keep walks on one story slide).
+#     story walks to keep a walk on one story slide).
 random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
                         revisit = FALSE, seed = NULL, max_tries = 1000,
                         lookahead = TRUE, within = NULL) {
