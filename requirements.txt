@@ -1,0 +1,78 @@
+# =====================================================================================================
+# requirements.txt — Python packages for the whole project (Team 2-PAC, Track 1)
+# =====================================================================================================
+#   python -m venv .venv
+#   .venv/bin/pip install -r requirements.txt          (Windows: .venv\Scripts\pip)
+#
+# Python 3.10 to 3.12. The interaction database needs 3.10+; on 3.13 numpy 1.26.4 has no prebuilt
+# wheel and would have to compile from source.
+#
+# Checked 2026-09-27: resolves for Python 3.10, 3.11 and 3.12; on 3.12 (Windows) every package
+# installs from a prebuilt wheel (dry run).
+#
+# Compiled 2026-09-27 from the dependency files the components already have, and checked against every
+# import in every .py and .ipynb file on all 5 branches. No version was invented: each line carries the
+# version its component declares. Where two components name the same package, the stricter one is kept
+# (pip does not accept a package twice).
+#
+# Not everything the project needs is a Python package: see "Not installed by pip" at the end.
+# =====================================================================================================
+
+# --- Shared ------------------------------------------------------------------------------------------
+numpy==1.26.4            # bic notebooks (pinned there); also network/video, which names no version
+pandas==2.2.3            # bic notebooks (pinned there); satisfies interaction_db's pandas>=2.0
+
+# --- Interaction database: network/interaction_db (its requirements.txt and pyproject.toml) -----------
+pyarrow>=12.0
+requests>=2.28
+tqdm>=4.60
+pyyaml>=6.0
+scikit-learn>=1.0        # scripts/score_investigation.py only
+rdflib>=6.0              # declared there; no file imports it directly
+SPARQLWrapper>=2.0
+pygoslin>=2.0
+networkx>=3.0
+pytest>=7.0              # its tests
+
+# --- Music video: network/video (versions from its setup.sh) ------------------------------------------
+faster-whisper==1.2.1    # syncs the lyrics to the song; downloads a ~0.5 GB model on first use
+pillow>=10
+
+# --- Exerkine notebooks: bic/, on branch differential_analysis only (its requirements.txt) ------------
+matplotlib==3.8.4
+nbformat==5.7.0
+nbclient==0.5.13
+ipykernel==6.19.2
+jupyter-client==7.4.8
+
+# =====================================================================================================
+# Not installed by pip
+# =====================================================================================================
+# Needs no Python packages (standard library only): the network pipeline's Python steps
+#   (network/01c_metabolite_ids.py, 01d_metabolite_classes.py, inventory/glygen_protein_inventory.py).
+#
+# R 4.4.3 with Bioconductor 3.20 — most of the project is R. Install commands: network/README.md,
+#   section 4. Versions below are the ones recorded in network/ENVIRONMENT.md.
+#     CRAN:          data.table 1.18.2.1, igraph 2.2.2, Matrix 1.7.5, nanoparquet 0.4.3, readxl 1.4.5,
+#                    jsonlite 2.0.0, curl 7.0.0, ggplot2 3.5.2, ggrepel 0.9.8, ggforce 0.5.0,
+#                    ggnewscale 0.5.2, patchwork 1.3.2, scales 1.4.0, visNetwork 2.1.4,
+#                    htmlwidgets 1.6.4, htmltools 0.5.9, rmarkdown 2.30, tinytex 0.58,
+#                    checkmate 2.3.4, testthat 3.3.2, pkgload 1.5.0
+#     Bioconductor:  limma 3.62.2, TMSig 1.0.0, fgsea 1.32.4
+#     GitHub:        MoTrPAC/MotrpacHumanPreSuspensionAnalysis 0.2.4 (the data)
+#     This repo:     exnet 1.0.0 (network/engine; loaded from source, no install needed)
+#     Loaded by scripts but not recorded in ENVIRONMENT.md, so no version is known:
+#                    repfdr (network/18_option_c_graphical_modules.R),
+#                    xml2 (data_scripts/rank_cfde_programs.R, branch diabetes_data),
+#                    dplyr (bic/motrpac-exploration/load_differential_analysis.R, branch differential_analysis)
+#     The bic/ analyses use a different release of the MoTrPAC package: 2.0.8.
+#
+# Node.js 22.5 — music video renderer: puppeteer 23.11.1 (network/video/render/package.json).
+#   Installed by: bash network/video/setup.sh
+#
+# System tools
+#     pandoc 3.10 and TinyTeX     network pipeline steps 13 and 17 (tinytex::install_tinytex())
+#     ffmpeg                      music video
+#     make                        interaction database
+#     Docker (optional)           local Neo4j 5: bash network/neo4j/run_local_neo4j.sh
+#     Claude Code, or ANTHROPIC_API_KEY    lyrics for the music video
