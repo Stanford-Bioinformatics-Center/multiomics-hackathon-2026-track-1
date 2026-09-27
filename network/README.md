@@ -122,7 +122,7 @@ flowchart LR
 | `ggforce`, `ggnewscale` | 0.5.0, 0.5.2 | steps 15-16 (class outlines; extra legend scales for the PTM tags) |
 | `limma`, `TMSig` (Bioconductor) | 3.62.2, 1.0.0 | step 17 module tests (MoTrPAC `run_cameraPR()` / `run_ORA()` need TMSig) |
 | `curl`, `rmarkdown`, `tinytex` | 7.0.0, 2.30, 0.58 | step 0 (GlyGen release lookup), pandoc detection, step 13 PDF |
-| `visNetwork`, `htmlwidgets`, `htmltools`, `jsonlite` + pandoc | 2.1.4, 1.6.4 | step 17 (interactive pages; pandoc ships with RStudio / Positron / Quarto) |
+| `visNetwork`, `htmlwidgets`, `htmltools`, `jsonlite` + pandoc | 2.1.4, 1.6.4, 0.5.9, 2.0.0 | step 17 (interactive pages; pandoc ships with RStudio / Positron / Quarto) |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
 | TinyTeX (R `tinytex`) | via `tinytex::install_tinytex()` | step 13 (compiles the LaTeX table to PDF) |
@@ -840,6 +840,24 @@ those columns; import with File > Import > Network from File, then Styles from F
 were loaded in a headless browser with every control exercised and no script errors; the .cyjs files load
 in the cytoscape.js library with no dangling edges and every node positioned; the style file is well-formed
 XML. **Not checked:** opening the files in Cytoscape desktop (not installed on the machine that made them).
+
+**How the step 17 pages are built (tools).** One R script, `17_interactive_networks.R`, writes every page; it is
+neither Cytoscape nor Neo4j. The browser does the drawing with the **vis-network** JavaScript library (version
+9.1.0, bundled inside the R package visNetwork), so each page is a single file that opens in any browser, offline.
+
+| Package (version) | Role in the pages |
+|---|---|
+| `visNetwork` (2.1.4) | R interface to vis-network: draws nodes and edges, zoom / drag / hover / click |
+| `htmlwidgets` (1.6.4) | writes the self-contained HTML (`saveWidget`, fixed widget IDs so reruns are byte-identical) and attaches our own JavaScript through `onRender` — the filters, weight recomputation, module panel, auto-generated legend, PTM tags and T2D layers all live in that script |
+| `htmltools` (0.5.9) | page layout: control bar, legend side panel, CSS |
+| `jsonlite` (2.0.0) | packs the page data (embeddings, per-cell statistics, phosphosites, modules, annotations, T2D) into JSON for the JavaScript |
+| `data.table` (1.18.2.1) | reads and joins the input tables |
+| pandoc | used by `saveWidget` to inline all libraries into one file |
+
+Inputs are all earlier outputs: node positions from steps 10 / 15, edges and weights from steps 3, 6 and 14,
+statistics, modules and annotations from `17_filter_stats.R`. The Cytoscape files (`.cyjs` + style XML) are
+written by the same script for use in Cytoscape desktop; the pages do not use Cytoscape. Page testing was done
+separately with headless Chrome driven by Puppeteer (Node.js); that test harness is not part of the pipeline.
 
 **Neo4j graph (`network/neo4j/`).** For the teammate building a Neo4j visualiser: `export_neo4j.R` writes
 the genes, metabolites, classes, contrasts, responses and all three edge types (with weights, evidence and
