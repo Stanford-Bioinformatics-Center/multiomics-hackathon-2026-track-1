@@ -34,6 +34,13 @@ words (a bar is ~2.6 s at 92 BPM, so the rapping takes ~45 s), personas are 2-4 
 for word. If Suno still returns a long take, the video step cuts it at 1:30 with a 3 s fade-out (`--max-seconds 90`,
 the default; `0` = never).
 
+**Respect and rhythm.** No gang, street-crime or drug-trade words or roles anywhere in the lyrics, personas, titles or
+video labels (`exvideo/respect_banned.txt`; personas are jobs or roles: the hub, the courier, the anchor), out of
+respect for people who come from those communities. Every bar is 10-16 syllables (one bar at 92 BPM) and each verse
+rhymes AABB or AAAA on the last word (checked on the vowel sound, so slant rhymes like block / pop pass), so Suno
+lands each line on the beat. Bars that break a rule are rewritten automatically; `fix_lyrics.py <folder>` applies the
+same rules to lyrics written earlier.
+
 **Suno rejected a word?** ("Your lyrics contain producer tag phosphate - we don't reference specific artists")
 `python3 network/video/fix_lyrics.py <walk folder> phosphate` bans the word from now on (`exvideo/suno_banned.txt`)
 and rewrites only the bars that use it; everything else stays word for word, and the fixed lyrics are printed and put

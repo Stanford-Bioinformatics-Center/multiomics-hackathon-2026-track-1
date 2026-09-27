@@ -72,7 +72,7 @@ class LyricsTests(unittest.TestCase):
     def test_prompt_is_verbatim(self) -> None:
         p = lyrics.build_prompt(["HYOU1", "HSP90B1", "CDC37", "SRC"], {"x": 1})
         self.assertTrue(p.startswith("give me 16 bars of 2pac rap lyrics which summarize the most interesting story from these 4 nodes: HYOU1 -> HSP90B1 -> CDC37 -> SRC."))
-        self.assertIn("I. HYOU1: the lookout", p)                    # the style example travels with it
+        self.assertIn("I. HYOU1: the first responder", p)           # the style example travels with it (neutral roles)
 
     def test_suno_text(self) -> None:
         w = ["A", "B", "C", "D"]
@@ -237,15 +237,19 @@ class SunoBanTests(unittest.TestCase):
 
     def test_scrub_rewrites_only_offending_bars(self):
         walk = ["A"]; old = lyrics.BACKENDS.get("cli")
-        answer = json.dumps({"title": "NEW", "suno_style": "x", "sections": [{"node": "A", "persona": "p", "bars": ["CHANGED 1", "fixed P-tag line", "CHANGED 3", "CHANGED 4"]}]})
+        answer = json.dumps({"title": "NEW", "suno_style": "x", "sections": [{"node": "A", "persona": "p", "bars": [
+            "changed line one that nobody should ever keep today", "Ten P-tags on the file and every one is on the clock,",
+            "changed line three that nobody should ever keep today", "changed line four that nobody should ever keep today"]}]})
         saved = lyrics.BARS_PER_NODE
         try:
             lyrics.BACKENDS["cli"] = lambda prompt, model: answer
-            lyr = self._lyr(["keep one", "a phosphate line", "keep three", "keep four"])
+            lyr = self._lyr(["Four hours after the whistle I'm the first one on the block,", "Ten phosphate spots on file and every one is on the clock,",
+                             "Endurance or the iron, either way my numbers climb,", "Only three lines on my phone but I'm the spark every time,"])
             out = lyrics.scrub(lyr, walk, "cli", "m")
         finally:
             lyrics.BACKENDS["cli"] = old
-        self.assertEqual([b["text"] for b in out["bars"]], ["keep one", "fixed P-tag line", "keep three", "keep four"])
+        self.assertEqual([b["text"] for b in out["bars"]], ["Four hours after the whistle I'm the first one on the block,", "Ten P-tags on the file and every one is on the clock,",
+                                                      "Endurance or the iron, either way my numbers climb,", "Only three lines on my phone but I'm the spark every time,"])
         self.assertEqual(out["title"], "T")
 
 class LengthTests(unittest.TestCase):
@@ -259,6 +263,25 @@ class LengthTests(unittest.TestCase):
     def test_prompt_has_length_rules(self):
         p = lyrics.build_prompt(["A", "B", "C", "D"], {})
         self.assertIn("LENGTH RULES", p); self.assertIn(f"at most {lyrics.MAX_WORDS} words", p)
+
+class RespectAndRhymeTests(unittest.TestCase):
+    """No gang / street-crime words (personas, bars, style); bars 10-16 syllables and AABB on the last word's vowel."""
+
+    def test_respect_words_caught(self):
+        lyr = {"title": "T", "suno_style": "90s gangsta rap", "personas": {"A": "the kingpin"}, "bars": [{"bar": 1, "node": "A", "text": "I run the block like a hub"}]}
+        where = [w for w, _ in lyrics.find_banned(lyr, lyrics.banned_terms("respect"))]
+        self.assertEqual(where, ["style", "persona A"])
+
+    def test_rhyme_and_syllables(self):
+        good = ["Four hours after the whistle I'm the first one on the block,", "Endurance or the iron, either way my numbers pop,",
+                "Six sugars on my jacket, N-linked, I stay dressed,", "Diabetes checked my papers and I passed the test,"]
+        bad = ["Thirty-four sugars on my coat and twenty-three are N-linked", "Years stack me higher but more of me keeps diabetes low",
+               "Weights hit and by four hours I dipped inside the blood", "One blue line"]
+        mk = lambda t: {"bars": [{"bar": i + 1, "node": "A", "text": x} for i, x in enumerate(t)]}
+        self.assertEqual(lyrics.find_rhythm(mk(good), ["A"]), [])
+        why = lyrics.find_rhythm(mk(bad), ["A"])
+        self.assertIn(("bar 4", "3 syllables"), why)
+        self.assertTrue(any("does not rhyme" in t for _, t in why))
 
 if __name__ == "__main__":
     unittest.main()

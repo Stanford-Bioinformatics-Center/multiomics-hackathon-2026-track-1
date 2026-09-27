@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # =====================================================================================================
-# video/fix_lyrics.py — SUNO REJECTED A WORD: ban it and rewrite only the bars that use it
+# video/fix_lyrics.py — FIX SAVED LYRICS: ban a word Suno rejected, and rewrite only the bars that break a rule
 # =====================================================================================================
 #
 # PURPOSE
@@ -8,8 +8,9 @@
 #   phosphate - we don't reference specific artists"). This script:
 #     1. adds the rejected word(s) to exvideo/suno_banned.txt, so every future lyric run avoids them too (the list goes
 #        into the prompt, and every answer is checked against it);
-#     2. asks Claude to rewrite ONLY the bars (or title / persona) that contain a banned word, keeping the meaning,
-#        facts, rhyme and rhythm; all other bars stay word for word;
+#     2. asks Claude to rewrite ONLY the bars (or title / persona) that break a rule — a Suno-banned word, a gang /
+#        street-crime word (respect_banned.txt), too long, or off the beat (10-16 syllables, AABB rhyme) — keeping the
+#        meaning and facts; all other bars stay word for word (lyrics written before a rule existed can be fixed too);
 #     3. saves the fixed lyrics (lyrics.json, suno_lyrics.txt, lyrics.md; the old lyrics.json is kept as
 #        lyrics_before_fix.json), prints them for Suno and copies them to the clipboard.
 #
@@ -52,12 +53,13 @@ def main(argv=None) -> int:
             print(f"banned from now on: {w}" if lyrics.add_banned(w) else f"already banned: {w}")
         rec = json.loads(f.read_text(encoding="utf-8")); walk = rec["walk"]
         lyr = {"title": rec.get("title", "Untitled"), "suno_style": rec.get("suno_style", ""), "personas": rec.get("personas", {}),
-               "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"]} for b in rec["bars"]]}
-        hits = lyrics.find_banned(lyr)
+               "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"], "rhyme": b.get("rhyme")} for b in rec["bars"]]}
+        pr = lyrics.problems(lyr, walk); hits = [x for v in pr.values() for x in v]
         if not hits:
-            print("no banned word in these lyrics; nothing to rewrite")
+            print("these lyrics follow every rule (Suno words, respect words, length, rhyme and rhythm); nothing to rewrite")
         else:
-            print("rewriting: " + ", ".join(f"{w} ({t})" for w, t in hits) + " ...")
+            print(f"rewriting {len({w for w, _ in hits})} parts (Suno words {len(pr['suno'])}, respect words {len(pr['respect'])}, "
+                  f"too long {len(pr['long'])}, off the beat {len(pr['rhythm'])}) ...")
             before = {b["bar"]: b["text"] for b in lyr["bars"]}
             lyr = lyrics.scrub(lyr, walk, args.backend, args.model)
             shutil.copy(f, dest / "lyrics_before_fix.json")
@@ -67,7 +69,7 @@ def main(argv=None) -> int:
             # the saved record keeps its other fields (seed, arm, model, timing if any); timing of changed bars is kept
             timed = {b["bar"]: b for b in rec["bars"]}
             rec.update(title=lyr["title"], suno_style=lyr["suno_style"], personas=lyr["personas"],
-                       bars=[{**timed[b["bar"]], "text": b["text"]} for b in lyr["bars"]])
+                       bars=[{**timed[b["bar"]], "text": b["text"], "rhyme": b.get("rhyme")} for b in lyr["bars"]])
             f.write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         suno = lyrics.suno_text(lyr, walk)
         (dest / "suno_lyrics.txt").write_text(suno + "\n", encoding="utf-8"); (dest / "suno_style.txt").write_text(lyr["suno_style"] + "\n", encoding="utf-8")

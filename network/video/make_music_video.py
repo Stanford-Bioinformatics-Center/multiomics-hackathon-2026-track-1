@@ -180,7 +180,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if saved is not None:
             print(f"[2/4] reusing the saved lyrics: {args.lyrics}"); t = time.time()
             lyr = {"title": saved.get("title", "Untitled"), "suno_style": saved.get("suno_style", ""), "personas": saved.get("personas", {}),
-                   "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"]} for b in saved["bars"]]}
+                   "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"], "rhyme": b.get("rhyme")} for b in saved["bars"]]}
         else:
             print(f"[2/4] writing the lyrics with Claude ({args.backend}, {args.model}) ...")
             t = time.time(); lyr = lyrics.write_lyrics(prompt, path, args.backend, args.model)
@@ -207,7 +207,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
 
         if args.stop_after_lyrics:                          # the two-sitting flow: the song comes back later (02_video_from_song.py)
             rec = {"walk": list(path), "seed": seed, "arm": args.arm if p_steps else None, "step_arms": step_arms, "title": lyr["title"], "suno_style": lyr["suno_style"],
-                   "personas": lyr["personas"], "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"]} for b in lyr["bars"]],
+                   "personas": lyr["personas"], "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"], "rhyme": b.get("rhyme")} for b in lyr["bars"]],
                    "model": args.model, "backend": args.backend}
             (dest / "lyrics.json").write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             here = os.path.relpath(HERE, Path.cwd())
