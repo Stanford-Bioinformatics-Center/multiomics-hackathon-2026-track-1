@@ -11,7 +11,7 @@
 #     repository fpm-cbmr/HIIT_adipose_project at a fixed commit: cleaned protein matrix, sample names, limma script)
 #   Supplementary files come from the publishers' public file servers (ars.els-cdn.com, static-content.springer.com); the GitHub files through `gh api`
 #   (needs the GitHub CLI) at the pinned commit, so a rerun gets identical bytes. Ubaida-Mohien et al. 2019 is read
-#   from the Amar et al. repository copy ($UBAIDA; see step 20) and is not downloaded here.
+#   from the Amar et al. repository copy that step 16f fetches ($UBAIDA; see step 20).
 # HOW TO RUN: bash network/20_fetch_disease_sets.sh      (run_all.sh step 20f; skipped when the files exist)
 # OUTPUTS: $DISEASE_EXT/<paper>/...  (not committed; fingerprinted by step 0)
 # =====================================================================================================

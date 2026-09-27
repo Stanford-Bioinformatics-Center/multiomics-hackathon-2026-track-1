@@ -13,9 +13,10 @@
 #   HACK_EXT [~/Desktop/output/hackathon-2026-track1/external/rhea]  Rhea cache
 #   MNET_DIR [~/Desktop/output/hackathon/resources/mo_annotation]   the team's mnet resource (edges, PTM)
 #   EDGE_SOURCE [mnet]  ("legacy" = the first curated STRING file + direct Rhea)
-#   DISEASE_SCORES [~/Desktop/output/week_6/_shared/disease_scores.csv.gz]  Amar et al. 2024 disease sets (steps 17i, 18d, 19, 20)
+#   AMAR_EXT [~/Desktop/output/hackathon-2026-track1/external/amar_2024]  Amar et al. 2024 disease tables (step 16f fetches, 16d builds)
+#   DISEASE_SCORES [$HACK_OUT/16d_disease_scores.csv.gz]  override the step 16d disease scores (steps 17i, 18d, 19, 20)
 #   DISEASE_EXT [~/Desktop/output/hackathon-2026-track1/external/disease]  published disease tables (step 20f / 20)
-#   UBAIDA [Amar et al. repository copy of Ubaida-Mohien 2019]  muscle ageing proteome (step 20)
+#   UBAIDA [$AMAR_EXT/disease_datasets/ubaida_mohien_ 2019_elife_stat.csv]  muscle ageing proteome (step 20; fetched by 16f)
 # ONLINE STEPS AND CACHES: step 1c queries RefMet / UniChem / PubChem (web services change over time), so it
 #   is skipped when its output exists unless REFRESH_ONLINE=1; step 5 downloads Rhea once into HACK_EXT; the
 #   inventory queries GlyGen once per protein and caches the answers (and GlyGen files) under
@@ -29,6 +30,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export HACK_OUT="${HACK_OUT:-$HOME/Desktop/output/hackathon-2026-track1/network}"
 export HACK_FIG="${HACK_FIG:-$HOME/Desktop/output/hackathon}"
+export AMAR_EXT="${AMAR_EXT:-$HOME/Desktop/output/hackathon-2026-track1/external/amar_2024}"
 export HACK_EXT="${HACK_EXT:-$HOME/Desktop/output/hackathon-2026-track1/external/rhea}"
 export MNET_DIR="${MNET_DIR:-$HOME/Desktop/output/hackathon/resources/mo_annotation}"
 export EDGE_SOURCE="${EDGE_SOURCE:-mnet}"
@@ -63,6 +65,8 @@ STEPS=(
   "inv2|Rscript $HERE/inventory/glygen_motrpac_inventory.R"
   "inv3|Rscript $HERE/inventory/export_phospho_features.R"
   "16|Rscript $HERE/16_annotated_networks.R"
+  "16f|bash $HERE/16f_fetch_amar_disease_sets.sh"   # Amar et al. 2024 disease tables (online; pinned commit; cached)
+  "16d|Rscript $HERE/16d_disease_scores.R"         # the disease scores steps 17i-20 read (built here, from 16f)
   "17s|Rscript $HERE/17_filter_stats.R"
   "17i|Rscript $HERE/17_interactive_networks.R"
   "18|Rscript $HERE/18_t2d_lipid_classes.R"
@@ -86,6 +90,8 @@ for s in "${STEPS[@]}"; do
   if [ "$running" = 1 ]; then
     if [ "$label" = "01c" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "$HACK_OUT/01c_metabolite_ids.csv" ]; then
       echo "[01c] skipped: cached web lookups in 01c_metabolite_ids.csv (REFRESH_ONLINE=1 to redo)"
+    elif [ "$label" = "16f" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "$AMAR_EXT/COMMIT_SHA" ] && [ "$(cat "$AMAR_EXT/COMMIT_SHA")" = "299e540ea2d2671df9cddbf883eaac90c1e7cb3a" ]; then
+      echo "[16f] skipped: cached Amar et al. disease tables in AMAR_EXT (REFRESH_ONLINE=1 to redo)"
     elif [ "$label" = "20f" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "${DISEASE_EXT:-$HOME/Desktop/output/hackathon-2026-track1/external/disease}/kjaergaard_2025_cell/mmc1.xlsx" ]; then
       echo "[20f] skipped: cached disease tables in DISEASE_EXT (REFRESH_ONLINE=1 to redo)"
     else

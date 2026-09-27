@@ -60,7 +60,7 @@
 #   $HACK_OUT/01_nodes_{EE,RE}.csv, 03_weighted_edges.csv, 10_layout_genes.csv   gene network
 #   $HACK_OUT/01b_metab_nodes_{EE,RE}.csv, 06_metabolite_edges.csv, 10_layout_metabolites.csv  metabolites
 #   $HACK_OUT/05_metabolite_protein_links.csv (Rhea reactions), 01c_metabolite_ids.csv (classes)
-#   $DISEASE_SCORES (Amar et al. 2024 disease sets, Venus week 6) for the T2D layers
+#   $DISEASE_SCORES (Amar et al. 2024 disease sets, step 16d) for the T2D layers
 #   $HACK_OUT/17_node_cell_stats.csv, 17_modules.csv, 17_module_camera.csv, 17_phospho_site_stats.csv,
 #     17_glygen_protein_annotation.csv   (from 17_filter_stats.R)
 #
@@ -159,10 +159,10 @@ NSTAT <- fread(file.path(OUT, "17_node_cell_stats.csv"))
 PHS <- fread(file.path(OUT, "17_phospho_site_stats.csv"))
 MODS <- fread(file.path(OUT, "17_modules.csv")); CAM <- fread(file.path(OUT, "17_module_camera.csv"))
 MNAME <- fread(file.path(OUT, "17_module_names.csv")); MORA <- fread(file.path(OUT, "17_module_ora.csv"))
-# T2D (Amar et al. 2024 disease sets; Venus week 6): Öhman 2021 muscle proteome (full table: log2 T2D / NGT, p) and
+# T2D (Amar et al. 2024 disease sets; step 16d): Öhman 2021 muscle proteome (full table: log2 T2D / NGT, p) and
 # Chae 2018 (significant proteins only). The pages show ONLY the consensus proteins below (the strongest, validated
 # signals); no measured T2D metabolite data exist in those sets, so metabolites carry no T2D direction.
-DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = file.path(Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network")), "16d_disease_scores.csv.gz"))
 T2D <- fread(cmd = sprintf("gzip -dc %s", shQuote(DISEASE_SCORES)))[set %in% c("ohman_2021", "chae_2018") & !is.na(p)][order(p)][!duplicated(paste(set, gene))]
 # T2D consensus: significant in BOTH studies (Öhman p < 0.05; Chae lists only significant proteins, FDR < 0.1) with the
 # same direction; genome-wide table for reuse (the pages send only these proteins)

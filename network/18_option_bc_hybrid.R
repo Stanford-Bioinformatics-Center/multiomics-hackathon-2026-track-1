@@ -42,7 +42,7 @@ suppressMessages({ library(data.table); library(ggplot2); library(ggrepel); libr
 # Folders and inputs (override with environment variables HACK_OUT, HACK_FIG, DISEASE_SCORES).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
 FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
-DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = file.path(Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network")), "16d_disease_scores.csv.gz"))
 # SEED keeps label placement repeatable; ALPHA = significance cut-off.
 SEED <- 20260926; ALPHA <- 0.05
 # Short display labels for the 9 disease sets.

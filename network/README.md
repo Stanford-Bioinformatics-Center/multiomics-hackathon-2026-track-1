@@ -201,7 +201,7 @@ tinytex::install_tinytex()                                  # step 13 PDF (once)
 | GlyGen (inventory, steps 16-17) | api.glygen.org and data.glygen.org, release 2.11.1, accessed 2026-09-26; answers cached under `$HACK_OUT/inventory/` | — |
 | Rhea (step 5) | downloaded automatically from ftp.expasy.org/databases/rhea/ on first run (release 142) | `HACK_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/rhea`) |
 | Published disease / ageing tables (step 20) | supplementary files of Kjærgaard 2025 (*Cell*), Needham 2024 (*Cell Metab*), Sun 2023 (*Nature*, UK Biobank), Gadd 2024 (*Nat Aging*, UK Biobank) from the publishers' public file servers, and Larsen 2023 (*Sci Adv*) from the authors' GitHub at a pinned commit; fetched once by `20_fetch_disease_sets.sh` (2026-09-26) | `DISEASE_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/disease`) |
-| Amar et al. 2024 disease sets (steps 17-20) | processed in the Venus project week 6 from the paper's repository (motrpac-rat-training-mitochondria); Ubaida-Mohien 2019 read from the same repository | `DISEASE_SCORES`, `UBAIDA` |
+| Amar et al. 2024 disease sets (steps 17-20) | fetched from the paper's repository (MoTrPAC/motrpac-rat-training-mitochondria, pinned commit; step 16f) and built by step 16d; Ubaida-Mohien 2019 read from the same repository | `DISEASE_SCORES`, `UBAIDA` |
 | Results folder | created by step 1 | `HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`) |
 
 Code and results are kept in separate trees: nothing is written inside the repo. That includes the
@@ -794,7 +794,7 @@ highlights only neighbours joined by a visible edge.
 
 **Step 18d — disease-filtered vs disease-overlaid modules (figures 18a / 18b).** Disease data: all 8 proteomics
 datasets (9 disease sets) of Amar et al. 2024 (*Cell Metab* 36:1411; doi 10.1016/j.cmet.2023.12.021), processed in
-the Venus project week 6 (`DISEASE_SCORES`; directions median-centred, rodent genes as human orthologs): T2D muscle
+step 16d (`DISEASE_SCORES`; directions median-centred, rodent genes as human orthologs): T2D muscle
 (Öhman 2021, full table; Chae 2018, significant proteins only), HCM heart (Coats 2018), heart failure rat heart
 (Havlenova 2021), MI mouse heart (Park 2019), NASH and cirrhosis liver (Niu 2022), NAFLD liver (Yuan 2020,
 significant only), ob/ob mouse liver (Stocks 2022). Approaches: **A** filter = proteins significant (p < 0.05) in

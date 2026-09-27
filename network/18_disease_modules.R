@@ -10,7 +10,7 @@
 #   judged against that paper's type 2 diabetes (T2D) muscle data, to propose which approach to use.
 #
 # WHAT THIS SCRIPT DOES (plain language)
-#   Disease data (the paper's 8 proteomics datasets, 9 disease sets, processed in the Venus project week 6:
+#   Disease data (the paper's 8 proteomics datasets, 9 disease sets, built by step 16d from the paper repository (was the Venus project week 6):
 #   directions median-centred, rodent genes as human orthologs): T2D muscle (Öhman 2021 full table; Chae 2018
 #   significant proteins only), HCM heart (Coats 2018), NASH and cirrhosis liver (Niu 2022), NAFLD liver (Yuan
 #   2020, significant only), ob/ob mouse liver (Stocks 2022), heart failure rat heart (Havlenova 2021), MI mouse
@@ -34,8 +34,8 @@
 #   After steps 14, 15, 17s:   Rscript network/18_disease_modules.R   (about 2 minutes; run_all.sh step 18d)
 #
 # DATA AND PROVENANCE
-#   Disease: $DISEASE_SCORES (default ~/Desktop/output/week_6/_shared/disease_scores.csv.gz, built by the Venus
-#   project week-6 code from the Amar et al. 2024 disease inputs; fingerprinted by step 0). Exercise:
+#   Disease: $DISEASE_SCORES (default $HACK_OUT/16d_disease_scores.csv.gz, built by step 16d in this repository
+#   from the Amar et al. 2024 disease inputs, fetched by step 16f; fingerprinted by step 0). Exercise:
 #   MotrpacHumanPreSuspensionAnalysis v0.2.4. Network: steps 14 / 15 (team mnet resource, STRING v12 >= 700).
 #
 # TECH STACK:  R 4.4; data.table, igraph, ggplot2, ggrepel, ggforce, patchwork, MotrpacHumanPreSuspensionAnalysis + TMSig.
@@ -66,7 +66,7 @@ suppressMessages({ library(data.table); library(igraph); library(ggplot2); libra
 # Folders and inputs (override with environment variables).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
 FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
-DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = file.path(Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network")), "16d_disease_scores.csv.gz"))
 # Make sure the reports sub-folder exists before anything is written to it.
 dir.create(file.path(OUT, "reports"), recursive = TRUE, showWarnings = FALSE)
 # Fixed seeds and thresholds.

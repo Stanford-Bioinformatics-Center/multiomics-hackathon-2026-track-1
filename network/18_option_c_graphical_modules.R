@@ -41,7 +41,7 @@
 #
 # DATA AND PROVENANCE
 #   Exercise: MotrpacHumanPreSuspensionAnalysis v0.2.4 (MUSCLE_TRNSCRPT_DA, MUSCLE_PROT_PR_DA, MUSCLE_METAB_DA,
-#   HUMAN_FEATURE_TO_GENE). Disease: $DISEASE_SCORES (Amar et al. 2024 disease sets, Venus week 6). repfdr 1.2.3.
+#   HUMAN_FEATURE_TO_GENE). Disease: $DISEASE_SCORES (Amar et al. 2024 disease sets, step 16d). repfdr 1.2.3.
 #   The paper's method was read from its saved graphical-analysis objects (graphical_analysis_results_20220126.RData),
 #   not its code.
 #
@@ -70,7 +70,7 @@ suppressMessages({ library(data.table); library(repfdr); library(igraph); librar
 # Folders and inputs (override with environment variables HACK_OUT, HACK_FIG, DISEASE_SCORES).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
 FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
-DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = file.path(Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network")), "16d_disease_scores.csv.gz"))
 # Fixed settings: SEED = repeatable randomness; ALPHA = significance cut-off; PRIOR_MASS = share of the prior kept (as the
 # paper's 86%); MIN_SET = smallest graphical set (features); MIN_NODES = smallest module (network nodes); N_PERM = random draws.
 SEED <- 20260926; ALPHA <- 0.05; PRIOR_MASS <- 0.86; MIN_SET <- 10L; MIN_NODES <- 5L; N_PERM <- 10000L

@@ -17,7 +17,7 @@
 #
 # WHAT THIS SCRIPT DOES (plain language)
 #   T2D direction per protein: Öhman 2021 muscle proteome (full table; log2 T2D / normal glucose tolerance, p) and
-#   Chae 2018 (published significant proteins only), as processed in the Venus project week 6; signed z from the
+#   Chae 2018 (published significant proteins only), as built by step 16d; signed z from the
 #   p-value (sign from the log2 change), exactly as step 18. "T2D-altered" = Öhman p < 0.05 (Chae: listed).
 #   Exercise response per node: the mean of its normalised log fold changes (the same numbers the embeddings and
 #   edge weights are built from) over the cells of one tissue. MUSCLE is primary (the T2D data are muscle);
@@ -38,7 +38,7 @@
 #   After steps 14 and 17s:   Rscript network/19_t2d_stories.R   (about 2 minutes; run_all.sh step 19)
 #
 # DATA AND PROVENANCE
-#   Disease: $DISEASE_SCORES (default ~/Desktop/output/week_6/_shared/disease_scores.csv.gz; Venus week 6 build of
+#   Disease: $DISEASE_SCORES (default $HACK_OUT/16d_disease_scores.csv.gz; step 16d build of
 #   the Amar et al. 2024 inputs; fingerprinted by step 0). Exercise: MotrpacHumanPreSuspensionAnalysis v0.2.4 via
 #   steps 1 / 1b (normalised responses) and 17s (per-cell adj. p). Network: step 14 (mnet, STRING v12 >= 700, Rhea).
 #
@@ -72,7 +72,7 @@ source(file.path(.here, "R", "figure_style.R"))
 # Folders and inputs (override with environment variables).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
 FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
-DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = file.path(Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network")), "16d_disease_scores.csv.gz"))
 dir.create(file.path(OUT, "reports"), recursive = TRUE, showWarnings = FALSE)
 # Fixed seed, permutation count, thresholds, tissues (muscle first = primary) and colours.
 SEED <- 20260926; N_PERM <- 10000L; ALPHA <- 0.05; TISSUES <- c("muscle", "blood", "adipose")

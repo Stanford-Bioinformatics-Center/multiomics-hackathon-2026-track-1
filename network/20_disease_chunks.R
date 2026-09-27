@@ -75,14 +75,14 @@ source(file.path(.here, "R", "figure_style.R"))
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
 FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
 EXT <- Sys.getenv("DISEASE_EXT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/external/disease"))
-UBAIDA <- Sys.getenv("UBAIDA", unset = path.expand("~/Desktop/github/motrpac/motrpac-rat-training-mitochondria/disease_datasets/ubaida_mohien_ 2019_elife_stat.csv"))
-DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+UBAIDA <- Sys.getenv("UBAIDA", unset = file.path(Sys.getenv("AMAR_EXT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/external/amar_2024")), "disease_datasets", "ubaida_mohien_ 2019_elife_stat.csv"))
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = file.path(Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network")), "16d_disease_scores.csv.gz"))
 dir.create(file.path(OUT, "reports"), recursive = TRUE, showWarnings = FALSE)
 SEED <- 20260926; N_PERM <- 10000L; ALPHA <- 0.05
 zof <- function(lfc, p) sign(lfc) * qnorm(pmax(p, 1e-300) / 2, lower.tail = FALSE)   # signed z, as step 18
 
 # ---- 1. disease sets: one standard table (set, gene, site, logFC, p, z) ------------------------------------
-# Old T2D (Amar et al. 2024 sets, Venus week 6 build).
+# Old T2D (Amar et al. 2024 sets, step 16d build).
 ds <- fread(cmd = sprintf("gzip -dc %s", shQuote(DISEASE_SCORES)))[set %in% c("ohman_2021", "chae_2018") & !is.na(p), .(set, gene, logFC, p)]
 OLD <- ds[order(p)][!duplicated(paste(set, gene))][, site := NA_character_]
 # Kjærgaard 2025: proteome and phosphoproteome, T2D - NGT, discovery and validation cohorts (Table S1 B-E).
