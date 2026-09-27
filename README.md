@@ -10,7 +10,7 @@ endurance in muscle, resistance in blood — read off one physically gated, exer
 | **Question** | Do endurance and resistance exercise differ in how they move the molecules disturbed in type 2 diabetes (and ageing, its main risk factor)? In which tissue? |
 | **Data** | MoTrPAC human acute exercise (RNA, protein, metabolites; adipose, blood, muscle) · STRING v12 and Rhea physical interactions · seven published T2D / insulin-resistance / ageing proteomes incl. UK Biobank |
 | **Method** | every edge = a **physical link** (hard: STRING ≥ 700 or Rhea) weighted by the **dot product of the two molecules' exercise responses** (soft), per arm — see the figure below and [`network/engine`](network/engine) |
-| **Finding** | muscle: endurance reverses the T2D proteome, resistance does not (difference p 0.007), and the T2D proteins form a connected subgraph (p 0.039); blood: resistance reverses the plasma proteins of ageing and of future T2D (UK Biobank, p < 0.001) |
+| **Top 3 stories** | **1. Muscle · T2D:** endurance reverses the T2D muscle proteome (Öhman 2021), resistance does not (difference p 0.007); the T2D proteins form a connected subgraph (p 0.039) · **2. Blood · ageing:** resistance reverses the 293 plasma proteins of ageing (UK Biobank; 0.47, p < 0.001) · **3. Blood · future T2D:** resistance reverses the 297 plasma proteins linked to future T2D (UK Biobank; 0.38, p < 0.001) |
 | **Reproduce** | `bash network/run_all.sh` — ~10 minutes, 25 engine tests + 44 validation checks, 139 outputs byte-identical to the reference run |
 | **Read more** | [`network/README.md`](network/README.md): full documentation (snapshot, question, workflow, setup, inputs/outputs, methods, validation, reuse) |
 

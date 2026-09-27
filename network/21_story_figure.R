@@ -62,9 +62,9 @@ scatter <- function(set_name, tissue, alpha, xlab, ylab, title) {
     scale_colour_manual(values = c(`TRUE` = DIR_COL[["lower"]], `FALSE` = DIR_COL[["higher"]]), guide = "none") +
     geom_text(data = ann, aes(x = -Inf, y = Inf, label = lab), hjust = -0.08, vjust = 1.15, size = 2.3, inherit.aes = FALSE) +
     facet_wrap(~arm) + labs(x = xlab, y = ylab, title = title) + theme_motrpac(7) }
-pa <- scatter("ohman_2021", "muscle", ALPHA, "T2D z (Öhman 2021; < 0 = lower in T2D)", "muscle response", "Muscle: 68 proteins altered in T2D")
-pd <- scatter("sun_2023_ukb_age", "blood_prot", 1.7e-5, "age z (UK Biobank; < 0 = lower with age)", "blood protein response", "Blood: 293 plasma proteins associated with age")
-pe <- scatter("gadd_2024_ukb_incident_T2D", "blood_prot", 3.1e-6, "future-T2D z (UK Biobank; < 0 = lower risk)", "blood protein response", "Blood: 297 plasma proteins linked to future T2D")
+pa <- scatter("ohman_2021", "muscle", ALPHA, "T2D z (Öhman 2021; < 0 = lower in T2D)", "muscle response", "Story 1 · Muscle: 68 proteins altered in T2D")
+pd <- scatter("sun_2023_ukb_age", "blood_prot", 1.7e-5, "age z (UK Biobank; < 0 = lower with age)", "blood protein response", "Story 2 · Blood: 293 plasma proteins associated with age")
+pe <- scatter("gadd_2024_ukb_incident_T2D", "blood_prot", 3.1e-6, "future-T2D z (UK Biobank; < 0 = lower risk)", "blood protein response", "Story 3 · Blood: 297 plasma proteins linked to future T2D")
 
 # ---- b: the connector subgraph with arm-specific edges ----------------------------------------------------------------
 # Rebuild the whole joint network with the engine (it reproduces step 14 exactly; tested), so the arm-specific
@@ -95,7 +95,7 @@ pb <- ggplot() + geom_segment(data = es[specificity %in% c("both", "neither")], 
   scale_colour_manual(values = c(`endurance-specific` = ARM_COL[["endurance"]], `resistance-specific` = ARM_COL[["resistance"]]),
                       labels = c("strong after endurance only", "strong after resistance only"), name = NULL) +
   scale_shape_manual(values = c(protein = 21, metabolite = 24), guide = "none") +
-  labs(title = sprintf("T2D proteins + connectors: %d-node subgraph (connectivity p 0.039)", nrow(SN))) +
+  labs(title = sprintf("Story 1 · T2D proteins + connectors (%d nodes; connectivity p 0.039)", nrow(SN))) +
   theme_motrpac_void(7) + theme(legend.position = "bottom")
 
 # ---- c: every tissue-matched test, grouped by readout tissue -------------------------------------------------------------

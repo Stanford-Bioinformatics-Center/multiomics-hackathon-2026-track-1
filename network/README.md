@@ -44,17 +44,26 @@ and the disease tests ask whether each kind of exercise pushes the molecules a d
   black box; figure below); (b) each disease comparison is tissue-matched, pre-specified and tested against a
   permutation null, with post-hoc steps labelled; (c) anyone can rerun the pipeline and get the numbers in section 7.
 
-**The answer (three-part story; Fig. 1, figures 19-21, tables in section 6 steps 19-20):**
+**The answer: three top stories** (Fig. 1 panels a-d; figures 19-21; tables in section 6, steps 19-20):
 
-| | Evidence | Endurance | Resistance | Endurance − resistance |
+| Story | Evidence | Endurance | Resistance | Endurance − resistance |
 |---|---|---|---|---|
-| **1. Discovery (muscle)** | 68 muscle proteins altered in T2D (Öhman 2021, Amar et al. 2024 sets) | **reverses T2D** (0.31, p 0.012) | no (−0.07, p 0.56) | **+0.38, p 0.007** |
+| **1. Muscle · T2D** | 68 muscle proteins altered in T2D (Öhman 2021, the Amar et al. 2024 sets) | **reverses T2D** (0.31, p 0.012) | no (−0.07, p 0.56) | **+0.38, p 0.007** |
 | | their network neighbourhood: T2D proteins + connectors (42 nodes) | | | more connected than chance, **p 0.039** |
-| **2. Replication (muscle)** | Kjærgaard 2025, two cohorts pooled (123 people; post hoc) | 0.08 | moves proteins **toward** T2D (−0.30, p 0.067) | **+0.38, p 0.007** |
-| **3. Blood** | 297 plasma proteins linked to future T2D (UK Biobank, Gadd 2024) | 0.01 (p 0.90) | **reverses** (0.38, p < 0.001) | **−0.38, p < 0.001** |
-| | 293 plasma proteins associated with age (UK Biobank, Sun 2023) | 0.15 (p 0.013) | **reverses** (0.47, p < 0.001) | **−0.32, p < 0.001** |
-| Boundary | insulin-resistant, non-diabetic muscle (Needham 2024) | 0.08 | 0.31 (p 0.078) | −0.23 (n.s.) |
-| | ageing muscle (Ubaida-Mohien 2019) | 0.09 | −0.08 | +0.17 (p 0.08, trend) |
+| **2. Blood · ageing** | 293 plasma proteins associated with age (UK Biobank, Sun 2023) | 0.15 (p 0.013) | **reverses** (0.47, p < 0.001) | **−0.32, p < 0.001** |
+| **3. Blood · future T2D** | 297 plasma proteins linked to future T2D (UK Biobank, Gadd 2024) | 0.01 (p 0.90) | **reverses** (0.38, p < 0.001) | **−0.38, p < 0.001** |
+
+Together: **endurance moves the T2D muscle proteome back toward healthy; resistance moves the plasma proteins of
+ageing and of future T2D back toward young / low risk.**
+
+*Supporting and boundary sets* (same tests; figure 20a):
+
+| Set | Endurance | Resistance | Endurance − resistance |
+|---|---|---|---|
+| Kjærgaard 2025 T2D muscle, two cohorts pooled (123 people; **post hoc**) | 0.08 | −0.30 (toward T2D; p 0.067) | +0.38, p 0.007 (discovery alone p 0.039; validation alone p 0.80) |
+| Needham 2024 insulin-resistant, non-diabetic muscle | 0.08 | 0.31 (p 0.078) | −0.23 (n.s.) |
+| Ubaida-Mohien 2019 ageing muscle | 0.09 | −0.08 | +0.17 (p 0.08, trend) |
+| Chae 2018 T2D muscle; Larsen 2023 T2D adipose; Kjærgaard phosphosites | — | — | n.s. |
 
 "Reversal" = −Spearman(disease z, exercise response) over the disease-altered proteins, in the tissue the disease
 data come from; > 0 means exercise moves proteins that are lower in the disease up and those higher down.
