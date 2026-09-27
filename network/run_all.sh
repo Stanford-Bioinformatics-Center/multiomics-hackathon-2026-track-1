@@ -77,6 +77,7 @@ STEPS=(
   "20f|bash $HERE/20_fetch_disease_sets.sh" # published disease tables (online; cached)
   "20|Rscript $HERE/20_disease_chunks.R"    # best story per disease chunk: old T2D, new T2D, ageing (figures 20a-e)
   "21|Rscript $HERE/21_story_figure.R"      # Figure 1: the whole story on one page
+  "22|Rscript $HERE/22_story_subnetworks.R"   # one physical subnetwork per story, slide PNGs (needs $MNET_DIR/edges.csv, $STRING_RAW, python3 pandas + pyyaml)
   "99v|Rscript $HERE/99_validate_outputs.R"
   "99m|Rscript $HERE/99_manifest.R"
 )
@@ -92,6 +93,8 @@ for s in "${STEPS[@]}"; do
       echo "[01c] skipped: cached web lookups in 01c_metabolite_ids.csv (REFRESH_ONLINE=1 to redo)"
     elif [ "$label" = "16f" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "$AMAR_EXT/COMMIT_SHA" ] && [ "$(cat "$AMAR_EXT/COMMIT_SHA")" = "299e540ea2d2671df9cddbf883eaac90c1e7cb3a" ]; then
       echo "[16f] skipped: cached Amar et al. disease tables in AMAR_EXT (REFRESH_ONLINE=1 to redo)"
+    elif [ "$label" = "22" ] && { [ ! -f "$MNET_DIR/edges.csv" ] || [ ! -f "${STRING_RAW:-$(dirname "$MNET_DIR")/raw}/9606.protein.physical.links.v12.0.txt.gz" ] || ! python3 -c "import pandas, yaml" 2>/dev/null; }; then
+      echo "[22] skipped: needs $MNET_DIR/edges.csv, \$STRING_RAW/9606.protein.physical.links.v12.0.txt.gz and python3 pandas + pyyaml (see the step 22 header)"
     elif [ "$label" = "20f" ] && [ "$REFRESH_ONLINE" != 1 ] && [ -f "${DISEASE_EXT:-$HOME/Desktop/output/hackathon-2026-track1/external/disease}/kjaergaard_2025_cell/mmc1.xlsx" ]; then
       echo "[20f] skipped: cached disease tables in DISEASE_EXT (REFRESH_ONLINE=1 to redo)"
     else
