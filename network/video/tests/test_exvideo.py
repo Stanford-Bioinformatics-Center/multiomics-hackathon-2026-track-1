@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from exvideo import align, audio, dancer, lyrics, walk  # noqa: E402
+from exvideo import align, audio, beats, dancer, lyrics, walk  # noqa: E402
 from exvideo.errors import InputError, ModelError, WalkError  # noqa: E402
 from exvideo.network import Edge, Network  # noqa: E402
 
@@ -156,6 +156,46 @@ class DancerTests(unittest.TestCase):
         self.assertEqual(out[0, 0].tolist(), [90, 90, 80, 255])
         self.assertEqual(out[0, 1].tolist(), [120, 120, 110, 255])
         self.assertEqual(out[0, 2].tolist(), [0, 255, 0, 0])   # fully transparent pixels untouched
+
+class BeatTests(unittest.TestCase):
+    """Synthetic drum grooves (kick every beat, snare on 2 and 4, hi-hat on the off-beats): the grooves that fooled the
+    old autocorrelation tempo (half time, 1.5-beat lags) and the old whole-spectrum flux (locked onto the hi-hats)."""
+
+    @staticmethod
+    def _groove(bpm, dur=30.0, seed=1):
+        import numpy as np
+        sr, rng = beats.SR, np.random.default_rng(seed)
+        y = np.zeros(int(dur * sr)); tk = np.arange(int(0.25 * sr)) / sr
+        kick = np.sin(2 * np.pi * (50 + 80 * np.exp(-tk * 30)) * tk) * np.exp(-tk * 12)
+        hat = rng.standard_normal(int(0.04 * sr)) * np.exp(-np.arange(int(0.04 * sr)) / sr * 120) * 0.3
+        snare = rng.standard_normal(int(0.15 * sr)) * np.exp(-np.arange(int(0.15 * sr)) / sr * 25) * 0.5
+        true = np.arange(0.5, dur - 1, 60 / bpm)
+        for k, b in enumerate(true):
+            for sound, t in ((kick, b), (snare, b if k % 2 else None), (hat, b + 30 / bpm)):
+                if t is not None:
+                    i = int(t * sr); y[i:i + len(sound)] += sound[:max(0, len(y) - i)]
+        return (y / np.abs(y).max()).astype(np.float32), true
+
+    def _detect(self, y):
+        import numpy as np
+        o = beats.onset_strength(y); p = beats.tempo_period(o)
+        return 60 * beats.SR / beats.HOP / p, (beats.track(o, p) * beats.HOP + beats.NFFT / 2) / beats.SR + beats.ONSET_LAG
+
+    def test_tempo_and_phase_across_tempi(self):
+        import numpy as np
+        for bpm in (92, 128, 174):
+            y, true = self._groove(bpm)
+            est, got = self._detect(y)
+            self.assertLess(abs(est - bpm) / bpm, 0.02, f"{bpm} BPM detected as {est:.1f}")
+            err = [np.min(np.abs(got - b)) for b in true[2:-2]]
+            self.assertLess(max(err), 0.03, f"{bpm} BPM: a beat is {1000 * max(err):.0f} ms off")      # on the beat, not the off-beat
+
+    def test_frame_at_puts_hits_on_beats(self):
+        grid, hits, n = [0.0, 0.6, 1.3, 1.9, 2.6], [0, 17], 35
+        self.assertEqual([dancer.frame_at(t, grid, hits, n, 1.0, 30) for t in grid[:4]], [0, 17, 0, 17])
+        self.assertEqual(dancer.frame_at(0.3, grid, hits, n, 1.0, 30), 8)                 # half way between two hits
+        self.assertEqual(dancer.frame_at(0.6 - 0.01, grid, hits, n, 1.0, 30), 17)         # nearest video frame snaps to the hit
+        self.assertEqual([dancer.frame_at(t, grid, hits, n, 0.5, 30) for t in grid[:3]], [0, 8, 17])   # a step every other beat
 
 if __name__ == "__main__":
     unittest.main()

@@ -11,6 +11,19 @@ python3 network/video/make_music_video.py --start SRC --audio ~/Downloads/song.m
 python3 network/video/01_lyrics_from_walk.py --start CDC37                       # lyrics only (no Suno, no video)
 ```
 
+**Just the rat, on any song:** `rat_dance.py` makes a video of the dancing rat stepping exactly on the beats of whatever
+song you give it (about 7 s for a 90 s song; no Node, no network data):
+
+```bash
+python3 network/video/rat_dance.py ~/Downloads/song.mp3               # -> ~/Downloads/song_rat.mp4 (720x1280, white)
+python3 network/video/rat_dance.py song.mp3 --size 1920x1080 --bg black --out ~/Desktop/rat.mp4
+python3 network/video/rat_dance.py song.mp3 --transparent             # ProRes 4444 .mov with alpha, to drop into an edit
+python3 network/video/rat_dance.py song.mp3 --bpm 170                 # if it dances at half / double time
+python3 network/video/rat_dance.py song.mp3 --nudge -0.03             # steps 30 ms earlier
+```
+Checked on synthetic drum grooves at 70, 92, 128 and 174 BPM and a 100→120 BPM ramp: tempo found in all five (70 at
+double time), every beat within 14 ms, and the rat on a step-hit pose at every beat it steps on.
+
 ## What happens
 
 | # | Stage | Time |
@@ -21,7 +34,7 @@ python3 network/video/01_lyrics_from_walk.py --start CDC37                      
 | 4 | **Suno**: the Suno-formatted lyrics are copied to the clipboard, the style prompt and title printed, suno.com/create opened. In Suno: *Create → Custom*, paste, set the style, create, download | ~1-2 min (you) |
 | 5 | **The song**: drag the file into the terminal, or press Enter and it picks up the new download in `~/Downloads` | — |
 | 5b | **Sync**: Whisper hears the song; every lyric line is placed where its first word is sung (first run ~45 s per 80 s of song, then cached) | ~45 s |
-| 5c | **Beat**: tempo and every beat of the song (spectral-flux onsets, autocorrelation tempo, dynamic-programming beat tracking; numpy); the dancer GIF cleaned (flash frames dropped, one single-colour clip kept, green fringe removed) and its step hits found (the bottom of each bob) with a seamless even-step loop | ~1 s |
+| 5c | **Beat**: tempo and every beat of the song (spectral-flux onsets in 40 log-spaced bands, pulse-train tempo over 72-176 BPM, dynamic-programming beat tracking; numpy); the dancer GIF cleaned (flash frames dropped, one single-colour clip kept, green fringe removed) and its step hits found (the bottom of each bob) with a seamless even-step loop | ~1 s |
 | 6 | **The video** (`render/render_walk.js`, Puppeteer + ffmpeg): the figure 17 page full screen with arm-specific edges on (red = endurance only, blue = resistance only); title card; the camera flies node to node, each walked edge turns gold; each node's persona and fact card; the current bar large and the next bar faded; the whole walk at the end; a **dancing rat** at the side played hit to hit: each step's hit frame is shown exactly on a beat and the frames in between are spread over the beat, so it follows the song and never drifts (grey clip by default, `--dancer-clip 1` red / `2` teal; `--dancer-steps-per-beat 0.5|1|2`; credit only on the closing card; `--dancer other.gif`, `--no-dancer`); the song underneath → `music_video.mp4` | ~1 s per second of song |
 
 **Lyrics are synced to the actual vocals** (`--sync whisper`, the default): Whisper (faster-whisper, run locally)
@@ -53,7 +66,7 @@ random walk), `network.py` (the joint network, the figure 17 facts, the on-scree
 prompt, the style example, the Claude call, answer checks, Suno formatting), `audio.py` (waiting for the download,
 song length, bar timing), `render.py` (renderer set-up, frames → MP4), `errors.py` (classed errors).
 `render/render_walk.js` draws the frames (frame-stepped, so none are dropped). Tests:
-`python3 -m unittest discover -s network/video/tests` (12 tests on a toy network, incl. lyric-to-vocal alignment: walks, the hard gate, reproducible
+`python3 -m unittest discover -s network/video/tests` (17 tests on a toy network and synthetic drum grooves, incl. lyric-to-vocal alignment, beat tracking and the dancer: walks, the hard gate, reproducible
 random walks, answer checks, the verbatim prompt, Suno text, timing, dragged paths).
 
 **The dancer GIF** (not in the repo): the rat-dance meme (original by @ratomilton, TikTok), transparent GIF from Tenor,

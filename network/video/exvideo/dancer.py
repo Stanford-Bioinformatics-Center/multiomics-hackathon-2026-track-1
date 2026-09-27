@@ -121,6 +121,17 @@ def write_pngs(rgba: np.ndarray, dest: Path) -> List[str]:
     return files
 
 
+def read_rgba_pngs(files: List[str]) -> np.ndarray:
+    """The loop frames written by `prepare` back as one array (frames, height, width, 4)."""
+    res = subprocess.run(["ffmpeg", "-v", "error", "-i", str(Path(files[0]).parent / "%04d.png"), "-vf", "format=rgba", "-f", "rawvideo", "-"], capture_output=True)
+    raw = np.frombuffer(res.stdout, dtype=np.uint8)
+    if res.returncode != 0 or raw.size == 0 or raw.size % len(files):
+        raise InputError(f"could not read the dancer frames back: {res.stderr.decode()[:300]}")
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "stream=width,height", "-of", "csv=p=0", files[0]], capture_output=True, text=True)
+    w, h = (int(x) for x in probe.stdout.strip().split(",")[:2])
+    return raw.reshape(len(files), h, w, 4)
+
+
 def prepare(gif: Path, dest: Path, clip: int = 0, steps_per_beat: Optional[float] = None, beat_period: Optional[float] = None,
             gif_frame_s: float = 0.03) -> Dict[str, object]:
     """Loop frames on disk + where the hits are.
@@ -151,3 +162,22 @@ def prepare(gif: Path, dest: Path, clip: int = 0, steps_per_beat: Optional[float
     return {"frames": files, "n_frames": len(files), "hits": rel, "steps_per_loop": len(rel), "steps_per_beat": steps_per_beat,
             "aspect": round(w / h, 4), "clip": clip, "clip_lengths": [len(g) for g in groups],
             "gif_frames": [int(idx[hit[i]]), int(idx[hit[j]])], "dropped_flash_frames": len(rgba) - sum(len(g) for g in groups)}
+
+
+def frame_at(t: float, beats: List[float], hits: List[int], n_frames: int, steps_per_beat: float, fps: float) -> int:
+    """Which loop frame to show at time t (seconds). The same rule as the renderer (render/render_walk.js):
+    step k's hit frame sits exactly on beat k / steps_per_beat; the frames between two hits are spread evenly over the
+    time between them; the video frame nearest a beat shows the hit itself (no rounding past it)."""
+    nb = len(beats)
+    if nb < 2:
+        raise InputError("need at least two beats to dance")
+    j = int(np.searchsorted(beats, t, side="right")) - 1
+    j = max(0, j)
+    half = 0.5 / fps
+    if j + 1 < nb and beats[j + 1] - t < half:
+        j += 1
+    span = beats[j + 1] - beats[j] if j + 1 < nb else beats[-1] - beats[-2]
+    pos = float(j) if abs(t - beats[j]) < half else j + min(1.0, max(0.0, (t - beats[j]) / span))
+    s = pos * steps_per_beat; k = int(np.floor(s + 1e-9)); fr = s - k; K = len(hits); kk = k % K
+    a = hits[kk]; b = hits[kk + 1] if kk + 1 < K else n_frames
+    return int(round(a + fr * (b - a))) % n_frames
