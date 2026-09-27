@@ -8,7 +8,12 @@
 # wheel and would have to compile from source.
 #
 # Checked 2026-09-27: resolves for Python 3.10, 3.11 and 3.12; on 3.12 (Windows) every package
-# installs from a prebuilt wheel (dry run).
+# installs from a prebuilt wheel (dry run). That check included the music video packages, removed
+# since; the list below is a subset of what was checked.
+#
+# The music video tooling (network/video) was removed from main on 2026-09-27 (commit 378e865) and is
+# kept outside the repository, so its packages and tools (faster-whisper, pillow, Node.js, ffmpeg) are
+# not listed here.
 #
 # Compiled 2026-09-27 from the dependency files the components already have, and checked against every
 # import in every .py and .ipynb file on all 5 branches. No version was invented: each line carries the
@@ -19,7 +24,7 @@
 # =====================================================================================================
 
 # --- Shared ------------------------------------------------------------------------------------------
-numpy==1.26.4            # bic notebooks (pinned there); also network/video, which names no version
+numpy==1.26.4            # bic notebooks (pinned there); also imported by interaction_db, which names no version
 pandas==2.2.3            # bic notebooks (pinned there); satisfies interaction_db's pandas>=2.0
 
 # --- Interaction database: network/interaction_db (its requirements.txt and pyproject.toml) -----------
@@ -33,10 +38,6 @@ SPARQLWrapper>=2.0
 pygoslin>=2.0
 networkx>=3.0
 pytest>=7.0              # its tests
-
-# --- Music video: network/video (versions from its setup.sh) ------------------------------------------
-faster-whisper==1.2.1    # syncs the lyrics to the song; downloads a ~0.5 GB model on first use
-pillow>=10
 
 # --- Exerkine notebooks: bic/, on branch differential_analysis only (its requirements.txt) ------------
 matplotlib==3.8.4
@@ -67,12 +68,7 @@ jupyter-client==7.4.8
 #                    dplyr (bic/motrpac-exploration/load_differential_analysis.R, branch differential_analysis)
 #     The bic/ analyses use a different release of the MoTrPAC package: 2.0.8.
 #
-# Node.js 22.5 — music video renderer: puppeteer 23.11.1 (network/video/render/package.json).
-#   Installed by: bash network/video/setup.sh
-#
 # System tools
 #     pandoc 3.10 and TinyTeX     network pipeline steps 13 and 17 (tinytex::install_tinytex())
-#     ffmpeg                      music video
 #     make                        interaction database
 #     Docker (optional)           local Neo4j 5: bash network/neo4j/run_local_neo4j.sh
-#     Claude Code, or ANTHROPIC_API_KEY    lyrics for the music video

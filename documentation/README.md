@@ -4,18 +4,19 @@ Team 2-PAC's documentation is spread over 5 branches and many folders. This page
 write-up in the repository, grouped by author, with a short summary and a link to the original.
 It holds no copies: the linked files are the source of truth.
 
-**As of 2026-09-27.** 35 documents (11 READMEs, 24 other write-ups) by 4 authors.
-Authors are taken from `git blame` and shown as git records them. Blame shows who committed the lines.
+**As of 2026-09-27, `main` at `378e865`.** 34 documents (10 READMEs, 24 other write-ups) by 4 authors, not
+counting this page. Authors are taken from `git blame` and shown as git records them. Blame shows who
+committed the lines.
 
 ## Branches
 
 | Branch | Commit | vs `main` | Documents it adds |
 |---|---|---|---|
-| `main` | `ca959dc` | — | 20 (9 READMEs, 11 write-ups) |
-| `differential_analysis` | `95c6ad0` | 86 behind, 2 ahead | 15 under `bic/` (2 READMEs, 13 write-ups), on this branch only |
-| `diabetes_data` | `e9fb2db` | 63 behind, 1 ahead | none |
-| `random_walk` | `86e1e2c` | 37 behind, 0 ahead | none (fully merged into `main`) |
-| `story-networks` | `2d8fa73` | 19 behind, 0 ahead | none (merged into `main`, PR #1) |
+| `main` | `378e865` | — | 19 (8 READMEs, 11 write-ups) |
+| `differential_analysis` | `95c6ad0` | 97 behind, 2 ahead | 15 under `bic/` (2 READMEs, 13 write-ups), on this branch only |
+| `diabetes_data` | `e9fb2db` | 74 behind, 1 ahead | none |
+| `random_walk` | `86e1e2c` | 48 behind, 0 ahead | none (fully merged into `main`) |
+| `story-networks` | `2d8fa73` | 30 behind, 0 ahead | none (merged into `main`, PR #1) |
 
 **Read the `main` version.** Every document that exists on both `main` and a side branch is either identical
 or an older snapshot on the side branch (see [Older copies](#older-copies-on-side-branches)).
@@ -24,10 +25,13 @@ or an older snapshot on the side branch (see [Older copies](#older-copies-on-sid
 
 | Author | READMEs | Other write-ups | Lines | Where |
 |---|---|---|---|---|
-| [Vidal M. Arroyo](#vidal-m-arroyo) | 7, plus 44 of 66 lines of the root README | 3 | 1,939 | `main` |
-| [jspaul2003](#jspaul2003) | 2 | 13 | 1,566 | `differential_analysis` |
+| [Vidal M. Arroyo](#vidal-m-arroyo) | 6, one of them shared (the root README) | 3 | 1,815 | `main` |
+| [jspaul2003](#jean-sebastien-paul) | 2 | 13 | 1,566 | `differential_analysis` |
 | [gandhimonil9823](#gandhimonil9823) | 1 | 8 | 700 | `main` |
-| [Subarna Bhattacharya](#subarna-bhattacharya) | 1 | 0 | 531 | `main` |
+| [Subarna Bhattacharya](#subarna-bhattacharya) | 1 | 0 | 555 | `main` |
+
+Lines are counted per author by `git blame`, so a shared document is split. The root README has 107 lines:
+43 by Subarna Bhattacharya, 42 by Vidal M. Arroyo, and 22 by Jimmy Zhen (the organisers' track brief).
 
 ## Vidal M. Arroyo
 
@@ -35,14 +39,13 @@ The network pipeline and everything built on it. All on `main`.
 
 | Document | Lines | What it covers |
 |---|---|---|
-| [README.md](../README.md) | 66 | Landing page: the headline result, the three top stories, how an edge is made, quick start. The last 22 lines are the organisers' track brief. |
-| [network/README.md](../network/README.md) | 1,274 | **The main document.** Eight parts: snapshot, research question, workflow, setup, inputs and outputs, methods for every pipeline step (1 to 21), validation, reuse. Also holds the contributors table, roadmap and "honest roadblocks". |
+| [README.md](../README.md) | 107 | Landing page: the headline result, the three top stories, how an edge is made, quick start. The quick start (requirements, inputs, run, what to do if it fails) is mostly by Subarna Bhattacharya. The last 22 lines are the organisers' track brief. |
+| [network/README.md](../network/README.md) | 1,285 | **The main document.** Eight parts: snapshot, research question, workflow, setup, inputs and outputs, methods for every pipeline step (1 to 21), validation, reuse. Also holds the contributors table, roadmap and "honest roadblocks". |
 | [network/engine/README.md](../network/engine/README.md) | 50 | `exnet`, the R package that implements the edge rule: 3 S4 classes, the functions, an example, 25 tests. |
 | [network/neo4j/README.md](../network/neo4j/README.md) | 170 | Exporting the networks to a Neo4j graph: graph model, import, example queries, expected counts, how to extend it. The visualiser itself is not started. |
-| [network/video/README.md](../network/video/README.md) | 122 | The music video: random walk, lyrics written from the network data, song made in Suno, rendered fly-through video. Includes the lyric rules and the dancing-rat tool. |
 | [network/inventory/README.md](../network/inventory/README.md) | 81 | Counts of MoTrPAC phosphosite and GlyGen data available for the 471 proteins and 450 metabolites. Counts only; nothing is integrated. |
 | [network/resource/README.md](../network/resource/README.md) | 52 | Column definitions of the two shareable feature lists (`proteins_471.csv`, `metabolites_450.csv`). The lists are not stored in the repo. |
-| [network/ENVIRONMENT.md](../network/ENVIRONMENT.md) | 90 | Software versions and MD5 fingerprints of every external input. Written by `00_environment.R` on each run. |
+| [network/ENVIRONMENT.md](../network/ENVIRONMENT.md) | 92 | Software versions and MD5 fingerprints of every external input. Written by `00_environment.R` on each run. |
 | [network/docs/FIGURES.md](../network/docs/FIGURES.md) | 35 | Captions for Fig. 1, the method figure and figures 17, 19 and 20. |
 | [network/docs/PRESENTATION.md](../network/docs/PRESENTATION.md) | 21 | 11-slide outline mapped to the judging criteria, plus the live demo steps. |
 
@@ -59,7 +62,7 @@ The interaction database ("mnet") that supplies the network's edges. All on `mai
 
 | Document | Lines | What it covers |
 |---|---|---|
-| [random_walk/README.md](../random_walk/README.md) | 531 | `random_walk(start, arm)`: one weighted walk from any node to 3 others, using endurance or resistance edge weights. Covers the method, a worked example (PPIB), validation, choices considered, known limits, and turning a walk into lyrics. |
+| [random_walk/README.md](../random_walk/README.md) | 499 | `random_walk(start, arm)`: one weighted walk from any node to 3 others, using endurance or resistance edge weights. Covers the method, a worked example (PPIB), how to use the walks, validation, choices considered, known limits and next steps. |
 
 ## Jean-Sebastien Paul
 
@@ -86,13 +89,18 @@ links go to GitHub. Base path: `bic/`.
 
 | Document | Older snapshot on | Lines there vs `main` |
 |---|---|---|
-| `README.md` | `diabetes_data`, `differential_analysis`, `random_walk` | 23 vs 66 |
-| `network/README.md` | `differential_analysis` / `diabetes_data` / `random_walk` | 375 / 790 / 1,156 vs 1,274 |
-| `network/ENVIRONMENT.md` | `random_walk` | 83 vs 90 |
-| `network/video/README.md` | `story-networks` | 53 vs 122 |
+| `README.md` | `diabetes_data`, `differential_analysis`, `random_walk` / `story-networks` | 23 / 66 vs 107 |
+| `network/README.md` | `differential_analysis` / `diabetes_data` / `random_walk` / `story-networks` | 375 / 790 / 1,156 / 1,274 vs 1,285 |
+| `network/ENVIRONMENT.md` | `random_walk` / `story-networks` | 83 / 90 vs 92 |
+| `random_walk/README.md` | `random_walk` | 531 vs 499 |
 
 Every other shared document is identical to `main`. Each older copy is an earlier version from `main`'s own
 history; none has been edited separately on its branch.
+
+**Removed from `main`:** the music video folder `network/video/`, with its README, was removed on 2026-09-27
+(commit `378e865`); the tooling is kept outside the repository. A 53-line early version of that README is
+still on `story-networks`. The last version on `main` had 125 lines and is in the history
+(`git show 378e865~1:network/video/README.md`).
 
 ## Gaps and inconsistencies
 
@@ -105,8 +113,10 @@ Found while reading the documents. Each one is checked against the files.
 | 3 | The contributors table omits Subarna Bhattacharya and jspaul2003 | `network/README.md`, section 8 |
 | 4 | **Two MoTrPAC package versions** are cited: 0.2.4 by the network pipeline, 2.0.8 by the `bic/` analyses | `network/README.md`; `bic/README.md` |
 | 5 | **Outdated network size:** 364 nodes / 764 edges, where `network/README.md` now reports 353 / 704 | `network/neo4j/README.md`; `random_walk/README.md` |
-| 6 | The default `--arm` is given as `coin` in the text and as `EE` in the stage table | `network/video/README.md` |
-| 7 | **Two documented scripts are not in the repository**, on any branch or in its history: `lyrics_gen.R` and `t2d_consensus.R` | `random_walk/README.md`, sections 11 and 16 |
+
+Two earlier gaps are closed. The scripts `lyrics_gen.R` and `t2d_consensus.R`, which were documented but never
+in the repository, are no longer mentioned in `random_walk/README.md`. The conflicting default for `--arm` was
+in `network/video/README.md`, which is removed.
 
 ## Reuse and next steps
 
@@ -114,7 +124,7 @@ Found while reading the documents. Each one is checked against the files.
 
 | To do this | Use | Documented in |
 |---|---|---|
-| Install every Python package the project uses | `pip install -r requirements.txt` (Python 3.10 to 3.12) | [requirements.txt](../requirements.txt), which also lists the R, Node and system tools |
+| Install every Python package the project uses | `pip install -r requirements.txt` (Python 3.10 to 3.12) | [requirements.txt](../requirements.txt), which also lists the R packages and system tools |
 | Rebuild every table, figure and interactive page | `bash network/run_all.sh` (about 10 minutes) | [network/README.md](../network/README.md), section 5 |
 | Build a weighted network from your own responses and edges | the `exnet` R package | [network/engine/README.md](../network/engine/README.md) |
 | Rebuild the interaction database, at any STRING threshold | `make` targets in `network/interaction_db/` | [network/interaction_db/README.md](../network/interaction_db/README.md) |
@@ -129,7 +139,7 @@ each step comes from.
 
 | Area | Next step | Source |
 |---|---|---|
-| Documentation | Close the 7 gaps above: add a README for `data_scripts/`, update the contributors table, correct the network size and the default `--arm`, commit the two missing scripts | this page |
+| Documentation | Close the 5 gaps above: add a README for `data_scripts/`, update the contributors table, correct the network size | this page |
 | Documentation | Merge `differential_analysis` into `main`, or link the `bic/` work from a document on `main` | this page |
 | Documentation | Agree on one MoTrPAC package version, or state in both places why they differ | this page |
 | Network | Test the blood result against blood cell composition and a plasma-volume control | `network/README.md`, roadmap |
@@ -151,7 +161,7 @@ each step comes from.
 
 ## References
 
-Every publication cited in the 35 documents, copied as the source document cites it.
+Every publication cited in the 34 documents, copied as the source document cites it.
 **Not checked against the journals:** verify before manuscript use. Where a document gives only a link and a
 description, that description is kept.
 
@@ -252,7 +262,13 @@ Cited in: **N** `network/README.md` · **R** `random_walk/README.md` · **I** `n
 ## How this was generated
 
 Compiled by Tia Kohir with Anthropic's Claude (Claude Code). Every listed document was read in full, except
-`package_NEWS.md` (first 40 lines). To refresh the inventory, from the repo root:
+`package_NEWS.md` (first 40 lines).
+
+Refreshed the same day after `network/video/` was removed from `main` (`378e865`): document counts, line
+counts, authorship, branch positions, older copies and gaps were recomputed from git. The documents that
+changed on `main` in between were checked against their diffs, not read again in full.
+
+To refresh the inventory, from the repo root:
 
 ```bash
 git fetch origin
