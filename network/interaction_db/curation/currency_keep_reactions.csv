@@ -1,0 +1,17 @@
+rhea_id,name,reason
+57720,ATP synthase (EC 7.1.2.2),ATP/ADP are the product/substrate not a cofactor
+12973,adenylate kinase (EC 2.7.4.3),ATP+AMP<->2ADP - adenine nucleotides are the substrates
+18113,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+25098,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+25237,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+27678,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+27682,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+27686,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+27690,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+30347,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+44640,nucleoside-diphosphate kinase (EC 2.7.4.6),NDP kinase - NTP/NDP are substrates
+21360,NMN adenylyltransferase / NMNAT (EC 2.7.7.1),NAD+ synthesis
+22860,NaMN adenylyltransferase (EC 2.7.7.18),NAD+ synthesis
+24384,NAD+ synthase glutamine-hydrolysing / NADSYN1 (EC 6.3.5.1),NAD+ synthesis
+18629,NAD+ kinase (EC 2.7.1.23),NADP+ synthesis - ATP is substrate
+17237,FAD synthase / FLAD1 (EC 2.7.7.2),FAD synthesis

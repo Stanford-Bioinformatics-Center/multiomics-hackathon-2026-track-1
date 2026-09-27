@@ -1,0 +1,21 @@
+metabolite,refmet_id,suggested_chebi,note
+Aminobutyric acid,RM0073571,,auto: unmapped in Phase 2
+C1-DeoxyCer 18:0;O/24:1,,,auto: unmapped in Phase 2
+CAR 14:1,RM0154190,,auto: unmapped in Phase 2
+CAR 16:1,RM0153934,,auto: unmapped in Phase 2
+CAR 18:1,RM0153915,,auto: unmapped in Phase 2
+CAR 18:2,RM0154158,,auto: unmapped in Phase 2
+CAR 4:0;OH,RM0154193,,auto: unmapped in Phase 2
+CAR 5:0;OH,RM0154127,,auto: unmapped in Phase 2
+CAR 5:1,RM0156347,,auto: unmapped in Phase 2
+CAR 8:1,RM0154083,,auto: unmapped in Phase 2
+Hydroxydecanoic acid,RM0140350,,auto: unmapped in Phase 2
+Hydroxydodecanoic acid,RM0140376,,auto: unmapped in Phase 2
+Hydroxyoctanoic acid,RM0140352,,auto: unmapped in Phase 2
+Hydroxytetradecanoic acid,RM0140664,,auto: unmapped in Phase 2
+Nonadecenoic acid,RM0138767,,auto: unmapped in Phase 2
+Tetradecadienoic acid,RM0140195,,auto: unmapped in Phase 2
+Tridecylamine,RM0149929,,auto: unmapped in Phase 2
+UDP-glucose,RM0135928,CHEBI:58885,UDP-alpha-D-glucose(2-); pH7.3 form in human Rhea (26 rxns)
+Phosphoglyceric acid,RM0013474,CHEBI:58272;CHEBI:58289,3- and 2-phospho-D-glycerate; attach both
+CAR 2:0,RM0154009,CHEBI:57589,O-acetyl-L-carnitine; in human Rhea (4 rxns)

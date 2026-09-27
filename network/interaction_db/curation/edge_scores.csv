@@ -1,0 +1,5 @@
+edge_type,source,score,confidence
+ppi,STRING,use_string_score,from_string
+catalysis,Rhea,900,curated
+lipid_is_a,hierarchy,500,hierarchy
+transport,Rhea,800,curated

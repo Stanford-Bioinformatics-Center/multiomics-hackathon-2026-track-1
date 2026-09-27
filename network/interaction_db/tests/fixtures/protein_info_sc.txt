@@ -1,0 +1,5 @@
+#string_protein_id	preferred_name	protein_size	annotation
+9606.ENSP1	G1	100	protein one
+9606.ENSP2	G2	100	protein two
+9606.ENSP3	G3	100	protein three
+9606.ENSP4	G4	100	protein four (no uniprot, no links)

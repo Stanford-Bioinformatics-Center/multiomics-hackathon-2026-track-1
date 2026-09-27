@@ -1,0 +1,47 @@
+chebi_id,name,reason
+CHEBI:15377,water,solvent
+CHEBI:15378,hydron,proton
+CHEBI:30616,ATP(4-),energy currency
+CHEBI:456216,ADP(3-),energy currency
+CHEBI:456215,adenosine 5'-monophosphate(2-),energy currency
+CHEBI:37565,GTP(4-),energy currency
+CHEBI:58189,GDP(3-),energy currency
+CHEBI:57540,NAD(1-),redox cofactor
+CHEBI:57945,NADH(2-),redox cofactor
+CHEBI:58349,NADP(3-),redox cofactor
+CHEBI:57783,NADPH(4-),redox cofactor
+CHEBI:57692,FAD(3-),redox cofactor
+CHEBI:58307,FADH2(2-),redox cofactor
+CHEBI:16526,carbon dioxide,small inorganic
+CHEBI:15379,dioxygen,small inorganic
+CHEBI:16240,hydrogen peroxide,small inorganic
+CHEBI:43474,hydrogenphosphate,leaving group
+CHEBI:33019,diphosphate(3-),leaving group
+CHEBI:57287,coenzyme A(4-),acyl carrier
+CHEBI:28938,ammonium,small inorganic
+CHEBI:17544,hydrogencarbonate,small inorganic
+CHEBI:59789,S-adenosyl-L-methionine zwitterion,methyl donor
+CHEBI:57856,S-adenosyl-L-homocysteine zwitterion,methyl donor
+CHEBI:58223,UDP(3-),nucleotide leaving group
+CHEBI:37563,CTP(4-),nucleotide
+CHEBI:58069,CDP(3-),nucleotide
+CHEBI:16389,ubiquinones,electron carrier
+CHEBI:46245,coenzyme Q10,electron carrier
+CHEBI:17976,ubiquinol,electron carrier
+CHEBI:64183,ubiquinol-10,electron carrier
+,reduced flavodoxin,electron carrier (NOT FOUND in Rhea participants)
+,oxidized flavodoxin,electron carrier (NOT FOUND in Rhea participants)
+CHEBI:29101,sodium(1+),inorganic ion
+CHEBI:29103,potassium(1+),inorganic ion
+CHEBI:17996,chloride,inorganic ion
+CHEBI:29108,calcium(2+),inorganic ion
+CHEBI:18420,magnesium(2+),inorganic ion
+CHEBI:29033,iron(2+),inorganic ion
+CHEBI:29034,iron(3+),inorganic ion
+CHEBI:29105,zinc(2+),inorganic ion
+CHEBI:49552,copper(1+),inorganic ion
+CHEBI:29036,copper(2+),inorganic ion
+CHEBI:16382,iodide,inorganic ion
+CHEBI:16189,sulfate,inorganic ion
+CHEBI:29919,hydrosulfide,inorganic ion
+CHEBI:16136,hydrogen sulfide,inorganic ion

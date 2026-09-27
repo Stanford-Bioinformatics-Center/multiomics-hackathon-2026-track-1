@@ -1,0 +1,12 @@
+pandas>=2.0
+pyarrow>=12.0
+requests>=2.28
+tqdm>=4.60
+pyyaml>=6.0
+pytest>=7.0
+scikit-learn>=1.0
+# metabolite extension (mnet)
+rdflib>=6.0
+SPARQLWrapper>=2.0
+pygoslin>=2.0
+networkx>=3.0

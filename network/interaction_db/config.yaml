@@ -1,0 +1,107 @@
+# Configuration for the STRING human network build pipeline.
+# All settings live here. Everything can be overridden from the CLI.
+
+# --- STRING / UniProt release ---
+string_version: "12.0"
+taxon: 9606                     # Homo sapiens
+
+# --- Score threshold (STRING 0-1000 scale) ---
+threshold: 700                 # keep combined_score >= this value
+threshold_when: "after"        # "before" or "after" mapping/aggregation
+
+# --- Undirected aggregation of duplicate pairs ---
+agg: "max"                     # mean | max | min | median | first
+decimals: 1                    # null = no rounding, or an int number of decimals
+
+# --- Score transformation (see reports/score_investigation.md) ---
+# raw                  -> report the links_source combined score unchanged
+# physical_else_scaled -> physical score if the edge is in the physical network,
+#                         else scale_factor * full score  (this reproduces the
+#                         reference: ~31% of edges are 0.9 x full score)
+score_mode: "physical_else_scaled"
+scale_factor: 0.9              # multiplier applied to non-physical edges
+
+# --- Mapping source for ENSP -> UniProt ---
+# one of: uniprot_idmapping | string_aliases:UniProt_AC | string_aliases:Ensembl_UniProt
+mapping_source: "uniprot_idmapping"
+# fallback chain when no UniProt accession exists:
+#   UniProt accession -> STRING preferred_name -> raw STRING id (e.g. 9606.ENSP...)
+mapping_fallback: true
+# extra STRING alias sources used to widen UniProt coverage before falling back
+# to preferred_name/raw id (reviewed accessions preferred).
+mapping_alias_sources: ["UniProt_AC", "Ensembl_UniProt"]
+
+# --- Optional filters ---
+reviewed_only: false           # keep only Swiss-Prot reviewed UniProt accessions
+keep_list: null                # path to a newline-delimited file of UniProt IDs to keep
+
+# --- Which links file to use as the base network: full | physical ---
+links_source: "full"
+
+# --- Data source URLs (update here if they move; never hard-code elsewhere) ---
+urls:
+  links: "https://stringdb-downloads.org/download/protein.links.v12.0/9606.protein.links.v12.0.txt.gz"
+  links_detailed: "https://stringdb-downloads.org/download/protein.links.detailed.v12.0/9606.protein.links.detailed.v12.0.txt.gz"
+  links_physical: "https://stringdb-downloads.org/download/protein.physical.links.v12.0/9606.protein.physical.links.v12.0.txt.gz"
+  links_physical_detailed: "https://stringdb-downloads.org/download/protein.physical.links.detailed.v12.0/9606.protein.physical.links.detailed.v12.0.txt.gz"
+  protein_info: "https://stringdb-downloads.org/download/protein.info.v12.0/9606.protein.info.v12.0.txt.gz"
+  uniprot_idmapping: "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/idmapping/by_organism/HUMAN_9606_idmapping.dat.gz"
+  uniprot_reldate: "https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/reldate.txt"
+  string_aliases: "https://stringdb-downloads.org/download/protein.aliases.v12.0/9606.protein.aliases.v12.0.txt.gz"
+  reviewed_list: "https://rest.uniprot.org/uniprotkb/stream?format=list&query=(organism_id:9606)+AND+(reviewed:true)"
+  # --- metabolite extension (mnet) sources; verified in the mnet-download step ---
+  rhea_rhea2uniprot: "https://ftp.expasy.org/databases/rhea/tsv/rhea2uniprot.tsv"
+  rhea2uniprot_sprot: "https://ftp.expasy.org/databases/rhea/tsv/rhea2uniprot_sprot.tsv"
+  rhea2uniprot_trembl: "https://ftp.expasy.org/databases/rhea/tsv/rhea2uniprot_trembl.tsv.gz"
+  rhea_directions: "https://ftp.expasy.org/databases/rhea/tsv/rhea-directions.tsv"
+  rhea2xrefs: "https://ftp.expasy.org/databases/rhea/tsv/rhea2xrefs.tsv"
+  rhea_rdf: "https://ftp.expasy.org/databases/rhea/rdf/rhea.rdf.gz"
+  rhea_sparql: "https://sparql.rhea-db.org/sparql"
+  rhea_chebi_ph7_3: "https://ftp.expasy.org/databases/rhea/tsv/chebi_pH7_3_mapping.tsv"
+  chebi_obo: "https://ftp.ebi.ac.uk/pub/databases/chebi/ontology/chebi.obo.gz"
+  # ChEBI flat files (2025 layout: flat_files/). obo carries formula/charge/smiles
+  # but NOT inchikey, so structures.tsv.gz supplies InChI/InChIKey.
+  chebi_chemical_data: "https://ftp.ebi.ac.uk/pub/databases/chebi/flat_files/chemical_data.tsv.gz"
+  chebi_structures: "https://ftp.ebi.ac.uk/pub/databases/chebi/flat_files/structures.tsv.gz"
+  # SwissLipids (Phase 3): the file is gzip-compressed despite the .tsv name
+  swisslipids_lipids: "https://www.swisslipids.org/api/file.php?cas=download_files&file=lipids.tsv"
+  # --- Phase 6 PTM sources ---
+  # reviewed human (Swiss-Prot carries essentially all curated PTM features);
+  # one bulk stream (accession, gene, sequence, phospho + glyco features)
+  uniprot_human_features: "https://rest.uniprot.org/uniprotkb/stream?format=tsv&query=%28organism_id%3A9606%29+AND+%28reviewed%3Atrue%29&fields=accession,gene_primary,sequence,ft_mod_res,ft_carbohyd"
+  omnipath_enzsub: "https://omnipathdb.org/enzsub?types=phosphorylation,dephosphorylation&genesymbols=yes&license=commercial&fields=sources,references"
+
+# --- Paths (relative to project root) ---
+paths:
+  raw: "data/raw"
+  reference: "data/reference/reference_network_ge700.parquet"
+  processed: "data/processed"
+  reports: "reports"
+  # {threshold} is substituted after CLI overrides; default 700 keeps the
+  # historical filename ..._ge700.parquet unchanged.
+  output: "data/processed/string_v12.0_human_uniprot_network_ge{threshold}.parquet"
+
+# --- Chunked reading ---
+chunksize: 2000000             # rows per chunk when streaming the links file
+
+# --- Metabolite extension (mnet) ---------------------------------------------
+# Settings for the metabolite-network extension (src/mnet/). Does not affect the
+# string_network build.
+mnet:
+  ppi_network: null            # null = use string_network resolve_output_path(cfg) at ppi_threshold
+  ppi_threshold: 500           # metabolite network is built on the >= 500 STRING network
+  metabolites: data/input/metabolite_chebi_ids.csv
+  interim: data/interim
+  output_dir: data/output
+  human_taxon: 9606
+  use_trembl: false            # also use rhea2uniprot_trembl (large); Swiss-Prot covers most human enzymes
+  include_unmeasured: true
+  unmeasured_max_hops: null
+  keep_currency_in_catalysis: false
+  currency_max_reactions: 150
+  measured_currency_policy: "cofactor_rule"   # cofactor_rule | drop | keep_all
+  # --- Phase 6 PTM annotation ---
+  motrpac_features: data/input/motrpac_phospho_feature_ids.csv
+  use_phosphositeplus: false     # non-commercial; if true, read a manually-placed data/raw file, never download
+  predict_n_sequons: false       # flag predicted N-X-S/T (X!=P) sequons
+  lipid_is_a: true

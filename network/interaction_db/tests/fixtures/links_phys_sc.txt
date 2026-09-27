@@ -1,0 +1,3 @@
+protein1 protein2 combined_score
+9606.ENSP1 9606.ENSP2 985
+9606.ENSP2 9606.ENSP1 985

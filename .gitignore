@@ -8,3 +8,6 @@
 *.pdf
 *.svg
 .DS_Store
+
+# interaction_db: curation tables are code, not data
+!network/interaction_db/curation/*.csv
