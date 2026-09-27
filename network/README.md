@@ -700,6 +700,20 @@ The page's module panel lists the top 5 significant sets with their member genes
 `17_module_names.csv`). **Read with care:** a name says what the module's members have in common in the
 databases, not what exercise does to it — that is the CAMERA-PR table below it.
 
+**Step 17 — T2D layers (2026-09-26).** Two more "colour nodes by" modes in the interactive pages. **T2D change**:
+purple = lower, orange = higher in T2D muscle (Öhman 2021 log2 T2D / NGT, from Amar et al. 2024), bold outline =
+T2D-significant (Öhman p < 0.05, or listed by Chae 2018), grey = no T2D data; metabolites in the classes step 18
+treats as T2D-elevated (free fatty acids, acylcarnitines, ceramides, sphingomyelins) get a **literature** direction
+(dashed outline; no measured T2D metabolite data exist in the paper's sets). **Exercise vs T2D direction**: each
+T2D-altered node's exercise direction (sign of its significant cells in the selected arm, omes, tissues, times) is
+compared with its T2D direction: opposite (green), same (orange), T2D-altered but no response (beige); with "endurance
+minus resistance" selected, both arms are compared (opposite after both / one arm only, same, mixed). The legend
+counts every category and states, per arm, the share moving opposite to T2D, the share **expected if the two
+directions were unrelated** (from how many nodes go up with exercise and how many are lower in T2D), and Fisher's
+exact test. In muscle: endurance 14 / 20 opposite (70%; expected 74%; Fisher p 1.0), resistance 17 / 27 (63%;
+expected 58%; p 0.65) — no association beyond the imbalance. (A first version counted proteins without a Chae entry
+as "opposite" through a JSON encoding error — 86%, p 1e-6; found by an offline recount and fixed.)
+
 **Step 18d — disease-filtered vs disease-overlaid modules (figures 18a / 18b).** Disease data: all 8 proteomics
 datasets (9 disease sets) of Amar et al. 2024 (*Cell Metab* 36:1411; doi 10.1016/j.cmet.2023.12.021), processed in
 the Venus project week 6 (`DISEASE_SCORES`; directions median-centred, rodent genes as human orthologs): T2D muscle
@@ -758,6 +772,11 @@ Findings: no option-C module is T2D-linked at FDR < 0.05, but the strongest are 
 moves the genes against their T2D change): 5 / 5 genes for the sustained-up and resistance-only 24 h sets
 (p 0.062), 8 / 10 for genes up after both arms at 4 h (p 0.11); across all exercise-responsive network proteins
 that are T2D-significant, only 29% (endurance, 7 / 24) and 38% (resistance, 10 / 26) move in the T2D direction.
+**Correction (2026-09-26): this discordance is what chance predicts** — most exercise-responsive genes go up
+(≈ 90% after endurance) and most T2D-significant genes are lower in T2D (≈ 80%), so "opposite" is expected ≈ 74%
+of the time even if the two directions were unrelated; against independence the discordance is not significant
+(Fisher p 1.0 endurance, 0.65 resistance; see the step 17 "exercise vs T2D direction" view). The sign test vs 0.5
+used by the paper's method does not account for this imbalance.
 The only FDR-significant links are to liver cirrhosis (tissue-mismatched): genes up 4 h after either arm are up in
 cirrhosis (21 / 22), probably a shared acute stress / injury response. Response-pattern modules are **not**
 connected on our network (0 / 35), unlike the paper's clusters on genome-wide STRING: our graph is sparse (434
@@ -773,7 +792,8 @@ Result: the test is **underpowered on our network** — only 44 (EE) / 65 (RE) m
 11–12 of their genes are T2D-significant, so no module has more than 4 genes in a T2D test; no T2D link at FDR
 < 0.05; the one FDR link is cell adhesion (M01) with liver cirrhosis after resistance (11 / 11 concordant,
 tissue-mismatched). Background: after endurance only 2 / 11 directional T2D-significant genes move in the T2D
-direction (p 0.065), after resistance 4 / 12 — the same "exercise opposes T2D" trend as options B and C. Tables:
+direction (p 0.065), after resistance 4 / 12 — explained by the same up / down imbalance (see the correction
+under step 18c), not evidence that exercise opposes T2D. Tables:
 `18bc_module_disease.csv`, `18bc_module_summary.csv`, `18_approach_comparison_ABCD.csv`.
 
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and

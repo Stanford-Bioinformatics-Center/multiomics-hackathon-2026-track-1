@@ -30,6 +30,9 @@
 #       publications), and GlyGen KINASE -> SUBSTRATE arrows between network proteins (red when a substrate
 #       site responds in the selection); tooltips give per-cell logFC / adj. p, responding sites (with kinase
 #       and O-GlcNAc flags) and the GlyGen summary;
+#     - T2D LAYERS: colour by the T2D change (Öhman 2021 muscle proteome, Chae 2018; literature direction for
+#       T2D-elevated metabolite classes, clearly marked) or by exercise vs T2D direction per arm / both arms, with
+#       counts, the share expected if the directions were unrelated, and Fisher's exact test in the legend;
 #     - search, click-to-highlight neighbours, metabolite-class selector, edge-type check boxes, class outlines
 #       ("bubbles", as in 15a / 15b), collapse / expand classes. Proteins are circles, metabolites triangles.
 #   And for each network a Cytoscape.js JSON file (.cyjs, with node positions) plus one Cytoscape style
@@ -57,6 +60,7 @@
 #   $HACK_OUT/01_nodes_{EE,RE}.csv, 03_weighted_edges.csv, 10_layout_genes.csv   gene network
 #   $HACK_OUT/01b_metab_nodes_{EE,RE}.csv, 06_metabolite_edges.csv, 10_layout_metabolites.csv  metabolites
 #   $HACK_OUT/05_metabolite_protein_links.csv (Rhea reactions), 01c_metabolite_ids.csv (classes)
+#   $DISEASE_SCORES (Amar et al. 2024 disease sets, Venus week 6) for the T2D layers
 #   $HACK_OUT/17_node_cell_stats.csv, 17_modules.csv, 17_module_camera.csv, 17_phospho_site_stats.csv,
 #     17_kinase_edges.csv, 17_glygen_protein_annotation.csv   (from 17_filter_stats.R)
 #
@@ -155,6 +159,14 @@ NSTAT <- fread(file.path(OUT, "17_node_cell_stats.csv"))
 PHS <- fread(file.path(OUT, "17_phospho_site_stats.csv"))
 MODS <- fread(file.path(OUT, "17_modules.csv")); CAM <- fread(file.path(OUT, "17_module_camera.csv"))
 MNAME <- fread(file.path(OUT, "17_module_names.csv")); MORA <- fread(file.path(OUT, "17_module_ora.csv"))
+# T2D (Amar et al. 2024 disease sets; Venus week 6): Öhman 2021 muscle proteome (full table: log2 T2D / NGT, p) and
+# Chae 2018 (significant proteins only). No measured T2D metabolite data exist in those sets, so metabolites in the
+# T2D-elevated classes used by step 18 (free fatty acids, acylcarnitines, ceramides, sphingomyelins) get a
+# LITERATURE direction (higher in T2D), clearly labelled as such in the page.
+DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+T2D <- fread(cmd = sprintf("gzip -dc %s", shQuote(DISEASE_SCORES)))[set %in% c("ohman_2021", "chae_2018") & !is.na(p)][order(p)][!duplicated(paste(set, gene))]
+LIT_CLASSES <- c("Fatty acids", "Fatty esters", "Ceramides", "Phosphosphingolipids")
+LIT <- fread(file.path(OUT, "01c_metabolite_ids.csv"))[main_class %in% LIT_CLASSES, .(metabolite, main_class)]
 KIN <- fread(file.path(OUT, "17_kinase_edges.csv")); ANN <- fread(file.path(OUT, "17_glygen_protein_annotation.csv"))
 for (f in c("17_node_cell_stats.csv", "17_phospho_site_stats.csv", "17_modules.csv", "17_module_camera.csv", "17_kinase_edges.csv"))
   if (!file.exists(file.path(OUT, f))) stop("run network/17_filter_stats.R first (", f, " missing)")
@@ -197,7 +209,14 @@ page_data <- function(P, net, types) {
   ke <- KIN[kinase %in% nodes & substrate %in% nodes]
   kin <- unname(lapply(seq_len(nrow(ke)), function(i) as.list(ke[i])))
   omes <- intersect(c("rna", "prot", "metab"), unique(sub("^[^|]*\\|([^|]*)\\|.*$", "\\1", v$key)))
-  jsonlite::toJSON(list(net = net, vecs = vecs, stats = stats, phos = phos, mods = mods, ann = ann, kin = kin, omes = I(omes),
+  # T2D per node: oh = [log2 FC, p] (Öhman), ch = log2 FC (Chae, significant list); lit = literature class for metabolites
+  oh <- T2D[set == "ohman_2021" & gene %in% nodes]; ch <- T2D[set == "chae_2018" & gene %in% nodes]
+  # (absent entries are dropped, not sent as NULL: jsonlite would turn a NULL into an empty object "{}")
+  t2d <- lapply(split(rbind(oh[, .(gene, set, logFC, p)], ch[, .(gene, set, logFC, p)]), by = "gene"), function(x)
+    Filter(Negate(is.null), list(oh = if (any(x$set == "ohman_2021")) c(signif(x[set == "ohman_2021", logFC], 4), signif(x[set == "ohman_2021", p], 3)) else NULL,
+                                 ch = if (any(x$set == "chae_2018")) signif(x[set == "chae_2018", logFC], 4) else NULL)))
+  lit <- as.list(setNames(LIT[metabolite %in% nodes, main_class], LIT[metabolite %in% nodes, metabolite]))
+  jsonlite::toJSON(list(net = net, vecs = vecs, stats = stats, phos = phos, mods = mods, ann = ann, kin = kin, omes = I(omes), t2d = t2d, lit = lit,
                         annFields = ANN_FIELDS, types = I(types)), auto_unbox = TRUE, digits = NA, na = "null")
 }
 
@@ -228,6 +247,28 @@ function(el, x, cfg) {
   function f3(v) { return (v === null || v === undefined) ? "NA" : (Math.abs(v) >= 0.001 && Math.abs(v) < 1000 ? (+v).toPrecision(3) : (+v).toExponential(1)); }
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
   function on(obj) { return Object.keys(obj).filter(function (k) { return obj[k]; }); }
+  // T2D direction of a node: Öhman p < 0.05 -> its sign; else listed by Chae -> Chae's sign; else literature class (metabolites, +1)
+  function t2dOf(id) { var t = D.t2d[id] || {};
+    // only a real [log2 FC, p] pair (Öhman) or a real number (Chae) counts; anything else is treated as absent
+    if (!(Array.isArray(t.oh) && t.oh.length === 2)) t.oh = null; if (typeof t.ch !== "number") t.ch = null;
+    if (t.oh && t.oh[1] < 0.05) return { dir: Math.sign(t.oh[0]), src: "Öhman 2021 (log2 " + (+t.oh[0]).toPrecision(2) + ", p " + (+t.oh[1]).toPrecision(2) + ")", measured: true };
+    if (t.ch !== null) return { dir: Math.sign(t.ch), src: "Chae 2018 (listed, log2 " + (+t.ch).toPrecision(2) + ")", measured: true };
+    if (D.lit[id]) return { dir: 1, src: "literature: " + D.lit[id] + " higher in T2D (class-level, not measured)", measured: false, lit: true };
+    if (t.oh) return { dir: 0, src: "Öhman 2021: not T2D-altered (p " + (+t.oh[1]).toPrecision(2) + ")", measured: true };
+    return { dir: 0, src: "no T2D data", measured: false, none: true }; }
+  // exercise direction of a node in one arm, over the selected omes / tissues / times: sign of the significant cells' changes
+  function exDir(id, arm) { var s = 0, S2 = D.stats[id] || {};
+    on(st.omes).forEach(function (o) { on(st.tis).forEach(function (t) { on(st.times).forEach(function (h) {
+      var r = S2[t + "|" + o + "|" + arm + "|" + h]; if (r && r[1] < st.thr) s += Math.sign(r[0]); }); }); });
+    return Math.sign(s); }
+  // Fisher's exact test (two-sided) for a 2 x 2 table [[a, b], [c, d]]: are exercise and T2D directions associated?
+  function lf(n) { var s = 0; for (var i = 2; i <= n; i++) s += Math.log(i); return s; }
+  function fisher2(a, b, c, d) { var r1 = a + b, r2 = c + d, c1 = a + c, n = r1 + r2; if (!n) return 1;
+    var lp = function (x) { return lf(r1) + lf(r2) + lf(c1) + lf(n - c1) - lf(n) - lf(x) - lf(r1 - x) - lf(c1 - x) - lf(r2 - c1 + x); };
+    var p0 = lp(a), tot = 0; for (var x = Math.max(0, c1 - r2); x <= Math.min(r1, c1); x++) { var v = lp(x); if (v <= p0 + 1e-9) tot += Math.exp(v); } return Math.min(1, tot); }
+  // exact two-sided binomial (sign) test p-value
+  function binom2(k, n) { if (!n) return 1; var pm = [Math.pow(0.5, n)]; for (var i = 0; i < n; i++) pm.push(pm[i] * (n - i) / (i + 1));
+    var pk = pm[k] * (1 + 1e-9); return Math.min(1, pm.reduce(function (a, v) { return v <= pk ? a + v : a; }, 0)); }
   function grad(pal) { return "<span class='hk-grad' style='background:linear-gradient(90deg," + pal.join(",") + ")'></span>"; }
   // selected dimension keys "tissue|ome|time"
   function keys(omes) { var k = []; omes.forEach(function (o) { on(st.tis).forEach(function (t) { on(st.times).forEach(function (h) { k.push(t + "|" + o + "|" + h); }); }); }); return k; }
@@ -278,6 +319,8 @@ function(el, x, cfg) {
           "<span class='hk-sep'></span><b>Arm</b> " + ["EE", "RE", "ER"].map(function (a) { return "<label><input type='radio' name='" + el.id + "-arm' class='hk-arm' value='" + a + "'" + (a === "EE" ? " checked" : "") + "> " + ARMLAB[a] + "</label>"; }).join(" ") +
           "<span class='hk-sep'></span><b>adj. p &lt;</b> <input class='hk-thr' type='number' step='0.01' min='0' max='1' value='0.05' style='width:55px'></div>";
   h += "<div><b>Colour nodes by</b> <select class='hk-colour'><option value='response'>exercise response (filtered)</option>" +
+       "<option value='t2d'>T2D change (Öhman muscle proteome; Chae; literature classes for metabolites)</option>" +
+       "<option value='t2dcmp'>exercise vs T2D direction (compares the selected arm; 'endurance minus resistance' = both arms)</option>" +
        D.annFields.map(function (f) { return "<option value='ann:" + f.col + "'>" + esc(f.label) + "</option>"; }).join("") + "</select>" +
        "<span class='hk-sep'></span><b>Module</b> <select class='hk-mod'><option value=''>none</option></select>" +
        "<span class='hk-sep'></span><b>Find</b> <input class='hk-find' list='" + el.id + "-dl' placeholder='gene or metabolite'>" +
@@ -365,17 +408,36 @@ function(el, x, cfg) {
     var nAll = nodes.get(), val = {}, vals = [];
     nAll.forEach(function (n) { var v = null;
       if (st.colour === "response") v = response(n.id);
+      else if (st.colour === "t2d") { var tt = D.t2d[n.id]; v = (tt && Array.isArray(tt.oh) && tt.oh.length === 2) ? tt.oh[0] : null; }
+      else if (st.colour === "t2dcmp") v = null;
       else if (st.colour === "phospho") { var pc = phosCells(n.id); v = (D.phos[n.id] ? pc : null); }
       else { var f = st.colour.substr(4), a = D.ann[n.id]; v = a ? a[f] : null; }
       val[n.id] = v; if (typeof v === "number") vals.push(v); });
     var vlim = q95(vals), vmax = Math.max.apply(null, vals.concat([1]));
     var smax = Math.max.apply(null, Object.keys(strength).map(function (k) { return strength[k]; }).concat([1e-9]));
     var keep = null; if (st.focus) { keep = {}; st.focus.forEach(function (i) { keep[i] = true; net.getConnectedNodes(i).forEach(function (j) { keep[j] = true; }); }); }
-    var thr = st.thr, fset = {}, tally = {}; if (st.focus) st.focus.forEach(function (i) { fset[i] = true; });
+    var thr = st.thr, fset = {}, tally = {}, cmpN = {EE: [0, 0], RE: [0, 0]}, tab = {EE: {"-1-1": 0, "-11": 0, "1-1": 0, "11": 0}, RE: {"-1-1": 0, "-11": 0, "1-1": 0, "11": 0}}; if (st.focus) st.focus.forEach(function (i) { fset[i] = true; });
     // 3. node styles + tooltips
     nodes.update(nAll.map(function (n) {
       var v = val[n.id], col = "#E6E6E6", border = "#555555", bw = 0.8, sc = sigCells(n.id), sig = sc.filter(function (r) { return r[4] < thr; });
       if (st.colour === "response") { if (v !== null) col = div3(v, vlim, st.arm === "ER" ? DIFF : RESP); if (sig.length) { border = "#000000"; bw = 3; } }
+      else if (st.colour === "t2d") { var T0 = t2dOf(n.id);
+        if (v !== null) col = div3(v, vlim, RESP); else if (T0.lit) col = "#FDD9B5"; else if (T0.measured) col = T0.dir > 0 ? "#E66100" : "#5E3C99";
+        if (T0.dir !== 0 && T0.measured) { border = "#000000"; bw = 2.6; }
+        var tl = T0.lit ? "metabolite: literature class, higher in T2D (not measured)" : T0.none ? "no T2D data" : T0.dir > 0 ? "higher in T2D (significant)" : T0.dir < 0 ? "lower in T2D (significant)" : "measured, not T2D-altered";
+        tally[tl] = (tally[tl] || 0) + 1; }
+      else if (st.colour === "t2dcmp") { var T1 = t2dOf(n.id), cat;
+        if (T1.dir === 0) cat = T1.none ? "no T2D data" : "not T2D-altered";
+        else { var arms = st.arm === "ER" ? ["EE", "RE"] : [st.arm], rel = arms.map(function (a) { var e = exDir(n.id, a); if (e !== 0) { cmpN[a][1]++; if (e !== T1.dir) cmpN[a][0]++; tab[a][String(e) + String(T1.dir)]++; } return e === 0 ? 0 : (e === T1.dir ? 1 : -1); });
+          var opp = rel.filter(function (r) { return r < 0; }).length, same = rel.filter(function (r) { return r > 0; }).length;
+          if (!opp && !same) cat = "T2D-altered, no exercise response in selection";
+          else if (arms.length === 1) cat = opp ? "exercise opposite to T2D" : "exercise same direction as T2D";
+          else cat = opp === 2 ? "opposite to T2D after both arms" : (opp && same) ? "mixed: opposite after one arm, same after the other" : opp ? (rel[0] < 0 ? "opposite after endurance only" : "opposite after resistance only") : "same direction as T2D (one or both arms)"; }
+        var CC = {"exercise opposite to T2D": "#1B7837", "opposite to T2D after both arms": "#1B7837", "opposite after endurance only": "#7FBC41", "opposite after resistance only": "#7FBC41",
+                  "exercise same direction as T2D": "#D95F02", "same direction as T2D (one or both arms)": "#D95F02", "mixed: opposite after one arm, same after the other": "#7570B3",
+                  "T2D-altered, no exercise response in selection": "#F2E6CF", "not T2D-altered": "#FFFFFF", "no T2D data": "#E6E6E6"};
+        col = CC[cat]; if (T1.dir !== 0 && cat.indexOf("no exercise") < 0) { border = "#000000"; bw = 2; }
+        tally[cat] = (tally[cat] || 0) + 1; }
       else if (st.colour === "phospho") { if (v === null) col = "#E6E6E6"; else { var up = v.filter(function (r) { return r[4] < thr && r[2] > 0; }).length, dn = v.filter(function (r) { return r[4] < thr && r[2] < 0; }).length;
           col = up && dn ? "#8C510A" : up ? "#E66100" : dn ? "#5E3C99" : "#FFFFFF"; if (up || dn) { border = "#000000"; bw = 2; } } }
       else { var fld = D.annFields.filter(function (f) { return "ann:" + f.col === st.colour; })[0];
@@ -392,8 +454,10 @@ function(el, x, cfg) {
         t += "<br><u>MoTrPAC phosphosites</u>: " + D.phos[n.id].length + " measured, " + pcs.length + " respond in selection" + (pcs.length ? "<br>" + pcs.slice(0, 8).map(function (r) { return r[3].site + " (" + r[0] + " " + r[1] + ") logFC " + f3(r[2]) + ", adj. p " + f3(r[4]) + (r[3].kin ? " · kinase " + esc(r[3].kin) : "") + (r[3].xt ? " · also an O-glycosylation site" : ""); }).join("<br>") : ""); }
       var a = D.ann[n.id]; if (a) t += "<br><u>PTM (mnet)</u>: " + a.phosphosites + " phosphosites (" + a.kinase_sites + " with kinase)" + (a.is_kinase ? " · kinase (" + a.substrate_sites + " substrate sites)" : "") + " · " + a.glyco_sites + " glycosylation sites (N " + a.glyco_N_sites + ", O " + a.glyco_O_sites + ")" + (a.crosstalk_residues ? " · " + a.crosstalk_residues + " phospho = O-glyco residues" : "") +
         "<br><u>GlyGen</u>: " + a.glycans + " glycan structures" + (a.glyco_protein_level ? " · glycosylated (protein-level evidence)" : "") + " · " + a.mutations + " mutations · " + a.disease + " diseases · " + a.pathways + " pathways · " + a.publications + " publications";
+      var T2 = t2dOf(n.id); t += "<br><u>T2D</u>: " + esc(T2.src) + (T2.dir !== 0 ? " · exercise direction in selection: endurance " + ["down", "none", "up"][exDir(n.id, "EE") + 1] + ", resistance " + ["down", "none", "up"][exDir(n.id, "RE") + 1] : "");
       var mm = D.mods.filter(function (m) { return m.members.indexOf(n.id) >= 0; })[0]; if (mm) t += "<br>module " + mm.id;
-      return { id: n.id, size: size, title: t, borderWidth: onF ? bw : 0.5, font: { color: onF ? "#1A1A1A" : "rgba(0,0,0,0.06)" },
+      var dashB = (st.colour === "t2d" || st.colour === "t2dcmp") && !!D.lit[n.id];
+      return { id: n.id, size: size, title: t, borderWidth: onF ? bw : 0.5, shapeProperties: { borderDashes: dashB ? [3, 2] : false }, font: { color: onF ? "#1A1A1A" : "rgba(0,0,0,0.06)" },
                color: { background: onF ? col : "rgba(230,230,230,0.25)", border: onF ? border : "rgba(170,170,170,0.25)", highlight: { background: col, border: "#000000" }, hover: { background: col, border: "#000000" } } };
     }));
     // 3b. PTM tags per protein for the current selection
@@ -441,6 +505,26 @@ function(el, x, cfg) {
     if (st.colour === "response") {
       G += "<div class='hk-ls'>fill = mean normalised response (" + ARMLAB[st.arm] + ", selection)</div>" + (st.arm === "ER" ? bar3(DIFF, "−" + f3(vlim), "0", "+" + f3(vlim), "higher in resistance", "higher in endurance") : bar3(RESP, "−" + f3(vlim), "0", "+" + f3(vlim), "down vs control", "up vs control")) +
            sw("#FFF", "black outline: adj. p &lt; " + thr + " in a selected cell", tally["significant"] || 0, "ring") + sw("#E6E6E6", "grey: no data in the selection", tally["no data in selection"] || 0);
+    } else if (st.colour === "t2d") {
+      G += "<div class='hk-ls'>fill = T2D vs normal glucose tolerance, muscle proteome (Öhman 2021, from Amar et al. 2024)</div>" + bar3(RESP, "\u2212" + f3(vlim), "0", "+" + f3(vlim), "lower in T2D", "higher in T2D") +
+           ["higher in T2D (significant)", "lower in T2D (significant)", "measured, not T2D-altered", "metabolite: literature class, higher in T2D (not measured)", "no T2D data"].map(function (k) {
+             var c = {"higher in T2D (significant)": "#E66100", "lower in T2D (significant)": "#5E3C99", "measured, not T2D-altered": "#FFFFFF", "metabolite: literature class, higher in T2D (not measured)": "#FDD9B5", "no T2D data": "#E6E6E6"}[k];
+             return sw(c, k, tally[k] || 0); }).join("") +
+           "<div class='hk-ls'>bold outline = T2D-significant (Öhman p &lt; 0.05, or listed by Chae 2018 where Öhman is not significant); dashed outline = literature class only</div>";
+    } else if (st.colour === "t2dcmp") {
+      var cats = st.arm === "ER" ? ["opposite to T2D after both arms", "opposite after endurance only", "opposite after resistance only", "same direction as T2D (one or both arms)", "mixed: opposite after one arm, same after the other"]
+                                 : ["exercise opposite to T2D", "exercise same direction as T2D"];
+      var CC2 = {"exercise opposite to T2D": "#1B7837", "opposite to T2D after both arms": "#1B7837", "opposite after endurance only": "#7FBC41", "opposite after resistance only": "#7FBC41",
+                 "exercise same direction as T2D": "#D95F02", "same direction as T2D (one or both arms)": "#D95F02", "mixed: opposite after one arm, same after the other": "#7570B3"};
+      G += "<div class='hk-ls'>exercise direction (" + (st.arm === "ER" ? "endurance and resistance, each" : ARMLAB[st.arm]) + ": sign of its significant cells, adj. p &lt; " + thr + ", selected omes / tissues / times) vs T2D direction (Öhman, else Chae; metabolites: literature classes)</div>" +
+           cats.map(function (k) { return sw(CC2[k], k, tally[k] || 0); }).join("") +
+           sw("#F2E6CF", "T2D-altered, no exercise response in selection", tally["T2D-altered, no exercise response in selection"] || 0) + sw("#FFFFFF", "not T2D-altered", tally["not T2D-altered"] || 0) + sw("#E6E6E6", "no T2D data", tally["no T2D data"] || 0);
+      ["EE", "RE"].filter(function (a) { return st.arm === "ER" || a === st.arm; }).forEach(function (a) { var k = cmpN[a][0], n = cmpN[a][1], t = tab[a];
+        var up = (t["1-1"] + t["11"]) / Math.max(n, 1), t2dDown = (t["-1-1"] + t["1-1"]) / Math.max(n, 1), expOpp = up * t2dDown + (1 - up) * (1 - t2dDown);
+        G += "<div class='hk-ls'><b>" + ARMLAB[a] + "</b>: of " + n + " T2D-altered nodes responding, " + k + " move opposite to T2D" +
+             (n ? " (" + Math.round(100 * k / n) + "%). Expected if exercise and T2D directions were unrelated: " + Math.round(100 * expOpp) + "% (" + Math.round(100 * up) + "% go up with exercise, " +
+                  Math.round(100 * t2dDown) + "% are lower in T2D); Fisher p " + f3(fisher2(t["-1-1"], t["-11"], t["1-1"], t["11"])) + "." : "") + "</div>"; });
+      G += "<div class='hk-ls'>Direction match only (healthy-adult exercise vs T2D-vs-NGT), not evidence of treatment. Use the tissue filter (e.g. muscle only) to match the T2D tissue.</div>";
     } else if (st.colour === "phospho") {
       G += "<div class='hk-ls'>fill = MoTrPAC phosphosites responding (adj. p &lt; " + thr + ", " + ARMLAB[st.arm] + ", selected muscle / adipose times)</div>" +
            [["#E66100", "up"], ["#5E3C99", "down"], ["#8C510A", "up and down"], ["#FFFFFF", "measured, none respond"], ["#E6E6E6", "not measured"]].map(function (x) { return sw(x[0], x[1], tally[x[1]] || 0); }).join("");
