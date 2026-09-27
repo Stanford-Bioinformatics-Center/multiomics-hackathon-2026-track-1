@@ -71,6 +71,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--backend", choices=tuple(lyrics.BACKENDS), default="cli", help="how to ask Claude (default %(default)s)")
     ap.add_argument("--model", default=lyrics.DEFAULT_MODEL)
     ap.add_argument("--audio", help="the song file (skip waiting)")
+    ap.add_argument("--lyrics", help="reuse saved lyrics (a lyrics.json from an earlier run or 01_lyrics_from_walk.py) instead of writing new ones; its walk is used")
     ap.add_argument("--downloads", default=str(Path.home() / "Downloads"), help="folder watched for the Suno download")
     ap.add_argument("--fps", type=int, default=20)
     ap.add_argument("--size", default="1280x720", help="video size WxH (default %(default)s)")
@@ -88,8 +89,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             raise VideoStageError(f"figure 17 page not found: {page} (run: bash network/run_all.sh 17s 17i)")
         width, height = (int(x) for x in args.size.lower().split("x"))
 
-        # 1-2. the walk
-        if args.walk:
+        # 1-2. the walk (from saved lyrics, a fixed walk, or a random walk)
+        saved = None
+        if args.lyrics:
+            saved = json.loads(audio.clean_path(args.lyrics).read_text(encoding="utf-8"))
+            if not isinstance(saved.get("bars"), list) or not saved.get("walk"):
+                raise VideoStageError(f"{args.lyrics} is not a lyrics.json (needs 'walk' and 'bars')")
+            path = tuple(saved["walk"]); walk.check_walk(path, net); seed = saved.get("seed")
+            lyrics.parse_lyrics(json.dumps({"sections": [{"node": n, "persona": saved.get("personas", {}).get(n, ""), "bars": [b["text"] for b in saved["bars"] if b["node"] == n]} for n in path]}), path)
+        elif args.walk:
             path = tuple(walk.resolve_node(n, net) for n in args.walk.split(",") if n.strip()); walk.check_walk(path, net); seed = None
         else:
             start = walk.resolve_node(args.start, net) if args.start else ask_start(net)
@@ -103,9 +111,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         prompt = lyrics.build_prompt(path, facts)
         (dest / "walk_facts.json").write_text(json.dumps(facts, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         (dest / "lyrics_prompt.md").write_text(prompt + "\n", encoding="utf-8")
-        print(f"[2/4] writing the lyrics with Claude ({args.backend}, {args.model}) ...")
-        t = time.time(); lyr = lyrics.write_lyrics(prompt, path, args.backend, args.model)
-        (dest / "lyrics_raw.txt").write_text(lyr.pop("raw"), encoding="utf-8")
+        if saved is not None:
+            print(f"[2/4] reusing the saved lyrics: {args.lyrics}"); t = time.time()
+            lyr = {"title": saved.get("title", "Untitled"), "suno_style": saved.get("suno_style", ""), "personas": saved.get("personas", {}),
+                   "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"]} for b in saved["bars"]]}
+        else:
+            print(f"[2/4] writing the lyrics with Claude ({args.backend}, {args.model}) ...")
+            t = time.time(); lyr = lyrics.write_lyrics(prompt, path, args.backend, args.model)
+            (dest / "lyrics_raw.txt").write_text(lyr.pop("raw"), encoding="utf-8")
         suno = lyrics.suno_text(lyr, path)
         (dest / "suno_lyrics.txt").write_text(suno + "\n", encoding="utf-8"); (dest / "suno_style.txt").write_text(lyr["suno_style"] + "\n", encoding="utf-8")
         md = [f"# {lyr['title']}", "", f"*Walk: {' -> '.join(path)} · {args.model}*", ""]
