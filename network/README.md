@@ -65,7 +65,7 @@ flowchart LR
   Q --> I[Step 17<br/>interactive pages + Cytoscape files<br/>search, highlight, filter, EE / RE / difference]
   P --> I
   I --> U
-  Q --> T[Step 19<br/>T2D stories: small subgraph,<br/>connector subgraph, replication<br/>EE vs RE, permutation tests]
+  Q --> T[Step 19<br/>T2D consensus proteins: neighbourhoods,<br/>Steiner tree, per protein + PTMs<br/>EE vs RE, permutation tests]
   T --> U
   P --> U[User: which relationships differ<br/>between the arms]
   F --> U
@@ -203,7 +203,7 @@ Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per a
 Rscript network/18_disease_modules.R          # disease filter vs overlay modules (Amar 2024 disease sets) -> figures 18a / 18b
 Rscript network/18_option_c_graphical_modules.R  # option C: paper-style repfdr modules + direction concordance -> figure 18c
 Rscript network/18_option_bc_hybrid.R         # hybrid B + C: structural modules + paper-style disease test -> figure 18d
-Rscript network/19_t2d_stories.R              # three T2D stories, endurance vs resistance -> figures 19a / 19b / 19c
+Rscript network/19_t2d_stories.R              # three T2D stories (two-study consensus proteins), endurance vs resistance -> figures 19a / 19b / 19c
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
@@ -245,7 +245,7 @@ Rscript network/99_manifest.R                 # fingerprints every output and co
 | 17 | `17_node_cell_stats.csv`, `17_modules.csv` (+ `17_module_modules.gmt`), `17_module_camera.csv`, `17_phospho_site_stats.csv`, `17_glygen_protein_annotation.csv` | from `17_filter_stats.R`: per-node per-cell logFC / adj. p; modules; CAMERA-PR per module × cell; phosphosite statistics with GlyGen flags; GlyGen counts per protein |
 | 17 | `$HACK_FIG/17_interactive/17a_joint_network.html`, `17b_gene_network.html`, `17c_metabolite_network.html` (not committed) | self-contained interactive pages (open in any browser) |
 | 17 | `17_cytoscape/17_{joint,gene,metabolite}_network.cyjs`, `..._{nodes,edges}.csv`, `17_cytoscape_styles.xml` | Cytoscape.js JSON with positions, plain tables, three Cytoscape styles (EE, RE, difference) |
-| 19 | `19_t2d_node_tests.csv`, `19_t2d_subgraph_tests.csv`, `19_t2d_components.csv`, `19_t2d_story_nodes.csv`, `19_t2d_consensus_cells.csv`, `reports/19_t2d_stories.md`; `$HACK_FIG/19a_t2d_small_subgraph.png`, `19b_t2d_connector_subgraph.png`, `19c_t2d_replication.png` (not committed) | reversal tests per T2D set × node set × tissue; subgraph tests per story; story-1 pieces; every story node with T2D values, responses per tissue and best muscle cell; consensus proteins per muscle cell; the three figures |
+| 19 | `19_t2d_consensus_tests.csv`, `19_t2d_subgraph_tests.csv`, `19_t2d_ego_networks.csv`, `19_t2d_node_tests.csv`, `19_t2d_story_nodes.csv`, `19_t2d_consensus_cells.csv`, `reports/19_t2d_stories.md`; `$HACK_FIG/19a_t2d_small_subgraphs.png`, `19b_t2d_steiner_subgraph.png`, `19c_t2d_consensus_proteins.png` (not committed) | consensus-protein reversal per tissue (sign flip); subgraph tests per story; each consensus protein's neighbourhood; single-study sensitivity; every story node with T2D values, responses and best muscle cell; consensus proteins per muscle cell; the three figures (PTM tags as in step 17) |
 | 18 | `18_t2d_class_summary.csv`, `18_t2d_species.csv`, `18_clinical_nefa_lactate.csv` | T2D-relevant lipid classes and species per arm, tissue and time; clinical NEFA, glycerol and lactate per arm (descriptive, untested) |
 | 13 | `$HACK_FIG/13_logfc_descriptive_stats.pdf` (+ `.tex`), `13_logfc_descriptive_stats.csv` | min, max, mean, SD and n of the unnormalised log fold changes per ome, pooled across arms (table 1) and by arm (table 2) |
 | 12 | `12_normalization_divisors.csv`, `12_normalization_summary.csv`; `$HACK_FIG/12a_gene_network_normalization_comparison.png`, `12b_metabolite_network_normalization_comparison.png` | the four normalisation options: every divisor, comparison numbers, and 2 × 2 difference-network panels per data type |
@@ -822,32 +822,29 @@ under step 18c), not evidence that exercise opposes T2D. Tables:
 
 **Step 19 — endurance vs resistance in the context of T2D: three stories (figures 19a / 19b / 19c).** The key
 question is how the two arms differ for disease prevention. Of the 9 disease sets in Amar et al. 2024 only the two
-T2D sets come from a tissue we measure (skeletal muscle: Öhman 2021 full table, Chae 2018 significant proteins
-only); the heart (HCM, heart failure, MI) and liver (NASH, cirrhosis, NAFLD, ob/ob) sets are **not used** —
-comparing a liver or heart signature with muscle / blood / adipose exercise responses gives "significant" overlaps
-even between unrelated tissues. So step 19 tells three T2D stories. **Readout:** each node's mean normalised
-response over the muscle cells (primary, tissue-matched); blood and adipose are secondary. **Reversal** (per arm) =
-−Spearman(T2D z, response) across T2D-altered nodes (Öhman p < 0.05): positive = exercise moves proteins that are
-lower in T2D up and those higher in T2D down. Rank correlation ignores an overall shift of all responses (the
-imbalance that made the sign counts in the step 17 pages misleading). All tests: 10,000 permutations, seed 20260926.
+T2D sets come from a tissue we measure (skeletal muscle); the heart and liver sets are **not used**. Only the
+strongest T2D signals enter: proteins **validated in both T2D datasets in the same direction** (Öhman 2021 p < 0.05
+and listed by Chae 2018, same sign): 85 genome-wide, **8 among our 471** (DCXR, DECR1, DCTN1, DIABLO, HSPB6, PRDX5,
+BLVRB lower in T2D; PEBP1 higher), 6 of them network nodes (DECR1 and PEBP1 have no edge; BLVRB sits in a separate
+part of the network). **Readout:** mean normalised response over the muscle cells (primary); blood and adipose
+secondary. **Reversal** of a protein = −sign(T2D change) × response (> 0 = moved opposite to T2D). **PTMs** are
+drawn on the proteins exactly as in the step 17 pages (phosphosite pins: red = responds after endurance only, blue =
+resistance only, purple = both, MoTrPAC muscle, adj. p < 0.05 at any time, up to 6 then +n; SNFG glycosylation
+squares; gold star = phospho / O-glyco crosstalk residue) — drawn, not tested. Random draws: 10,000; seed 20260926.
 
-| Story | Subgraph | Endurance vs resistance | Test (p) |
+| Story | Subgraph | What is drawn / tested | Result (p) |
 |---|---|---|---|
-| **Node level (all stories)** | 68 T2D-altered proteins among the 471 (51 in the network) | muscle reversal: endurance **0.31** (p 0.011), resistance −0.07 (p 0.57); difference **p 0.009** (q 0.026 over the 3 tissues; per-node arm swap p 0.002). Network proteins only: 0.33 (p 0.020) vs −0.02, difference p 0.038 | T2D z permuted (same shuffle for both arms) |
-| **1 — small subgraph** (19a) | the T2D proteins' own connected pieces: 10 pieces of 2–3 proteins (e.g. AKR1B1–DCXR–QDPR, polyol / pterin; STIP1–HSPB6–BAG3, chaperones; PPIB–P4HB, ER folding) | T2D proteins are **not** more connected than chance (largest piece 3, p 0.87; edges 13 vs 8.9 expected, p 0.08); no single piece differs between arms (w_EE − w_RE vs same-size connected subgraphs: smallest p 0.065, PPIB–P4HB, EE-positive / RE-negative) | degree-matched random sets; random connected subgraphs; exact sign flip |
-| **2 — larger subgraph** (19b) | T2D proteins + connectors (nodes linked to ≥ 2 of them): 42 nodes (24 T2D proteins, 18 connectors incl. HSPA1A, HSPB1, CDC37, HSP90B1, CCT5, PRDX3, TXNRD1, SOD1, BAX, TRAF2, MAPK9, ABL1, ITGAV, PXN and glutathione) | more connected than chance (**p 0.039**); edges co-regulated more under resistance (mean w_RE 0.051 vs w_EE 0.012; difference vs same-size connected subgraphs p 0.12); T2D proteins inside: endurance reversal 0.30 (p 0.16) vs resistance 0.01 (p 0.96), difference p 0.27 | degree-matched seeds through the same connector rule; random connected subgraphs; T2D z permuted |
-| **3 — replication** (19c) | Chae 2018 (independent cohort; 18 listed proteins among the 471) and the 8 consensus proteins (both studies, same direction) | Chae: endurance − resistance **+0.22, the same direction** as Öhman, not significant (endurance 0.13, p 0.60; resistance −0.09, p 0.72; difference p 0.43). Consensus proteins: endurance − resistance > 0 in the sign-flip test, p 0.055 (n = 8); HSPB6 falls at 0.5 h after both arms; DECR1 and DCXR (lower in T2D) rise at 24 h after endurance only (RNA, adj. p < 0.05) | T2D z permuted; exact sign flip (256 patterns) |
+| **1 — small subgraphs** (19a) | each consensus protein with its direct neighbours (DCXR–AKR1B1–SORD, HSPB6–HSPB1–BAG3, DIABLO–BAX–TRAF2, DCTN1–DCTN2/DCTN6/SOD1/RAB6A, PRDX5–PRDX3, BLVRB–HMOX1/HMOX2) | mean w_EE − w_RE over the edges touching them vs degree-matched random protein sets | edges co-regulated more under resistance (w_RE 0.093 vs w_EE −0.004), **p 0.088** |
+| **2 — larger subgraph** (19b) | Steiner tree (Kou–Markowsky–Berman) connecting the 5 reachable consensus proteins: 20 nodes via HSPA1A, CDC37, FOXO1, MAPK9, IKBKG, SOD1 / SOD2, PRDX3, BAX, TRAF2, NT5E, CD34, SORD | tree size and mean w_EE − w_RE vs trees built the same way on degree-matched random terminals | not closer than chance (**p 0.94**); edges lean to resistance (0.075 vs 0.011), **p 0.17** |
+| **3 — protein by protein** (19c) | the 8 consensus proteins | mean reversal per arm and EE − RE, exact sign-flip test (256 patterns); per-cell muscle response; their 16 measured muscle phosphosites per time and arm | muscle EE − RE 6 / 8 proteins, **p 0.055** (endurance 0.003, p 0.71; resistance −0.008, p 0.24); blood / adipose p ≥ 0.38. Per cell: DCXR and DECR1 rise at 24 h after endurance only (RNA, adj. p 1e-4 / 0.005); HSPB6 falls at 0.5 h after both arms |
 
-**Read with care.** The one robust result is node-level and tissue-matched: after endurance, muscle proteins that are
-lower in T2D tend to go up and those higher in T2D tend to go down; after resistance they do not (difference p 0.009,
-reproduced by the arm-swap test). The second cohort points the same way but is too small to confirm it. The graph
-adds structure, not extra evidence: T2D proteins only form a larger subgraph through connectors (story 2), whose
-edges lean towards resistance co-regulation without reaching significance. In **blood** (secondary, not
-tissue-matched) the pattern flips: resistance reverses (0.35, p 0.004) and endurance does not reach significance (0.22, p 0.065);
-the arms do not differ significantly there. These are direction matches between acute exercise in healthy adults and T2D vs
-normal glucose tolerance, not evidence that either arm treats or prevents T2D. Tables: `19_t2d_node_tests.csv`,
-`19_t2d_subgraph_tests.csv`, `19_t2d_components.csv`, `19_t2d_story_nodes.csv`, `19_t2d_consensus_cells.csv`;
-report `reports/19_t2d_stories.md`.
+**Read with care.** With 8 proteins no set-level test reaches p < 0.05 (the smallest possible sign-flip p is
+0.0078). The single-study sets (sensitivity, `19_t2d_node_tests.csv`, not the primary question) give Öhman-only
+(68 proteins) endurance reversal 0.31 vs resistance −0.07, difference p 0.0085, and Chae-only (18) the same
+direction, not significant. The T2D data measure protein abundance, so phosphosite changes cannot be oriented to
+T2D. Direction matches between acute exercise in healthy adults and T2D are not evidence of treatment. Tables:
+`19_t2d_consensus_tests.csv`, `19_t2d_subgraph_tests.csv`, `19_t2d_ego_networks.csv`, `19_t2d_node_tests.csv`,
+`19_t2d_story_nodes.csv`, `19_t2d_consensus_cells.csv`; report `reports/19_t2d_stories.md`.
 
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
@@ -1086,7 +1083,7 @@ network/
   18_disease_modules.R           step 18d disease-filtered vs disease-overlaid modules (Amar 2024 disease sets), figures 18a / 18b
   18_option_c_graphical_modules.R  step 18c option C: modules + disease links as in Amar et al. 2024 (repfdr, graphical sets), figure 18c
   18_option_bc_hybrid.R          step 18bc hybrid: option-B modules + option-C disease test, figure 18d
-  19_t2d_stories.R               step 19  three T2D stories (small subgraph, connector subgraph, replication): EE vs RE, figures 19a-c
+  19_t2d_stories.R               step 19  three T2D stories on the two-study consensus proteins (neighbourhoods, Steiner tree, per protein + PTMs): EE vs RE, figures 19a-c
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
