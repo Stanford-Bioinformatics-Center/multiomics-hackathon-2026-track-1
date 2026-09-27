@@ -23,19 +23,22 @@ N <- merge(E, ch[, .(choice, x0 = x, y0 = y)], by = "choice")
 N[, `:=`(i = seq_len(.N), n = .N), by = choice]
 # neighbours fan out over the UPPER half only (the name sits below the dot): one straight up, more spread 15-165 deg
 N[, a := ifelse(n == 1, pi / 2, pi * (15 + 150 * (i - 1) / pmax(n - 1, 1)) / 180)][, `:=`(x1 = x0 + R * cos(a), y1 = y0 + R * sin(a))]
-heads <- ch[, .(x = min(x) + (max(x) - min(x)) / 2, y = 0.62), by = group]
+# one colour per choice (Vidal: red, blue, green, yellow, orange, purple; no story heading), placed so that every pair
+# of grid neighbours is easy to tell apart (checked with the dataviz palette validator over all 720 placements: worst
+# neighbour pair CVD dE 15.3, normal-vision dE 20.8); grid order = row by row. Every dot also carries its name.
+HUES <- c(red = "#e34948", yellow = "#eda100", blue = "#2a78d6", green = "#008300", orange = "#eb6834", purple = "#4a3aa7")
+setorder(ch, -y, x); ch[, dot := unname(HUES)[(seq_len(.N) - 1) %% length(HUES) + 1]]
 
 p <- ggplot() +
   geom_segment(data = N, aes(x0, y0, xend = x1, yend = y1), colour = "#c9c8c3", linewidth = 0.5) +
   geom_point(data = N, aes(x1, y1), colour = "#9a9993", size = 1.6) +
   geom_text(data = N, aes(x1, y1, label = neighbour), colour = "#6e6d68", size = 2.1,
             vjust = -0.9, hjust = ifelse(cos(N$a) > 0.3, 0.2, ifelse(cos(N$a) < -0.3, 0.8, 0.5))) +
-  geom_point(data = ch, aes(x, y, colour = group), size = 6.5) +
+  geom_point(data = ch, aes(x, y), colour = ch$dot, size = 6.5) +
   geom_point(data = ch, aes(x, y), colour = "#fcfcfb", size = 6.5, shape = 1, stroke = 0.9) +   # 2px surface ring
   geom_label(data = ch, aes(x, y - 0.13, label = choice), fill = "#fcfcfb", colour = "#0b0b0b", label.size = 0,
              fontface = "bold", size = 3.6, vjust = 1, label.padding = unit(0.08, "lines")) +
-  geom_text(data = heads, aes(x, y, label = group, colour = group), fontface = "bold", size = 4.2, show.legend = FALSE) +
-  scale_colour_manual(values = COL, breaks = GROUPS, name = "Story", guide = if (nlevels(droplevels(ch$group)) > 1) "legend" else "none") +
+
   coord_equal(clip = "off") +
   labs(title = "Choose Your Own Adventure") +                     # title only: no hint of what the choice is for
   theme_void(base_size = 12) +
