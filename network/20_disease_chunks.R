@@ -12,19 +12,22 @@
 #                phosphoproteome, discovery 77 people + validation 46), Needham et al. 2024 (Cell Metab 36:2542;
 #                insulin-resistant vs insulin-sensitive muscle proteome, 19 people), Larsen et al. 2023 (Sci Adv
 #                9:eadi7548; subcutaneous adipose proteome, T2D vs lean, 48 men).
+#                Plus UK Biobank plasma: Gadd et al. 2024 (Nat Aging 4:1616; 1,468 Olink proteins x incident T2D, 47,600 people).
 #     AGEING   — Ubaida-Mohien et al. 2019 (eLife 8:e49874; vastus lateralis proteome, healthy adults aged 20-87;
-#                proteins associated with age).
+#                proteins associated with age) and, scaled up, UK Biobank plasma: Sun et al. 2023 (Nature 622:329;
+#                Olink Explore 3k, ~54,000 people; per-protein association with age).
 #   For every disease set the SAME pre-specified tests are run, and each chunk's story is chosen by a fixed rule.
 #
 # WHAT THIS SCRIPT DOES (plain language)
 #   1. Disease direction per protein (or phosphosite): log2 change (disease vs healthy; age slope for ageing) and p,
 #      turned into a signed z as in step 18. "Altered" = p < 0.05 (sets that publish only significant proteins: all
-#      listed). Needham's phosphosite table gives no direction for insulin-resistant vs -sensitive, so only its
+#      listed; UK Biobank sets, where p < 0.05 flags almost every protein at n ~50,000: the paper's own Bonferroni
+#      threshold, 1.7e-5 for Sun 2023 and 3.1e-6 for Gadd 2024). Needham's phosphosite table gives no direction for insulin-resistant vs -sensitive, so only its
 #      protein table is used. Larsen's adipose table is regenerated from the authors' own cleaned matrix (GitHub
 #      fpm-cbmr/HIIT_adipose_project) with their limma model (group x time, subject correlation); their matrix is
 #      already batch-corrected, so the batch term is dropped (same coefficients, slightly optimistic d.f.).
 #   2. Exercise response per node: mean normalised log fold change over the cells of the disease set's tissue (muscle
-#      or adipose). For phosphosites: the mean MoTrPAC muscle phosphosite logFC over 0.5 / 4 / 24 h, matched on
+#      or adipose; for the UK Biobank plasma sets, our blood PROTEIN cells, which are the same Olink platform). For phosphosites: the mean MoTrPAC muscle phosphosite logFC over 0.5 / 4 / 24 h, matched on
 #      protein + residue.
 #   3. Tests per set (10,000 random draws; seed 20260926):
 #      A  protein / site level: reversal per arm = -Spearman(disease z, response) over the altered proteins / sites
@@ -108,22 +111,34 @@ LA <- data.table(set = "larsen_2023_adipose_T2D_vs_lean", gene = sub(";.*$", "",
 # Ubaida-Mohien 2019: muscle proteins associated with age (published table lists only p < 0.05); age slope = direction.
 ub <- fread(UBAIDA)
 UB <- data.table(set = "ubaida_mohien_2019_age", gene = ub$GenePrimary, site = NA_character_, logFC = ub$AgeBeta, p = ub$Pvalue)
+# UK Biobank plasma (Olink): Sun 2023 Supplementary Table 5 (age beta, SE, log10 p; proteins associated with age, sex
+# or BMI) and Gadd 2024 Supplementary Table 4 (Cox hazard ratio per protein for incident type 2 diabetes, age-adjusted).
+st5 <- as.data.table(read_excel(file.path(EXT, "sun_2023_nature", "MOESM3.xlsx"), sheet = "ST5", skip = 5, col_names = FALSE, .name_repair = "minimal"))[, 1:5]
+setnames(st5, c("id", "name", "beta", "se", "log10p")); st5 <- st5[!is.na(id)][, lapply(.SD, function(v) if (all(grepl("^[-0-9.eE+]+$", na.omit(v)))) as.numeric(v) else v)]
+SU <- st5[, .(set = "sun_2023_ukb_age", gene = sub(":.*$", "", id), site = NA_character_, logFC = as.numeric(beta), p = 10^(-as.numeric(log10p)), zz = as.numeric(beta) / as.numeric(se))]
+g4 <- as.data.table(read_excel(file.path(EXT, "gadd_2024_nataging", "MOESM3.xlsx"), sheet = "Supplementary Table 4", skip = 8, col_names = FALSE, .name_repair = "minimal"))[, 1:6]
+setnames(g4, c("predictor", "outcome", "HR", "LCI", "UCI", "P")); g4 <- g4[outcome == "Type 2 diabetes"][, (3:6) := lapply(.SD, as.numeric), .SDcols = 3:6]
+GA <- g4[, .(set = "gadd_2024_ukb_incident_T2D", gene = sub("\\..*$", "", predictor), site = NA_character_, logFC = log(HR), p = P,
+             zz = log(HR) / ((log(UCI) - log(LCI)) / (2 * qnorm(0.975))))]   # z from the confidence interval (p underflows to 0)
 # All sets, their chunk / tissue / level / whether all or only significant rows are published.
-DS <- rbind(OLD, KJ, NE, LA, UB, fill = TRUE)
+DS <- rbind(OLD, KJ, NE, LA, UB, SU, GA, fill = TRUE)
 DS[, `:=`(logFC = suppressWarnings(as.numeric(logFC)), p = suppressWarnings(as.numeric(p)))]   # some supplementary cells are stored as text
 DS <- DS[!is.na(gene) & gene != "" & is.finite(logFC) & is.finite(p)]
-DS <- DS[order(p)][!duplicated(paste(set, gene, site))][, z := zof(logFC, p)]
+DS <- DS[order(p)][!duplicated(paste(set, gene, site))][, z := zof(logFC, p)][!is.na(zz), z := zz][, zz := NULL]   # UK Biobank: z from beta / SE
 META <- data.table(set = c("ohman_2021", "chae_2018", "kjaergaard_2025_prot_discovery", "kjaergaard_2025_prot_validation", "kjaergaard_2025_phos_discovery",
-                           "kjaergaard_2025_phos_validation", "needham_2024_prot_IR_vs_IS", "larsen_2023_adipose_T2D_vs_lean", "ubaida_mohien_2019_age"),
-                   chunk = c("old T2D", "old T2D", "new T2D", "new T2D", "new T2D", "new T2D", "new T2D", "new T2D", "ageing"),
+                           "kjaergaard_2025_phos_validation", "needham_2024_prot_IR_vs_IS", "larsen_2023_adipose_T2D_vs_lean", "ubaida_mohien_2019_age",
+                           "gadd_2024_ukb_incident_T2D", "sun_2023_ukb_age"),
+                   chunk = c("old T2D", "old T2D", "new T2D", "new T2D", "new T2D", "new T2D", "new T2D", "new T2D", "ageing", "new T2D", "ageing"),
                    label = c("Öhman 2021 T2D muscle protein", "Chae 2018 T2D muscle protein", "Kjærgaard 2025 T2D muscle protein (discovery)", "Kjærgaard 2025 T2D muscle protein (validation)",
                              "Kjærgaard 2025 T2D muscle phosphosite (discovery)", "Kjærgaard 2025 T2D muscle phosphosite (validation)", "Needham 2024 insulin-resistant muscle protein",
-                             "Larsen 2023 T2D adipose protein", "Ubaida-Mohien 2019 ageing muscle protein"),
-                   tissue = c("muscle", "muscle", "muscle", "muscle", "muscle", "muscle", "muscle", "adipose", "muscle"),
-                   level = c("protein", "protein", "protein", "protein", "site", "site", "protein", "protein", "protein"),
-                   sig_only = c(FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE),
-                   primary = c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE),
-                   validates = c(NA, "ohman_2021", NA, "kjaergaard_2025_prot_discovery", NA, "kjaergaard_2025_phos_discovery", NA, NA, NA))
+                             "Larsen 2023 T2D adipose protein", "Ubaida-Mohien 2019 ageing muscle protein",
+                             "UK Biobank (Gadd 2024) incident T2D plasma protein", "UK Biobank (Sun 2023) ageing plasma protein"),
+                   tissue = c("muscle", "muscle", "muscle", "muscle", "muscle", "muscle", "muscle", "adipose", "muscle", "blood_prot", "blood_prot"),
+                   level = c("protein", "protein", "protein", "protein", "site", "site", "protein", "protein", "protein", "protein", "protein"),
+                   sig_only = c(FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FALSE),
+                   alpha = c(rep(ALPHA, 9), 3.1e-6, 1.7e-5),         # "altered" threshold (UK Biobank: the paper's Bonferroni threshold)
+                   primary = c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE),
+                   validates = NA_character_)
 # Pooled sets (POST HOC — added after the Kjærgaard discovery result did not replicate in their validation cohort):
 # per protein, Stouffer's z across cohorts that measured it in all of them (same contrast, independent people).
 stouffer <- function(sets, name) { x <- DS[set %in% sets, .(z = sum(z) / sqrt(.N), logFC = mean(logFC), k = .N), by = gene][k == length(sets)]
@@ -132,7 +147,7 @@ DS <- rbind(DS, stouffer(c("kjaergaard_2025_prot_discovery", "kjaergaard_2025_pr
                 stouffer(c("ohman_2021", "kjaergaard_2025_prot_discovery", "kjaergaard_2025_prot_validation"), "t2d_muscle_3cohort_pooled"))
 META <- rbind(META, data.table(set = c("kjaergaard_2025_prot_pooled", "t2d_muscle_3cohort_pooled"), chunk = c("new T2D", "old + new T2D"),
                                label = c("Kjærgaard 2025 T2D muscle protein, both cohorts pooled (post hoc)", "Öhman + Kjærgaard T2D muscle protein, 3 cohorts pooled (post hoc)"),
-                               tissue = "muscle", level = "protein", sig_only = FALSE, primary = c(TRUE, FALSE), validates = NA_character_))
+                               tissue = "muscle", level = "protein", sig_only = FALSE, alpha = ALPHA, primary = c(TRUE, FALSE), validates = NA_character_))
 META[set == "kjaergaard_2025_prot_discovery", primary := FALSE]   # the pooled set replaces it as new T2D's primary protein set
 DS <- DS[set %in% META$set]
 fwrite(DS, file.path(OUT, "20_disease_scores.csv"))
@@ -140,7 +155,8 @@ fwrite(DS, file.path(OUT, "20_disease_scores.csv"))
 # ---- 2. exercise responses ------------------------------------------------------------------------------------
 EEg <- fread(file.path(OUT, "01_nodes_EE.csv")); REg <- fread(file.path(OUT, "01_nodes_RE.csv")); GENES471 <- EEg$gene_symbol
 tmean <- function(Mx, tis) { cols <- grep(paste0("^", tis, "_"), names(Mx), value = TRUE); v <- rowMeans(as.matrix(Mx[, ..cols]), na.rm = TRUE); v[is.nan(v)] <- NA; setNames(v, Mx$gene_symbol) }
-RESP <- list(muscle = list(EE = tmean(EEg, "muscle"), RE = tmean(REg, "muscle")), adipose = list(EE = tmean(EEg, "adipose"), RE = tmean(REg, "adipose")))
+RESP <- list(muscle = list(EE = tmean(EEg, "muscle"), RE = tmean(REg, "muscle")), adipose = list(EE = tmean(EEg, "adipose"), RE = tmean(REg, "adipose")),
+             blood_prot = list(EE = tmean(EEg, "blood_prot"), RE = tmean(REg, "blood_prot")))   # blood protein cells = Olink, as UK Biobank
 PH <- fread(file.path(OUT, "17_phospho_site_stats.csv"))[tissue == "muscle" & arm %in% c("EE", "RE")]
 SRESP <- dcast(PH[, .(r = mean(logFC, na.rm = TRUE)), by = .(protein, site, arm)], protein + site ~ arm, value.var = "r")   # site response per arm
 E <- fread(file.path(OUT, "14_joint_edges.csv")); N <- fread(file.path(OUT, "14_joint_nodes.csv"))
@@ -169,7 +185,7 @@ lcc_nodes <- function(v) { cm <- components(induced_subgraph(gJ, v)); names(cm$m
 # ---- 3. tests per set -----------------------------------------------------------------------------------------
 TESTS <- list(); SUBG <- list()
 for (i in seq_len(nrow(META))) { m <- META[i]; d <- DS[set == m$set]; set.seed(SEED)
-  alt <- if (m$sig_only) d else d[p < ALPHA]
+  alt <- if (m$sig_only) d else d[p < m$alpha]
   if (m$level == "protein") {
     y <- alt[gene %in% GENES471, .(node = gene, z)][, `:=`(a = RESP[[m$tissue]]$EE[node], b = RESP[[m$tissue]]$RE[node])][is.finite(a) & is.finite(b)]
   } else {
@@ -253,23 +269,27 @@ net_panel <- function(nodes, Zs, alt, arm, lim, wlim, title) {
     tag_layers(tag_data(lay, 7)) + geom_point(data = nd, aes(x, y, fill = r, colour = outline, shape = shape), size = 3.6, stroke = 1.3) +
     geom_text_repel(data = nd, aes(x, y, label = node, fontface = ifelse(node %in% alt, "bold", "plain")), size = 2.4, seed = SEED, max.time = 60, max.iter = 1e4, box.padding = 0.3, min.segment.length = 0.2, segment.size = 0.2) +
     scale_colour_identity() + scale_shape_identity() + scale_linetype_manual(values = c(`FALSE` = "solid", `TRUE` = "22"), guide = "none") +
-    scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0, limits = c(-lim, lim), oob = scales::squish, name = "mean normalised\nmuscle response") +
+    scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0, limits = c(-lim, lim), oob = scales::squish, name = "mean normalised\nresponse (set's tissue)") +
     scale_linewidth(range = c(0.2, 2.6), limits = c(0, wlim), name = "|edge weight|") + coord_equal(clip = "off") + labs(title = title) + theme_void(base_size = 10) +
     theme(plot.title = element_text(face = "bold", size = 10), legend.position = "bottom") }
-rev_scatter <- function(tab, zv, title, labs_nodes, xlab) {
+rev_scatter <- function(tab, zv, title, labs_nodes, xlab, ylab = "mean normalised muscle response") {
   d <- rbind(data.table(node = names(zv), z = zv, r = rE[names(zv)], arm = ARMLAB[["EE"]]), data.table(node = names(zv), z = zv, r = rR[names(zv)], arm = ARMLAB[["RE"]]))[is.finite(r)]
   ann <- data.table(arm = ARMLAB[c("EE", "RE")], lab = c(sprintf("reversal %.2f, p %.3g", tab$rev_EE, tab$p_EE), sprintf("reversal %.2f, p %.3g", tab$rev_RE, tab$p_RE)))
   ggplot(d, aes(z, r)) + geom_hline(yintercept = 0, colour = "grey70") + geom_vline(xintercept = 0, colour = "grey70") +
     geom_point(aes(colour = z < 0), size = 1.8, alpha = 0.85) + scale_colour_manual(values = c(`TRUE` = COL_LOW, `FALSE` = COL_HIGH), guide = "none") +
     geom_text_repel(data = d[node %in% labs_nodes], aes(label = node), size = 2.3, seed = SEED, max.time = 60, max.iter = 1e4, min.segment.length = 0.1) +
     geom_label(data = ann, aes(x = -Inf, y = -Inf, label = lab), hjust = -0.05, vjust = -0.3, size = 3, label.size = 0, fill = "white", alpha = 0.85, inherit.aes = FALSE) +
-    facet_wrap(~arm) + labs(x = xlab, y = "mean normalised muscle response", title = title) + theme_bw(base_size = 10) + theme(plot.title = element_text(face = "bold", size = 10)) }
+    facet_wrap(~arm) + labs(x = xlab, y = ylab, title = title) + theme_bw(base_size = 10) + theme(plot.title = element_text(face = "bold", size = 10)) }
 CELL <- fread(file.path(OUT, "17_node_cell_stats.csv"))
 story_fig <- function(chunk_name, set_name, file, fig_title, xlab) {
-  m <- META[set == set_name]; d <- DS[set == set_name]; alt <- if (m$sig_only) d else d[p < ALPHA]
+  m <- META[set == set_name]; d <- DS[set == set_name]; alt <- if (m$sig_only) d else d[p < m$alpha]
+  rE <<- RESP[[m$tissue]]$EE; rR <<- RESP[[m$tissue]]$RE                      # the readout of this set's tissue
+  tlab <- c(muscle = "muscle", adipose = "adipose", blood_prot = "blood protein")[[m$tissue]]
   Zs <- setNames(d$z, d$gene); a471 <- intersect(alt$gene, GENES471); tab <- TS[set == set_name]
-  sigp <- unique(CELL[node %in% a471 & tissue == "muscle" & arm %in% c("EE", "RE") & adj_p < ALPHA, node])
-  psc <- rev_scatter(tab, Zs[a471], sprintf("%s: the %d altered proteins among the 471 (labels: a muscle cell with adj. p < 0.05)", m$label, length(a471)), sigp, xlab)
+  ctis <- if (m$tissue == "blood_prot") "blood" else m$tissue; come <- if (m$tissue == "blood_prot") "prot" else c("rna", "prot")
+  sigp <- unique(CELL[node %in% a471 & tissue == ctis & ome %in% come & arm %in% c("EE", "RE") & adj_p < ALPHA, node])
+  psc <- rev_scatter(tab, Zs[a471], sprintf("%s: the %d altered proteins among the 471 (labels: a %s cell with adj. p < 0.05)", m$label, length(a471), tlab), sigp, xlab,
+                     sprintf("mean normalised %s response", tlab))
   frc <- fr[chunk == chunk_name]
   pfc <- ggplot(frc, aes(v, lab, colour = arm)) + geom_vline(xintercept = 0, colour = "grey60") + geom_point(size = 2.8, position = position_dodge(0.6)) +
     geom_text(aes(label = sprintf("p %.2g", p)), position = position_dodge(0.6), vjust = -0.85, size = 2.4, show.legend = FALSE) +
@@ -280,19 +300,27 @@ story_fig <- function(chunk_name, set_name, file, fig_title, xlab) {
   # proteins' own connected pieces (edges among altered proteins only, pieces with >= 2 proteins).
   pieces <- nrow(sg) && sg$p_size >= ALPHA && length(S2) > 40
   if (pieces) { cm <- components(induced_subgraph(gJ, DN)); S2 <- names(cm$membership)[cm$membership %in% which(cm$csize >= 2)] }
+  big <- length(S2) > 60                                          # still too large to read: keep only the largest connected piece
+  if (big) S2 <- lcc_nodes(S2)
   es <- E[node_a %in% S2 & node_b %in% S2]; wl <- max(abs(c(es$w_EE, es$w_RE)), 1e-6); lim <- max(quantile(abs(c(rE[S2], rR[S2])), 0.95, na.rm = TRUE), 1e-6)
   sub <- if (nrow(sg)) sprintf("Connector subgraph: %d altered network proteins + nodes linked to >= 2 of them; largest piece %d nodes (size vs degree-matched random seeds p %.2g; w_EE %.3f vs w_RE %.3f, difference p %.2g).%s",
                                sg$n_altered_network, sg$size, sg$p_size, sg$w_EE, sg$w_RE, sg$p_w_diff,
-                               if (pieces) sprintf(" Not beyond chance and too large to read, so the network shows the altered proteins' own connected pieces (%d proteins).", length(S2)) else " The network shows that subgraph.") else ""
+                               if (pieces) sprintf(" Not beyond chance and too large to read, so the network shows the altered proteins' own connected pieces%s (%d nodes).", if (big) ", largest piece only" else "", length(S2)) else " The network shows that subgraph.") else ""
   row <- (net_panel(S2, Zs, alt$gene, "EE", lim, wl, "Endurance: node fill = muscle response, edge width = w_EE") | net_panel(S2, Zs, alt$gene, "RE", lim, wl, "Resistance: node fill = muscle response, edge width = w_RE") | key_panel()) +
     plot_layout(widths = c(1, 1, 0.26), guides = "collect") & theme(legend.position = "bottom")
   f <- ((psc | pfc) + plot_layout(widths = c(1.4, 1))) / row + plot_layout(heights = c(1, 1.3)) +
     plot_annotation(title = fig_title, subtitle = paste(strwrap(paste0("Outline / bold: purple = lower, orange = higher in the disease (or with age); black = connector. ", sub), 230), collapse = "\n"), theme = theme(plot.title = element_text(face = "bold")))
   ggsave(file.path(FIG, file), f, width = 19, height = 14, dpi = 300, bg = "white"); message("-> ", file.path(FIG, file)) }
-story_fig("new T2D", "kjaergaard_2025_prot_pooled", "20b_new_t2d_story.png",
-          "Figure 20b. New T2D (Kjærgaard 2025, both cohorts pooled; post hoc): muscle proteins altered in T2D, endurance vs resistance", "T2D z (pooled; < 0 = lower in T2D)")
-story_fig("ageing", "ubaida_mohien_2019_age", "20c_ageing_story.png",
-          "Figure 20c. Muscle ageing (Ubaida-Mohien 2019): age-associated muscle proteins, endurance vs resistance", "age z (signed; < 0 = lower with age)")
+# The chosen story of each chunk (rule above), plus the supporting muscle sets of the story arc.
+xl <- function(set) if (grepl("age", set)) "age z (signed; < 0 = lower with age)" else "T2D z (signed; < 0 = lower in T2D / at lower risk)"
+story_fig("new T2D", STORY[chunk == "new T2D", set], "20b_new_t2d_story.png",
+          sprintf("Figure 20b. New T2D, chosen story: %s, endurance vs resistance", META[set == STORY[chunk == "new T2D", set], label]), xl(STORY[chunk == "new T2D", set]))
+story_fig("ageing", STORY[chunk == "ageing", set], "20c_ageing_story.png",
+          sprintf("Figure 20c. Ageing, chosen story: %s, endurance vs resistance", META[set == STORY[chunk == "ageing", set], label]), xl(STORY[chunk == "ageing", set]))
+story_fig("new T2D", "kjaergaard_2025_prot_pooled", "20d_new_t2d_muscle_pooled.png",
+          "Figure 20d. New T2D in muscle (Kjærgaard 2025, both cohorts pooled; post hoc): endurance vs resistance", xl("t2d"))
+story_fig("ageing", "ubaida_mohien_2019_age", "20e_ageing_muscle.png",
+          "Figure 20e. Muscle ageing (Ubaida-Mohien 2019): age-associated muscle proteins, endurance vs resistance", xl("age"))
 
 # ---- 6. report --------------------------------------------------------------------------------------------------
 f3 <- function(x) formatC(x, digits = 3, format = "fg"); fp <- function(x) formatC(x, digits = 2, format = "g")
@@ -307,6 +335,6 @@ md <- c("# Step 20 — the best endurance-vs-resistance story per disease chunk"
   "## Chosen story per chunk (smallest p among primary sets)", "", "| chunk | set | test | statistic | p |", "|---|---|---|---|---|",
   row_md(STORY[, .(chunk, label, kind, f3(stat), fp(p))]), "",
   "## Figures (caption skeletons)", "", "- **20a** — every set and test (forest, by chunk).",
-  "- **20b** — new T2D: pooled Kjærgaard scatter (EE vs RE), all new-T2D sets, connector subgraph in both arms with PTM tags.",
-  "- **20c** — ageing: age-associated proteins scatter, connector subgraph in both arms with PTM tags.")
+  "- **20b / 20c** — the chosen story of new T2D / ageing: scatter (EE vs RE), all sets of the chunk, network in both arms with PTM tags.",
+  "- **20d / 20e** — supporting muscle sets: Kjærgaard pooled (new T2D), Ubaida-Mohien (ageing).")
 writeLines(md, file.path(OUT, "reports", "20_disease_chunks.md")); message("-> ", file.path(OUT, "reports", "20_disease_chunks.md"))

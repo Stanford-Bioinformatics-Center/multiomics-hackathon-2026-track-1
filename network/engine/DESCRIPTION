@@ -1,0 +1,17 @@
+Package: exnet
+Type: Package
+Title: Exercise Network Engine: Physically Gated, Response-Weighted Molecular Networks
+Version: 1.0.0
+Authors@R: person("Vidal M.", "Arroyo", email = "varroyo@stanford.edu", role = c("aut", "cre"))
+Description: The core of the MoTrPAC hackathon Track 1 network. An edge between two molecules exists only
+    if a physical interaction database links them (the hard layer: STRING protein-protein interactions,
+    Rhea enzyme-metabolite reactions); its weight in each exercise arm is the dot product of the two
+    molecules' normalised exercise-response vectors (the soft layer). Typed S4 classes with validity checks,
+    defensive input assertions and classed errors.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends: R (>= 4.2), methods
+Imports: checkmate, data.table
+Suggests: testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Collate: 'errors.R' 'classes.R' 'build.R' 'methods.R' 'toy.R'

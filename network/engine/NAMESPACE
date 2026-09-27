@@ -1,0 +1,5 @@
+exportClasses(Embedding, PhysicalEdges, WeightedNetwork)
+export(embedding, physical_edges, build_network, combine_networks, double_embedding, bind_embeddings, edge_table, node_strength, arm_specific_edges, toy_example)
+exportMethods(show)
+import(methods)
+importFrom(data.table, data.table, as.data.table, rbindlist, setnames)

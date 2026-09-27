@@ -33,6 +33,9 @@ versions and input checksums should give identical outputs (checked with `networ
 | tinytex | 0.58 |
 | limma | 3.62.2 |
 | readxl | 1.4.5 |
+| checkmate | 2.3.4 |
+| testthat | 3.3.2 |
+| exnet | 1.0.0 |
 | TMSig | 1.0.0 |
 | fgsea | 1.32.4 |
 | MotrpacHumanPreSuspensionAnalysis | 0.2.4 |
@@ -56,20 +59,22 @@ versions and input checksums should give identical outputs (checked with `networ
 | team mnet resource (MNET_DIR) | README.md | 3,233 | 2026-09-26 17:26 | ab6a128f64b73a2d61f7ed98d819c72a |
 | legacy curated STRING file (STRING_PARQUET; used only with EDGE_SOURCE=legacy) | Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet | 585,329 | 2026-09-26 10:30 | 3a1fc7a9776d76553b8ac01cb152fdb3 |
 | Amar et al. 2024 disease proteomics sets, processed in Venus week 6 (DISEASE_SCORES; step 18d) | disease_scores.csv.gz | 995,726 | 2026-09-24 10:22 | d4a098ad84762f24f7f4335579b69420 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc1.xlsx | 10,851,954 | 2026-09-26 21:28 | f3a74f2cfbe065085921edffd5d39dc9 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc2.xlsx | 12,975,402 | 2026-09-26 21:28 | f5c8604836d1b2577b7d7dbbbaa40781 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc3.xlsx | 11,073 | 2026-09-26 21:28 | 3f4396042f86a76b0e6cc9ae964a52c7 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | COMMIT_SHA | 41 | 2026-09-26 21:26 | d821d8607d06e21f8630e12f88828c0b |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | Exprs_adipose_clean.txt | 3,004,748 | 2026-09-26 21:26 | 434e4eef00ce02aa0821760588f608f9 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | File_names.txt | 10,322 | 2026-09-26 21:26 | aad8dc9f38a10770762b69a60dcc09e1 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | Limma_and_GeneSet_analysis.R | 68,635 | 2026-09-26 21:26 | 1728905219bcf34a67e1ac26f61c1ab3 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | Preprocessing_and_Figure1.R | 17,592 | 2026-09-26 21:26 | 923e73d5cc787dcfe6598dc316622131 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | README.md | 1,112 | 2026-09-26 21:26 | 817af329f7cf5a5a40f9d374fd7e61d3 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc2.xlsx | 11,532 | 2026-09-26 21:28 | 63b0aaf2183f8c634f2382b5e4541a1f |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc3.xlsx | 2,191,560 | 2026-09-26 21:28 | 961f0d66d97b64a9ccb11b4cf0b29228 |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc4.xlsx | 13,509 | 2026-09-26 21:28 | 542ef3d259746943afa6771dcb77865f |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc5.xlsx | 29,658,815 | 2026-09-26 21:28 | 89a190b3665c2dd50e2d487e34ff09ae |
-| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f) | mmc6.xlsx | 2,099,402 | 2026-09-26 21:28 | 77a87cbabeeda62adf19f127c3f99b33 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | MOESM3.xlsx | 7,733,778 | 2026-09-26 22:27 | e993d67cf5833b4c96fcc3780fb137d2 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc1.xlsx | 10,851,954 | 2026-09-26 21:28 | f3a74f2cfbe065085921edffd5d39dc9 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc2.xlsx | 12,975,402 | 2026-09-26 21:28 | f5c8604836d1b2577b7d7dbbbaa40781 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc3.xlsx | 11,073 | 2026-09-26 21:28 | 3f4396042f86a76b0e6cc9ae964a52c7 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | COMMIT_SHA | 41 | 2026-09-26 21:26 | d821d8607d06e21f8630e12f88828c0b |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | Exprs_adipose_clean.txt | 3,004,748 | 2026-09-26 21:26 | 434e4eef00ce02aa0821760588f608f9 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | File_names.txt | 10,322 | 2026-09-26 21:26 | aad8dc9f38a10770762b69a60dcc09e1 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | Limma_and_GeneSet_analysis.R | 68,635 | 2026-09-26 21:26 | 1728905219bcf34a67e1ac26f61c1ab3 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | Preprocessing_and_Figure1.R | 17,592 | 2026-09-26 21:26 | 923e73d5cc787dcfe6598dc316622131 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | README.md | 1,112 | 2026-09-26 21:26 | 817af329f7cf5a5a40f9d374fd7e61d3 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc2.xlsx | 11,532 | 2026-09-26 21:28 | 63b0aaf2183f8c634f2382b5e4541a1f |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc3.xlsx | 2,191,560 | 2026-09-26 21:28 | 961f0d66d97b64a9ccb11b4cf0b29228 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc4.xlsx | 13,509 | 2026-09-26 21:28 | 542ef3d259746943afa6771dcb77865f |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc5.xlsx | 29,658,815 | 2026-09-26 21:28 | 89a190b3665c2dd50e2d487e34ff09ae |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | mmc6.xlsx | 2,099,402 | 2026-09-26 21:28 | 77a87cbabeeda62adf19f127c3f99b33 |
+| published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f) | MOESM3.xlsx | 34,411,394 | 2026-09-26 22:28 | aeb2acdc5586034e91197658a10a7d70 |
 | Ubaida-Mohien 2019 muscle ageing proteome, Amar et al. repository copy (UBAIDA; step 20) | ubaida_mohien_ 2019_elife_stat.csv | 3,075,476 | 2026-08-05 20:59 | 2b48b6cb930d00dcaed765d3f8a9b74d |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | chebi_pH7_3_mapping.tsv | 3,099,222 | 2026-09-26 13:02 | adf14687a450d8366f9b364101202635 |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | rhea-kegg.reaction.gz | 1,556,033 | 2026-09-26 13:02 | 325907b498cfb6c89aa0fa6ff8605bab |

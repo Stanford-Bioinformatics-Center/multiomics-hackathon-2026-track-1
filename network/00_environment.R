@@ -41,7 +41,7 @@ tool_version <- function(cmd, args) tryCatch(system2(cmd, args, stdout = TRUE, s
 pdflatex_bin <- function() { p <- Sys.which("pdflatex"); if (nzchar(p)) return(p)
   r <- tryCatch(tinytex::tinytex_root(), error = function(e) ""); c(list.files(file.path(r, "bin"), pattern = "^pdflatex$", recursive = TRUE, full.names = TRUE), "pdflatex")[1] }
 KEY_PKGS <- c("data.table", "igraph", "ggplot2", "ggrepel", "ggforce", "ggnewscale", "scales", "nanoparquet", "jsonlite", "visNetwork",
-              "htmlwidgets", "htmltools", "rmarkdown", "tinytex", "limma", "readxl", "TMSig", "fgsea", "MotrpacHumanPreSuspensionAnalysis",
+              "htmlwidgets", "htmltools", "rmarkdown", "tinytex", "limma", "readxl", "checkmate", "testthat", "exnet", "TMSig", "fgsea", "MotrpacHumanPreSuspensionAnalysis",
               "MotrpacHumanPreSuspensionData", "MotrpacHumanPreSuspension", "Matrix")
 pk <- data.table(package = KEY_PKGS, version = sapply(KEY_PKGS, function(p) tryCatch(as.character(packageVersion(p)), error = function(e) "NOT INSTALLED")))
 tools <- data.table(tool = c("R", "Python", "pandoc", "TinyTeX (pdflatex)", "platform"),
@@ -70,7 +70,7 @@ INP <- rbind(
   fp(Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz")),
      "Amar et al. 2024 disease proteomics sets, processed in Venus week 6 (DISEASE_SCORES; step 18d)"),
   fp(list.files(Sys.getenv("DISEASE_EXT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/external/disease")), recursive = TRUE, full.names = TRUE,
-                pattern = "\\.(xlsx|txt|R|md)$|COMMIT_SHA"), "published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023; step 20f)"),
+                pattern = "\\.(xlsx|txt|R|md)$|COMMIT_SHA"), "published disease tables for step 20 (DISEASE_EXT; Kjærgaard 2025, Needham 2024, Larsen 2023, Sun 2023, Gadd 2024; step 20f)"),
   fp(Sys.getenv("UBAIDA", unset = path.expand("~/Desktop/github/motrpac/motrpac-rat-training-mitochondria/disease_datasets/ubaida_mohien_ 2019_elife_stat.csv")),
      "Ubaida-Mohien 2019 muscle ageing proteome, Amar et al. repository copy (UBAIDA; step 20)"),
   fp(list.files(EXT, full.names = TRUE), paste0("Rhea cache (HACK_EXT), release ", rhea_rel)),
