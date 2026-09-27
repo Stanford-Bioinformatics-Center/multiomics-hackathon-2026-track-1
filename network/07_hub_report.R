@@ -3,6 +3,10 @@
 # 07_hub_report.R — STEP 7: HOW MANY HUBS ARE THERE, AND HOW MANY ANALYTES HANG ON EACH? (NOTHING REMOVED)
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   Are there nodes that dominate our networks (hubs), which are they, and how much hangs on each? This is
+#   a report to inform the team's decision on hub removal; nothing is removed.
+#
 # HUB DEFINITION (team decision, 2026-09-26): the HUB is the node with the highest summed edge weight
 #   ("strength" = sum of |w| over its edges, per arm; the weights are signed dot products, so their sizes are
 #   summed). "Strength hubs" are all nodes whose strength (the larger of the two arms) is above the Tukey fence
@@ -39,6 +43,15 @@
 #                                         overall), strength-hub count, and the degree cutoffs / counts for reference
 #          $HACK_OUT/07_hub_list.csv      every node above the strength fence or the degree Tukey fence, with its
 #                                         strength per arm, degree, and what is attached to it
+#
+# HOW TO RUN
+#   After steps 3, 5, 6 and 14:   Rscript network/07_hub_report.R   (run_all.sh runs it right after step 14)
+#
+# KNOWN LIMITS
+#   - Gene nodes are named by gene symbol, so two genes sharing a symbol would be counted as one node.
+#   - For mediating proteins, "strength" sums only the metabolite edges where the protein is a SHARED
+#     protein; edges it supports only through a STRING-interacting partner are not counted.
+#   - Both fences are conventions (El-Kebir 40 x IQR, Tukey 1.5 x IQR), not statistical tests.
 # =====================================================================================================
 
 # Load data.table quietly.
@@ -60,7 +73,9 @@ hubs <- function(nodes, network, hub_type) {
   top <- nodes[order(-degree, node)][1]
   # THE HUB (team definition): highest summed edge weight; per arm, and overall = the larger of the two arms
   nodes[, strength_max := pmax(strength_EE, strength_RE)]
+  # the strength fence: over connected nodes, 75th percentile + 1.5 x interquartile range of strength_max
   sm <- nodes[degree > 0, strength_max]; qs <- quantile(sm, c(.25, .75), names = FALSE); cut_st <- qs[2] + 1.5 * (qs[2] - qs[1])
+  # THE HUB itself: the node with the largest strength_max (ties: first alphabetically)
   hub <- nodes[order(-strength_max, node)][1]
   # the one-row summary
   s <- data.table(network = network, hub_type = hub_type, connected_nodes = length(d),
@@ -128,7 +143,9 @@ r3$list <- pn[, .(node, edges_supported)][r3$list, on = "node"]
 r3$summary[, top_hub_edges_supported := pn[node == r3$summary$top_hub, edges_supported]]
 
 # ---- joint protein-metabolite network (step 14) -----------------------------------------------------
+# The joint network's edges from step 14 (protein-protein, metabolite-metabolite and protein-metabolite).
 je <- fread(file.path(OUT, "14_joint_edges.csv"))[, .(a = node_a, b = node_b, w_EE, w_RE)]
+# Hub report for the joint network (proteins and metabolites together).
 r4 <- hubs(node_table(je), "joint protein-metabolite network (EE & RE)", "protein or metabolite (joint)")
 
 # ---- write --------------------------------------------------------------------------------------

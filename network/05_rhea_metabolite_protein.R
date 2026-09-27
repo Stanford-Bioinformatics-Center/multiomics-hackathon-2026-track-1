@@ -3,6 +3,11 @@
 # 05_rhea_metabolite_protein.R — STEP 5: WHICH OF OUR METABOLITES ARE USED BY WHICH OF OUR PROTEINS (RHEA)
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   Which of our measured proteins (enzymes or transporters) act on which of our measured metabolites?
+#   These links are what later lets metabolites be connected to each other (step 6) and to proteins
+#   (the joint network, step 14).
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   Links each of our 450 metabolites to the proteins (among our 471 genes) that act on it as enzymes.
 #   A link means: in the Rhea database, the metabolite is a substrate or product of a reaction that the
@@ -10,6 +15,10 @@
 #   during catalysis). It is not a general binding assay: transporters, carriers and regulatory binding
 #   are only included where Rhea records them as a reaction. Step 6 uses these links to decide which
 #   metabolites are connected to each other.
+#   DEFAULT SOURCE SINCE 2026-09-26 (EDGE_SOURCE=mnet): the script still builds the direct-Rhea links
+#   described below, but then REPLACES them with the team's mnet resource (Rhea catalysis AND transport
+#   edges, currency molecules removed), and overwrites the same output files. Set EDGE_SOURCE=legacy to
+#   keep the direct-Rhea result. See the "mnet source" section near the end of the code.
 #
 # THE DATABASE: Rhea (www.rhea-db.org), expert-curated biochemical reactions (SIB / EMBL-EBI)
 #   Downloaded from ftp.expasy.org/databases/rhea/ (release number and date are recorded in the output).
@@ -45,10 +54,24 @@
 #   R 4.4; data.table; MotrpacHumanPreSuspensionAnalysis (gene -> UniProt lookup). Internet only the first
 #   time (files are cached in $HACK_EXT).
 #
+# HOW TO RUN
+#   After steps 1 and 1c:   Rscript network/05_rhea_metabolite_protein.R        (default: mnet links)
+#                           EDGE_SOURCE=legacy Rscript network/05_rhea_metabolite_protein.R   (direct Rhea)
+#
 # INPUTS:  $HACK_OUT/01c_metabolite_ids.csv (ChEBI IDs), $HACK_OUT/01_nodes_EE.csv (the 471 genes),
-#          Rhea files (downloaded to $HACK_EXT, default ~/Desktop/output/hackathon-2026-track1/external/rhea)
+#          Rhea files (downloaded to $HACK_EXT, default ~/Desktop/output/hackathon-2026-track1/external/rhea);
+#          with the default EDGE_SOURCE=mnet also $MNET_DIR/nodes.csv and $MNET_DIR/edges.parquet
+#          (default MNET_DIR ~/Desktop/output/hackathon/resources/mo_annotation)
 # OUTPUTS: $HACK_OUT/05_metabolite_protein_links.csv   one row per metabolite-protein link
 #          $HACK_OUT/05_rhea_summary.csv               counts, coverage, Rhea release
+#
+# KNOWN LIMITS
+#   - Metabolites without a ChEBI ID (mostly lipid species) cannot be matched in the direct-Rhea route.
+#   - Only human proteins that MoTrPAC measured can take part (our 471 genes).
+#   - The Rhea files are downloaded once and then reused; deleting the cache and rerunning would fetch
+#     the CURRENT Rhea release, which may differ (the release used is recorded in 05_rhea_summary.csv).
+#   - With mnet, the summary rows keep their direct-Rhea names (e.g. "metabolites_found_in_rhea") but
+#     count metabolites matched to mnet nodes.
 # =====================================================================================================
 
 # Load the packages quietly: data.table (tables) and the MoTrPAC package (gene -> protein IDs).
@@ -147,7 +170,7 @@ link <- link[, .(n_reactions = uniqueN(rhea_id),
                  uniprot = paste(sort(unique(uniprot)), collapse = ";"),
                  matched_via = paste(sort(unique(via)), collapse = "+")),
              by = .(metabolite, entrez_gene)]
-# Add gene symbols and the metabolite's class (from step 1c).
+# Add gene symbols (from the step 1 node table).
 link <- genes[link, on = "entrez_gene"]
 # Add each metabolite's RefMet classes.
 link <- ids[, .(metabolite, super_class, main_class)][link, on = "metabolite"]
@@ -163,34 +186,60 @@ fwrite(link, file.path(OUT, "05_metabolite_protein_links.csv"))
 # mnet (resources/mo_annotation) links proteins and metabolites through Rhea catalysis and transport
 # reactions, with currency / cofactor molecules (water, ATP, NAD+ ...) removed by its curation. Our metabolites
 # are matched to mnet's measured metabolite nodes by name, then RefMet ID, then ChEBI ID; proteins by UniProt.
+# Which link source to use (override with EDGE_SOURCE): "mnet" (default) or "legacy" (keep the direct-Rhea
+# links computed above).
 EDGE_SOURCE <- Sys.getenv("EDGE_SOURCE", unset = "mnet")
+# The team's mnet folder (override with MNET_DIR).
 MNET_DIR <- Sys.getenv("MNET_DIR", unset = path.expand("~/Desktop/output/hackathon/resources/mo_annotation"))
+# Everything inside these braces runs only for the mnet source.
 if (EDGE_SOURCE == "mnet") {
+  # mnet's node table (every column read as text)
   mn <- fread(file.path(MNET_DIR, "nodes.csv"), colClasses = "character")
+  # keep only the metabolite nodes that MoTrPAC actually measured
   mm <- mn[node_type == "metabolite" & is_measured == "True"]
+  # match 1: our metabolite name to mnet's label, ignoring upper/lower case
   ids[, mnet_id := mm$node_id[match(tolower(metabolite), tolower(mm$label))]]
+  # match 2 (only for metabolites still unmatched and with a RefMet ID): by RefMet ID
   ids[is.na(mnet_id) & refmet_id != "", mnet_id := mm$node_id[match(refmet_id, mm$refmet_id)]]
+  # match 3 (still unmatched, with a ChEBI ID): by ChEBI ID
   ids[is.na(mnet_id) & chebi_id != "", mnet_id := mm$node_id[match(chebi_id, mm$chebi_id)]]
+  # mnet's edges, keeping only protein-metabolite links from enzyme reactions (catalysis) or transport
   me <- as.data.table(nanoparquet::read_parquet(file.path(MNET_DIR, "edges.parquet")))[edge_type %in% c("catalysis", "transport")]
   # orient: metabolite node, protein node
+  # (m = whichever end is the metabolite, p = whichever end is the protein, isoform suffix such as "-2" removed)
   me[, `:=`(m = fifelse(node1_type == "metabolite", node1, node2), p = sub("-[0-9]+$", "", fifelse(node1_type == "protein", node1, node2)))]
+  # keep only edges whose metabolite is one of ours, and attach our metabolite name
   me <- merge(me, ids[!is.na(mnet_id), .(m = mnet_id, metabolite)], by = "m")
+  # keep only edges whose protein is one of our 471 genes, and attach the gene ID
   me <- merge(me, acc[, .(p = uniprot, entrez_gene)], by = "p", allow.cartesian = TRUE)
+  # one row per metabolite-gene pair, in the same columns as the direct-Rhea table above: the number of
+  # distinct evidence IDs (Rhea reaction IDs) supporting it, up to 5 example IDs, the protein IDs, and
+  # whether the link is catalysis, transport or both
   link <- me[, .(n_reactions = uniqueN(unlist(strsplit(paste(evidence, collapse = ";"), "[;|, ]+"))),
                  example_reactions = paste(head(sort(unique(unlist(strsplit(paste(evidence, collapse = ";"), "[;|, ]+")))), 5), collapse = ";"),
                  uniprot = paste(sort(unique(p)), collapse = ";"), matched_via = paste(sort(unique(edge_type)), collapse = "+")),
              by = .(metabolite, entrez_gene)]
+  # add gene symbols
   link <- genes[link, on = "entrez_gene"]
+  # add each metabolite's RefMet classes
   link <- ids[, .(metabolite, super_class, main_class)][link, on = "metabolite"]
+  # same column order as the direct-Rhea table
   setcolorder(link, c("metabolite", "super_class", "main_class", "entrez_gene", "gene_symbol", "uniprot", "n_reactions", "example_reactions", "matched_via"))
+  # sort rows by metabolite, then gene
   setorder(link, metabolite, gene_symbol)
+  # save, OVERWRITING the direct-Rhea file written above
   fwrite(link, file.path(OUT, "05_metabolite_protein_links.csv"))
+  # record the source in place of a Rhea release number and date, for the summary below
   rhea_release <- "mnet (Rhea current; resources/mo_annotation)"; rhea_date <- "2026-09-26"
+  # the metabolites matched to mnet stand in for "found in Rhea" in the summary below
   m_rx <- data.table(metabolite = ids[!is.na(mnet_id), metabolite])
+  # report how many metabolites matched and how many links resulted
   message(sprintf("mnet: %d of %d metabolites matched to mnet nodes; %d links", sum(!is.na(ids$mnet_id)), nrow(ids), nrow(link)))
 }
 
 # ---- summary -------------------------------------------------------------------------------------
+# Headline counts: Rhea release, how many metabolites have a ChEBI ID, are found in Rhea (or mnet), link to
+# our genes, and how many genes and links there are.
 summ <- data.table(
   metric = c("rhea_release", "rhea_release_date", "metabolites", "metabolites_with_chebi",
              "metabolites_found_in_rhea", "metabolites_linked_to_our_genes", "genes", "genes_linked_to_our_metabolites",

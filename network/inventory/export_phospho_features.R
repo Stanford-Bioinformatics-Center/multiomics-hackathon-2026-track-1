@@ -24,42 +24,59 @@
 suppressMessages(library(data.table))
 # Folders (outside the repo).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
+# The inventory sub-folder for this script's output; created if missing.
 INV <- file.path(OUT, "inventory"); dir.create(INV, recursive = TRUE, showWarnings = FALSE)
 
 # Features measured per tissue (differential analysis tables) and their QC annotation.
+# The two tissues with phosphoproteomics (name used in the package's table names).
 tis <- c(muscle = "MUSCLE", adipose = "ADIPOSE")
+# Per tissue: the list of phosphosite feature IDs in the package's differential analysis table.
 meas <- lapply(tis, function(t) { data(list = paste0(t, "_PROT_PH_DA"), package = "MotrpacHumanPreSuspensionAnalysis")
   unique(as.character(get(paste0(t, "_PROT_PH_DA"))$feature_id)) })
+# Per tissue: the QC feature annotation (localisation confidence, flanking sequence, redundant IDs).
 ann <- rbindlist(lapply(names(tis), function(n) { data(list = paste0(tis[[n]], "_PROT_PH_QC"), package = "MotrpacHumanPreSuspensionData")
   as.data.table(get(paste0(tis[[n]], "_PROT_PH_QC"))$feature_metadata)[, .(feature_id = id, confident_site, flanking_sequence, redundant_ids, tissue = n)] }))
 # One annotation per feature (muscle first, then adipose).
 ann <- ann[order(feature_id, tissue != "muscle")][!duplicated(feature_id)][, tissue := NULL]
 
 # All measured features with identifiers.
+# One row per feature measured in either tissue, with a flag for each tissue.
 X <- data.table(feature_id = sort(unique(unlist(meas))))
 X[, `:=`(in_muscle = feature_id %in% meas$muscle, in_adipose = feature_id %in% meas$adipose)]
+# Load the feature-to-gene table and keep one gene row per phospho feature (the first listed).
 data("HUMAN_FEATURE_TO_GENE", package = "MotrpacHumanPreSuspensionAnalysis")
 f2g <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[assay == "prot-ph", .(feature_id = as.character(feature_id), gene_symbol = as.character(gene_symbol),
                                                                        entrez_gene = as.character(entrez_gene), ensembl_gene = as.character(ensembl_gene))], by = "feature_id")
+# Attach gene symbol, Entrez and Ensembl IDs to each feature (left join; features without a gene keep NA).
 X <- f2g[X, on = "feature_id"]
 # Parse the ID: accession, isoform flag, site string, residues and positions.
 X[, `:=`(uniprot = sub("_.*$", "", feature_id), sites = sub("^[^_]*_", "", feature_id))]
+# Isoform accession = ends in "-<number>" (e.g. P46976-2).
 X[, isoform := grepl("-[0-9]+$", uniprot)]
+# Find every site in the site string: a residue letter S / T / Y followed by its position.
 st <- regmatches(X$sites, gregexpr("[STY][0-9]+", X$sites))
+# Number of sites, and the residues and positions joined with ";".
 X[, `:=`(n_sites = lengths(st), residues = sapply(st, function(v) paste(substr(v, 1, 1), collapse = ";")),
          positions = sapply(st, function(v) paste(substring(v, 2), collapse = ";")))]
+# Attach the QC annotation (left join).
 X <- ann[X, on = "feature_id"]
 # Flags: our 471 proteins; site already listed by GlyGen.
+# Our 471 network genes (from step 2).
 genes <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))
 X[, in_471 := entrez_gene %in% genes$entrez_gene]
+# GlyGen's phosphosites on our proteins (written by glygen_protein_inventory.py), if present.
 gp <- file.path(INV, "glygen_phosphosites.csv")
 if (file.exists(gp)) {
+  # match key per GlyGen site: canonical accession (isoform suffix removed) + position + FIRST LETTER of GlyGen's
+  # three-letter residue (Ser -> S, Thr -> T, but Tyr also -> T, so tyrosine sites can never match)
   g <- fread(gp); gk <- paste(sub("-.*$", "", g$glygen_ac), g$position, substr(g$residue, 1, 1))
+  # only single-site features on our 471 proteins can be checked; everything else is NA (unknown)
   X[, known_in_glygen := fifelse(n_sites == 1 & in_471, paste(uniprot, positions, residues) %in% gk, NA)]
 } else X[, known_in_glygen := NA]
 # Column order and save.
 setcolorder(X, c("feature_id", "uniprot", "isoform", "sites", "n_sites", "residues", "positions", "gene_symbol", "entrez_gene", "ensembl_gene",
                  "in_muscle", "in_adipose", "confident_site", "flanking_sequence", "redundant_ids", "in_471", "known_in_glygen"))
+# Safety check: one row per feature and at least one site each; then save and report counts.
 stopifnot(!anyDuplicated(X$feature_id), all(X$n_sites >= 1))
 fwrite(X, file.path(INV, "motrpac_phospho_feature_ids.csv"))
 message(sprintf("-> %s: %d features (muscle %d, adipose %d, both %d; on our 471 proteins %d)", file.path(INV, "motrpac_phospho_feature_ids.csv"),

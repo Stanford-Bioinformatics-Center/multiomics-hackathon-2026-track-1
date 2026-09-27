@@ -3,6 +3,10 @@
 # 03_edge_weights.R — STEP 3: HOW STRONG IS EACH EDGE, SEPARATELY IN ENDURANCE AND IN RESISTANCE
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   For every pair of connected genes: do the two genes respond to exercise together, in opposition, or
+#   independently, and does that differ between endurance and resistance?
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   Step 2 decided WHICH genes are connected (the same edges for both arms). This step gives every edge
 #   a strength ("weight") in each arm, from the exercise data. The weight is the dot product of the two
@@ -59,8 +63,17 @@
 # TECH STACK
 #   R 4.4; data.table.
 #
+# HOW TO RUN
+#   After steps 1 and 2:   Rscript network/03_edge_weights.R   (or bash network/run_all.sh)
+#
 # INPUTS:  $HACK_OUT/01_nodes_{EE,RE}.csv (step 1), $HACK_OUT/02_edges.csv (step 2)
 # OUTPUT:  $HACK_OUT/03_weighted_edges.csv   one row per edge: w_EE, w_RE, w_diff, sig_EE, sig_RE
+#
+# KNOWN LIMITS
+#   - A weight near zero is ambiguous (weak response, or strong responses that cancel across dimensions).
+#   - Dimensions with larger raw changes (e.g. blood OLINK protein) contribute more to every weight,
+#     because step 1 shares one divisor across tissues within an ome.
+#   - The weights carry no error bars; the standard errors saved in step 1 are not used here.
 # =====================================================================================================
 
 # Load data.table quietly.
@@ -94,7 +107,10 @@ message(sprintf("dot product over %d dims: %s", ncol(Z$EE), paste(colnames(Z$EE)
 
 # For each arm: the weight of every edge = sum over dimensions of (gene A value x gene B value).
 for (arm in names(Z)) {
+  # this arm's gene-by-dimension matrix
   M <- Z[[arm]]
+  # look up both genes' rows by gene ID, multiply them dimension by dimension, add up each row, and
+  # store the result as a new column w_EE or w_RE
   set(edges, j = paste0("w_", arm), value = rowSums(M[edges$entrez_a, ] * M[edges$entrez_b, ]))
 }
 # The scale s for the 0-1 version: the median size of a weight, pooled over BOTH arms (one shared unit).
@@ -117,8 +133,11 @@ fwrite(out, file.path(OUT, "03_weighted_edges.csv"))
 # Print a short summary per arm: typical weight, range, how many are negative, and how many 0-1 values
 # are pinned at the extremes (a check that the sigmoid is not saturated).
 for (arm in names(Z)) {
+  # this arm's raw weights
   w <- out[[paste0("w_", arm)]]
+  # this arm's 0-1 (sigmoid) weights
   s <- out[[paste0("sig_", arm)]]
+  # print the summary line
   message(sprintf("%s: %d edges, median %.2f, range %.1f..%.1f, %d negative; sigmoid > 0.99 for %d, < 0.01 for %d",
                   arm, length(w), median(w), min(w), max(w), sum(w < 0), sum(s > 0.99), sum(s < 0.01)))
 }

@@ -33,6 +33,14 @@
 #     information); the numbers of drawn nodes and edges are stated in each panel's side label.
 #   Titles are descriptive only; interpretation belongs in the report text.
 #
+# HOW TO RUN
+#   After steps 1, 1b, 1c, 3 and 6:   Rscript network/10_plot_arm_networks.R
+#
+# KNOWN LIMITS
+#   Differences between the arms are measured, not tested. Node positions come from one run of a
+#   force-directed layout (fixed seed): closeness on the page reflects shared edges, nothing more. The
+#   metabolite figure has five fillable shapes, so at most five super classes can be told apart.
+#
 # TECH STACK
 #   R 4.4; data.table, igraph (layouts), ggplot2, ggrepel (non-overlapping labels).
 #
@@ -83,6 +91,7 @@ theme_net <- function(base = 8) {
 
 # ---- helpers ----------------------------------------------------------------------------------------
 # Scale a coordinate to 0..1 (a single value goes to the middle).
+# (used so the layout fits the page whatever the raw coordinate range of the layout algorithm)
 norm01 <- function(v) if (diff(range(v)) < 1e-9) rep(0.5, length(v)) else (v - min(v)) / diff(range(v))
 
 # Build the drawing data for one network pair (EE above, RE below).
@@ -101,10 +110,12 @@ build <- function(nodes, edges) {
   # node strength per arm = sum of the sizes of its edge weights
   both <- rbind(edges[, .(node = a, w_EE, w_RE)], edges[, .(node = b, w_EE, w_RE)])
   st <- both[, .(EE = sum(abs(w_EE)), RE = sum(abs(w_RE))), by = node]
+  # reshape to one row per node and arm ("long" format), so it can be joined to the layout by node and arm
   st <- melt(st, id.vars = "node", variable.name = "arm", value.name = "strength")[, arm := as.character(arm)]
   # attach strength, response (the arm's own column) and shape key to each drawn node
   N <- merge(lay, st, by = c("node", "arm"))
   N <- merge(N, nodes, by = "node")
+  # pick the response column that matches each row's layer (EE rows get resp_EE, RE rows get resp_RE)
   N[, resp := fifelse(arm == "EE", resp_EE, resp_RE)]
   # edge segments per arm, with that arm's weight
   E <- rbindlist(lapply(c("EE", "RE"), function(arm) {
@@ -112,6 +123,7 @@ build <- function(nodes, edges) {
     # a bare `arm` would mean the COLUMN arm (always equal to itself), silently selecting both layers.
     ar <- arm
     pa <- lay[arm == ar]
+    # one row per edge: this arm's weight, plus the start (node a) and end (node b) positions looked up by name
     data.table(arm = arm, w = edges[[paste0("w_", arm)]],
                x = pa$x[match(edges$a, pa$node)], y = pa$y[match(edges$a, pa$node)],
                xend = pa$x[match(edges$b, pa$node)], yend = pa$y[match(edges$b, pa$node)])
@@ -119,7 +131,6 @@ build <- function(nodes, edges) {
   # sign of each edge weight, for the line type
   E[, direction := factor(fifelse(w >= 0, "same direction (w > 0)", "opposite direction (w < 0)"),
                           levels = c("same direction (w > 0)", "opposite direction (w < 0)"))]
-  # the drawing data and the counts shown in the side labels
   # which connected group each node belongs to (used for the metabolite class labels)
   N[, comp := components(g)$membership[node]]
   # the drawing data and the counts shown in the side labels
@@ -131,10 +142,13 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
                  group_labels = FALSE) {
   # which nodes get a label in each layer
   N <- copy(G$N)
+  # rank the nodes by strength within each layer (1 = strongest)
   N[, rk := frank(-strength, ties.method = "first"), by = arm]
+  # keep the name only for the nodes the label rule picks; the others get no label (NA)
   N[, lab := fifelse(label_rule(rk), node, NA_character_)]
   # class labels (metabolites): one per connected group per layer, centred above the group. Every group is a
   # single class because edges require the same class; the label is the shape key (the super class).
+  # (for genes these group labels are computed but not drawn: group_labels is FALSE)
   GL <- N[, .(x = mean(range(x)), y = max(y) + 0.06, lab = as.character(shape_key[1])), by = .(arm, comp)]
   # side labels for the two layers, stating what is drawn
   SL <- data.table(x = -0.06, y = c(0.73, 0.23),
@@ -163,6 +177,7 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
     scale_linewidth(range = c(0.1, 1.2), guide = "none") +
     scale_size(range = c(0.8, 4.5), name = "node strength (sum |w|)") +
     scale_shape_manual(values = shape_values, name = shape_name) +
+    # colour limits: symmetric at the 95th percentile of |mean response| over both layers
     sc_fill(as.numeric(quantile(abs(N$resp), 0.95))) +
     # room on the left for the layer names
     coord_cartesian(xlim = c(-0.1, 1.02), ylim = c(-0.02, 1.02), clip = "off") +
@@ -173,6 +188,7 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
     labs(title = title) + theme_net()
   # save with a white background at 300 dpi
   ggsave(file, p, width = width, height = height, dpi = 300, bg = "white")
+  # report the saved file on screen
   message("-> ", file)
 }
 
@@ -180,14 +196,17 @@ draw <- function(G, title, shape_values, shape_name, label_rule, file, width = 1
 # Node vectors per arm (16 observed dimensions; the two empty adipose protein columns are ignored).
 ge <- fread(file.path(OUT, "01_nodes_EE.csv")); gr <- fread(file.path(OUT, "01_nodes_RE.csv"))
 # Each gene's mean response across its dimensions, per arm (missing columns skipped).
+# (ge[, -(1:2)] drops the two identifier columns, entrez_gene and gene_symbol. The EE and RE files are
+#  assumed to list the genes in the same row order, which is how step 1 writes them.)
 gn <- data.table(node = ge$gene_symbol,
                  resp_EE = rowMeans(as.matrix(ge[, -(1:2)]), na.rm = TRUE),
                  resp_RE = rowMeans(as.matrix(gr[, -(1:2)]), na.rm = TRUE))
 # Shape key: every gene is drawn as a square.
 gn[, shape_key := factor("gene")]
 # Weighted gene edges (step 3), named by gene symbol.
+# (sig_EE / sig_RE are carried along but not drawn)
 gw <- fread(file.path(OUT, "03_weighted_edges.csv"))[, .(a = symbol_a, b = symbol_b, w_EE, w_RE, sig_EE, sig_RE)]
-# Build and draw.
+# Build the drawing data (shared layout, node strengths, edge segments).
 G1 <- build(gn, gw)
 # Save the shared layout (0..1) for the interactive views (step 17).
 fwrite(G1$layout, file.path(OUT, "10_layout_genes.csv"))
@@ -201,6 +220,8 @@ draw(G1, "Gene networks: endurance vs resistance (471 genes, STRING combined sco
 # Metabolite vectors per arm (9 dimensions).
 me <- fread(file.path(OUT, "01b_metab_nodes_EE.csv")); mr <- fread(file.path(OUT, "01b_metab_nodes_RE.csv"))
 # Each metabolite's mean response, per arm.
+# (me[, -1] drops the metabolite-name column; same row-order assumption as for genes; these tables have
+#  no missing values, so no na.rm is needed)
 mn <- data.table(node = me$metabolite, resp_EE = rowMeans(as.matrix(me[, -1])), resp_RE = rowMeans(as.matrix(mr[, -1])))
 # Shape key: the RefMet super class (from step 1c).
 ids <- fread(file.path(OUT, "01c_metabolite_ids.csv"))
@@ -216,6 +237,8 @@ fwrite(G2$layout, file.path(OUT, "10_layout_metabolites.csv"))
 cls <- sort(unique(as.character(G2$N$shape_key)))
 # Draw and save the metabolite figure.
 draw(G2, "Metabolite networks: endurance vs resistance (shared Rhea enzyme among the 471 genes + same RefMet super class)",
+     # shapes 21-25 are R's fillable symbols (circle, square, triangle, diamond, down-triangle), one per class;
+     # every metabolite is labelled, and each connected group gets its class name
      shape_values = setNames(c(21, 22, 24, 23, 25)[seq_along(cls)], cls), shape_name = "RefMet super class",
      label_rule = function(rk) rep(TRUE, length(rk)), group_labels = TRUE,
      file = file.path(FIG, "10b_metabolite_networks_EE_vs_RE.png"))

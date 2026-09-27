@@ -37,10 +37,15 @@
 #          optional second copy at $EXPORT_COPY (e.g. ~/Desktop/metabolite_class_counts.csv)
 # =====================================================================================================
 
+# Postpone evaluation of type hints (so they are only documentation and never run as code).
+from __future__ import annotations
+
 # Built-in modules: csv (read/write tables) and os (file paths, settings).
 import csv, os
 # defaultdict: a dictionary that starts every new key with an empty list (handy for grouping).
 from collections import defaultdict
+# Type names used only in the function type hints (no effect on results).
+from typing import Optional
 
 # Results folder: the HACK_OUT setting if given, otherwise the pipeline's default folder.
 OUT = os.environ.get("HACK_OUT", os.path.expanduser("~/Desktop/output/hackathon-2026-track1/network"))
@@ -52,7 +57,7 @@ LIPID = {"Fatty Acyls", "Glycerolipids", "Glycerophospholipids", "Sphingolipids"
 
 
 # Helper: tidy one class name.
-def clean(x):
+def clean(x: Optional[str]) -> str:
     """A blank or '-' class becomes 'Unclassified' so nothing is silently dropped."""
     # Remove surrounding spaces (and treat a missing value as empty text).
     x = (x or "").strip()
@@ -61,7 +66,8 @@ def clean(x):
 
 
 # The main program.
-def main():
+def main() -> None:
+    """Read step 1c's table, count metabolites per class, write the table and print a summary."""
     # Open step 1c's table (one row per metabolite)...
     with open(os.path.join(OUT, "01c_metabolite_ids.csv"), newline="") as f:
         # ...and read all its rows.

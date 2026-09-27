@@ -84,6 +84,7 @@ arm_long <- function(arm) {
   x <- merge(merge(r, n, by = c("metabolite", "variable")), s, by = c("metabolite", "variable"))
   # label arm, tissue and time from the column name (e.g. "blood_metab_0.5h")
   x[, `:=`(arm = arm, z = norm / se, tissue = sub("_.*", "", variable), time = sub(".*_", "", variable))]
+  # keep only the columns the tables below need (this is the function's result)
   x[, .(metabolite, tissue, time, arm, logFC, z)]
 }
 # Both arms together.
@@ -96,6 +97,8 @@ d <- merge(d, ids, by = "metabolite")
 stopifnot(uniqueN(d$metabolite) == 450, all(CLASSES %in% d$main_class), all(SPECIES %in% d$metabolite))
 
 # ---- table 1: class summary per arm, tissue and time -------------------------------------------------
+# For each T2D class, tissue, time and arm: how many metabolites, their average logFC, and how many are
+# clearly down (z below -2) or clearly up (z above +2).
 cls <- d[main_class %in% CLASSES,
          .(n = .N, mean_logFC = round(mean(logFC), 3), n_clearly_down = sum(z < -Z_CUT), n_clearly_up = sum(z > Z_CUT)),
          by = .(super_class, main_class, tissue, time, arm)]
@@ -105,6 +108,7 @@ cls <- cls[order(super_class, main_class, tissue, match(time, c("0.5h", "4h", "2
 fwrite(cls, file.path(OUT, "18_t2d_class_summary.csv"))
 
 # ---- table 2: T2D-relevant species -------------------------------------------------------------------
+# Keep only the named species, with logFC rounded to 3 decimals and z to 2.
 sp <- d[metabolite %in% SPECIES, .(metabolite, tissue, time, arm, logFC = round(logFC, 3), z = round(z, 2))]
 # Order rows by species, tissue, time and arm.
 sp <- sp[order(metabolite, tissue, match(time, c("0.5h", "4h", "24h")), arm)]
@@ -112,6 +116,8 @@ sp <- sp[order(metabolite, tissue, match(time, c("0.5h", "4h", "24h")), arm)]
 fwrite(sp, file.path(OUT, "18_t2d_species.csv"))
 
 # ---- table 3: clinical chemistry (independent assay) --------------------------------------------------
+# From the package's clinical chemistry results, keep NEFA, glycerol and lactate for the two exercise-vs-
+# control contrasts; rename "EE-CON"/"RE-CON" to "EE"/"RE" and round the numbers for display.
 cc <- as.data.table(CLIN_CHEMISTRY_DA)[feature_id %in% c("NEFA", "Glycerol", "Lactate") & contrast_category %in% c("EE-CON", "RE-CON"),
         .(feature = feature_id, arm = sub("-CON", "", as.character(contrast_category)), time = as.character(Timepoint),
           logFC = round(logFC, 3), adj_p = signif(adj_p_value, 2))]

@@ -36,59 +36,91 @@
 #   uses a subset of its members; direction concordance with healthy-adult exercise is not evidence of treatment.
 # =====================================================================================================
 
+# Load packages quietly.
 suppressMessages({ library(data.table); library(ggplot2); library(ggrepel); library(ggforce); library(patchwork) })
+# Folders and inputs (override with environment variables HACK_OUT, HACK_FIG, DISEASE_SCORES).
 OUT <- Sys.getenv("HACK_OUT", unset = path.expand("~/Desktop/output/hackathon-2026-track1/network"))
 FIG <- Sys.getenv("HACK_FIG", unset = path.expand("~/Desktop/output/hackathon"))
 DISEASE_SCORES <- Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz"))
+# SEED keeps label placement repeatable; ALPHA = significance cut-off.
 SEED <- 20260926; ALPHA <- 0.05
+# Short display labels for the 9 disease sets.
 SETS <- c(ohman_2021 = "T2D muscle (Öhman)", chae_2018 = "T2D muscle (Chae)", coats_2018 = "HCM heart", havlenova_2021 = "HF heart (rat)",
           park_2019 = "MI heart (mouse)", niu_2022_nash = "NASH liver", niu_2022_cirrhosis = "Cirrhosis liver", yuan_2020 = "NAFLD liver", stocks_2022 = "ob/ob liver (mouse)")
+# The disease sets that are tissue-matched to our muscle data (T2D muscle).
 MATCHED <- c("ohman_2021", "chae_2018")
 
 # ---- option B modules and option C feature directions -------------------------------------------------------------
+# Option B's modules (whole-network Louvain modules from step 18d) and their pathway names.
 MOD <- fread(file.path(OUT, "18_disease_modules.csv"))[approach == "B"]
 SUMB <- fread(file.path(OUT, "18_module_summary.csv"))[approach == "B", .(module, name)]
+# Option C's per-feature table, restricted to features whose node is in our network.
 FS <- fread(file.path(OUT, "18c_feature_states.csv"))[in_network == TRUE]
+# Helper: one direction per feature for an arm, from its three per-time columns (EE_0.5h ... in 18c_feature_states.csv,
+# which hold the z-scores, not the repfdr states the header describes): drop zeros; if what remains all has the same
+# sign, that sign (+1 / -1), otherwise (mixed signs, or nothing left) 0.
 arm_dir <- function(arm) { s <- as.matrix(FS[, paste0(arm, "_", c("0.5h", "4h", "24h")), with = FALSE])
   apply(s, 1, function(v) { v <- v[v != 0]; if (!length(v) || length(unique(sign(v))) > 1) 0L else as.integer(sign(v[1])) }) }
+# Add the endurance and resistance directions.
 FS[, `:=`(dir_EE = arm_dir("EE"), dir_RE = arm_dir("RE"))]
 # the directional features of each module's members
+# (a node can have several features, e.g. RNA and protein; each is kept)
 MF <- FS[, .(feature, node, ome, dir_EE, dir_RE)][MOD[, .(module, node)], on = "node", nomatch = 0, allow.cartesian = TRUE]
+# Report module count, member nodes with a selected feature, and directional feature counts.
 message(sprintf("option B modules: %d; member nodes with a selected muscle feature: %d; directional features: EE %d, RE %d",
                 uniqueN(MOD$module), uniqueN(MF$node), MF[dir_EE != 0, .N], MF[dir_RE != 0, .N]))
 
 # ---- option C disease test on option B modules ----------------------------------------------------------------------
+# Read the disease scores table (gzip-compressed).
 ds <- fread(cmd = sprintf("gzip -dc %s", shQuote(DISEASE_SCORES)))
+# Disease-significant genes per set (p < 0.05, or every listed gene for the significant-only sets Chae and Yuan)
+# with their disease direction (+1 up, -1 down); zero-change genes dropped; one row per gene and set.
 dsig <- ds[!is.na(p) & (p < ALPHA | set %in% c("chae_2018", "yuan_2020")), .(set, gene, dis_dir = sign(logFC))][dis_dir != 0][!duplicated(paste(set, gene))]
+# For each module, each arm and each disease set: count concordant vs discordant features.
 MD <- rbindlist(lapply(unique(MOD$module), function(mo) rbindlist(lapply(c("EE", "RE"), function(arm) {
+  # the module's features that have a direction in this arm
   f <- MF[module == mo][get(paste0("dir_", arm)) != 0, .(node, d = get(paste0("dir_", arm)))]
+  # keep those whose gene is disease-significant in this set; none = an empty row
   rbindlist(lapply(names(SETS), function(s) { x <- f[dsig[set == s], on = c(node = "gene"), nomatch = 0]
     if (!nrow(x)) return(data.table(module = mo, arm = arm, set = s, n = 0L, concordant = NA_integer_, discordant = NA_integer_, p = NA_real_))
+    # concordant = exercise direction equals disease direction; sign test of the concordant share vs one half
     conc <- sum(x$d == x$dis_dir)
     data.table(module = mo, arm = arm, set = s, n = nrow(x), concordant = conc, discordant = nrow(x) - conc, p = binom.test(conc, nrow(x), 0.5)$p.value) }))
 }))))
+# Benjamini-Hochberg FDR within each disease set.
 MD[, fdr := p.adjust(p, "BH"), by = set]
+# Add the concordant fraction and the tissue-matched flag, then save.
 MD[, `:=`(frac_concordant = concordant / n, tissue_matched = set %in% MATCHED)]
 fwrite(MD, file.path(OUT, "18bc_module_disease.csv"))
 # background: all directional network features vs Öhman (our addition)
+# For each arm: all directional network features vs Öhman T2D directions, with a sign test; shown on screen.
 bg <- rbindlist(lapply(c("EE", "RE"), function(arm) { x <- FS[get(paste0("dir_", arm)) != 0, .(node, d = get(paste0("dir_", arm)))][dsig[set == "ohman_2021"], on = c(node = "gene"), nomatch = 0]
   data.table(arm = arm, n = nrow(x), concordant = sum(x$d == x$dis_dir), frac = mean(x$d == x$dis_dir), p = binom.test(sum(x$d == x$dis_dir), nrow(x), 0.5)$p.value) }))
 print(bg)
 
 # ---- per-module summary and comparison ------------------------------------------------------------------------------------
+# Per module: the arm with the smallest Öhman T2D p, and that arm's counts, p and FDR.
 t2 <- MD[set == "ohman_2021" & !is.na(p)][order(p), .SD[1], by = module][, .(module, t2d_arm = arm, t2d_n = n, t2d_concordant = concordant, t2d_discordant = discordant, t2d_p = p, t2d_fdr = fdr)]
+# Öhman and Chae concordant fractions for the same module and arm (Chae needs at least 2 genes).
 chr <- merge(MD[set == "ohman_2021" & !is.na(p), .(module, arm, oh = frac_concordant)], MD[set == "chae_2018" & !is.na(p) & n >= 2, .(module, arm, ch = frac_concordant)], by = c("module", "arm"))
+# Per module: size, number of proteins and number of metabolites.
 SUM <- MOD[, .(n = .N, n_prot = sum(node_type == "protein"), n_met = sum(node_type == "metabolite")), by = module]
+# Add the pathway name, directional feature counts and the T2D result (left joins on module).
 SUM <- Reduce(function(a, b) b[a, on = "module"], list(SUM, SUMB, MF[, .(directional_features_EE = sum(dir_EE != 0), directional_features_RE = sum(dir_RE != 0)), by = module], t2))
+# Chae agrees if, in at least one arm, both studies lean the same way (both above or both below one half).
 SUM[, chae_same_direction := sapply(module, function(mo) { r <- chr[module == mo]; if (!nrow(r)) NA else any(sign(r$oh - .5) == sign(r$ch - .5) & r$oh != .5) })]
+# Number of disease sets in which the module is significant at FDR < 0.05.
 SUM[, n_disease_sets_fdr := sapply(module, function(mo) MD[module == mo & !is.na(fdr) & fdr < ALPHA, uniqueN(set)])]
+# Label each module's T2D relation, separating FDR-significant from nominal-p-only results.
 SUM[, relation := fcase(!is.na(t2d_fdr) & t2d_fdr < ALPHA & t2d_discordant > t2d_concordant, "exercise opposes T2D",
                         !is.na(t2d_fdr) & t2d_fdr < ALPHA, "exercise moves with T2D",
                         !is.na(t2d_p) & t2d_p < ALPHA & t2d_discordant > t2d_concordant, "exercise opposes T2D (nominal p only)",
                         !is.na(t2d_p) & t2d_p < ALPHA, "exercise moves with T2D (nominal p only)", default = "no T2D link")]
+# Save the summary (best T2D p first) and show it.
 fwrite(SUM[order(t2d_p)], file.path(OUT, "18bc_module_summary.csv"))
 print(SUM[order(t2d_p), .(module, name = substr(name, 1, 40), n, dirEE = directional_features_EE, dirRE = directional_features_RE, arm = t2d_arm,
                           conc = t2d_concordant, disc = t2d_discordant, t2d_p = signif(t2d_p, 2), fdr = signif(t2d_fdr, 2), chae = chae_same_direction, sets_fdr = n_disease_sets_fdr, relation)])
+# Read the A / At / B / B' / C comparison and add the B+C row (some numbers are carried over from B).
 cmp <- fread(file.path(OUT, "18_approach_comparison_ABC.csv"))
 BC <- data.table(approach = "B+C", nodes = uniqueN(MOD$node), modules = uniqueN(MOD$module), nodes_in_modules = nrow(MOD),
                  t2d_measured_frac = cmp[approach == "B", t2d_measured_frac], modules_t2d_sig = SUM[!is.na(t2d_fdr) & t2d_fdr < ALPHA, .N],
@@ -97,18 +129,25 @@ BC <- data.table(approach = "B+C", nodes = uniqueN(MOD$node), modules = uniqueN(
                  modules_named = SUM[name != "no significant pathway", .N], modules_exercise_sig = cmp[approach == "B", modules_exercise_sig],
                  exercise_sig_and_muscle_specific = cmp[approach == "B", exercise_sig_and_muscle_specific], t2d_sig_and_exercise_sig = SUM[!is.na(t2d_fdr) & t2d_fdr < ALPHA, .N],
                  network_coherent_modules = "by construction")
+# Stack the rows, add the count of nominally T2D-significant modules (B+C only), save and show.
 CMP <- rbind(cmp, BC, fill = TRUE); CMP[, modules_t2d_nominal := c(rep(NA_integer_, nrow(cmp)), SUM[!is.na(t2d_p) & t2d_p < ALPHA, .N])]
 fwrite(CMP, file.path(OUT, "18_approach_comparison_ABCD.csv")); print(CMP[, .(approach, modules, modules_t2d_sig, modules_t2d_nominal, modules_any_disease_sig, modules_chae_replicated, chae_direction_agreement)])
 
 # ---- figure 18d --------------------------------------------------------------------------------------------------------------
+# Read the network edges and nodes and attach the step-15 layout positions.
 E <- fread(file.path(OUT, "14_joint_edges.csv")); Nn <- fread(file.path(OUT, "14_joint_nodes.csv"))
 N <- fread(file.path(OUT, "15_class_layout.csv"))[, .(node, x, y)][Nn, on = "node"]
+# Attach each node's Öhman T2D change (for colour) and flag nodes with a directional exercise feature (for size).
 oh <- ds[set == "ohman_2021", .(node = gene, t2d_logFC = logFC)][!duplicated(node)]; N <- oh[N, on = "node"]
 N[, has_dir := node %in% FS[dir_EE != 0 | dir_RE != 0, node]]
+# Edge start / end positions; edge width = the stronger of the two arms' weights.
 e <- copy(E)[, `:=`(x = N$x[match(node_a, N$node)], y = N$y[match(node_a, N$node)], xend = N$x[match(node_b, N$node)], yend = N$y[match(node_b, N$node)], w = pmax(abs(w_EE), abs(w_RE)))]
+# Module members with positions, and one label per module just above its top node.
 m <- MOD[N[, .(node, x, y)], on = "node", nomatch = 0]
 ml <- m[, .(x = mean(x), y = max(y) + 0.03), by = module][, lab := sub("^B_", "", module)]
+# Colour scale limit for T2D change: 95th percentile of absolute values.
 lim_t <- as.numeric(quantile(abs(N$t2d_logFC), 0.95, na.rm = TRUE))
+# The network panel: grey hull per module, edges, nodes (fill = T2D change, size = has a direction), labels.
 net <- ggplot() +
   geom_mark_hull(data = m, aes(x, y, group = module), colour = "grey45", fill = "grey60", alpha = 0.07, linewidth = 0.25, expand = unit(2.2, "mm"), radius = unit(2, "mm"), concavity = 3) +
   geom_segment(data = e, aes(x, y, xend = xend, yend = yend, linewidth = w), colour = "grey60", alpha = 0.7) +
@@ -120,10 +159,15 @@ net <- ggplot() +
   scale_size_manual(values = c(`FALSE` = 1, `TRUE` = 2.6), labels = c(`FALSE` = "no directional exercise feature", `TRUE` = "directional exercise feature (option C states)"), name = NULL) +
   scale_linewidth(range = c(0.1, 1), guide = "none") + coord_cartesian(clip = "off") +
   theme_void(base_size = 8) + theme(legend.position = "bottom", legend.box = "vertical", legend.title = element_text(size = 6.5), legend.text = element_text(size = 6))
+# Heatmap data: every module x arm x disease row, with module names.
 hm <- MD[SUM[, .(module, name)], on = "module"]
+# Row label = module number + name (cut to 40 characters); column = disease set · arm; cell text = concordant /
+# total, with * if FDR < 0.05 (blank when nothing was tested).
 hm[, `:=`(row = sprintf("%s  %s", sub("^B_", "", module), substr(name, 1, 40)), col = factor(sprintf("%s · %s", SETS[set], arm), levels = as.vector(outer(SETS, c("EE", "RE"), paste, sep = " · "))),
           lab = fifelse(is.na(n) | n == 0, "", fifelse(!is.na(fdr) & fdr < ALPHA, sprintf("%d/%d*", concordant, n), sprintf("%d/%d", concordant, n))))]
+# Order rows alphabetically from the top.
 hm[, row := factor(row, levels = rev(sort(unique(row))))]
+# The heatmap panel (all 18 columns kept, so the divider lines sit in the right place).
 hmp <- ggplot(hm[n > 0], aes(col, row, fill = frac_concordant)) + geom_tile(colour = "white") + geom_text(aes(label = lab), size = 1.9) +
   geom_vline(xintercept = c(2.5, 11.5), colour = "grey30", linewidth = 0.3) + geom_vline(xintercept = 9.5, colour = "black", linewidth = 0.9) +
   scale_x_discrete(drop = FALSE) +
@@ -132,9 +176,11 @@ hmp <- ggplot(hm[n > 0], aes(col, row, fill = frac_concordant)) + geom_tile(colo
                                                     "left of each thin line: tissue-matched (T2D muscle). Background concordance with Öhman over all directional network features: EE %d/%d (%.2f), RE %d/%d (%.2f)."),
                                              bg[arm == "EE", concordant], bg[arm == "EE", n], bg[arm == "EE", frac], bg[arm == "RE", concordant], bg[arm == "RE", n], bg[arm == "RE", frac])) +
   theme_minimal(base_size = 7) + theme(axis.text.x = element_text(angle = 45, hjust = 1), panel.grid = element_blank(), legend.position = "bottom", plot.caption = element_text(size = 5.5, hjust = 0))
+# Put the two panels side by side with a title and a subtitle of key counts.
 q <- net + hmp + plot_layout(widths = c(1, 1.15)) + plot_annotation(
   title = "B + C · Structural modules of the whole joint network (option B), linked to disease with the Amar et al. 2024 direction-concordance test (option C)",
   subtitle = sprintf("%d modules · T2D-linked (Öhman, FDR < 0.05): %d (nominal p < 0.05: %d) · modules with any disease link at FDR < 0.05: %d · Chae agrees with Öhman in %s module-arms",
                      uniqueN(MOD$module), SUM[!is.na(t2d_fdr) & t2d_fdr < ALPHA, .N], SUM[!is.na(t2d_p) & t2d_p < ALPHA, .N], SUM[n_disease_sets_fdr > 0, .N], BC$chae_direction_agreement),
   theme = theme(plot.title = element_text(face = "bold", size = 10), plot.subtitle = element_text(size = 7.5, colour = "grey30")))
+# Save the figure as a PNG.
 ggsave(file.path(FIG, "18d_structural_modules_concordance.png"), q, width = 15, height = 8.5, dpi = 300, bg = "white"); message("-> ", file.path(FIG, "18d_structural_modules_concordance.png"))

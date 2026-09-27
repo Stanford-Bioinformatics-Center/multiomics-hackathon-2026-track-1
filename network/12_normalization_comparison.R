@@ -45,6 +45,14 @@
 #   on different scales, each panel's colours and widths are relative to that panel's own 95th percentile
 #   of |w_EE - w_RE|: compare PATTERNS across panels, not raw magnitudes.
 #
+# HOW TO RUN
+#   After steps 1, 1b, 1c, 3 and 6:   Rscript network/12_normalization_comparison.R
+#
+# KNOWN LIMITS
+#   The safety checks confirm that option 1 reproduces the step 3 / 6 ENDURANCE weights only. Colours in
+#   the figures are relative to each panel, so they show patterns, not sizes. Nothing here is a
+#   statistical test.
+#
 # TECH STACK
 #   R 4.4; data.table, igraph (layout), ggplot2, ggrepel (labels).
 #
@@ -72,8 +80,11 @@ COL_RE <- "#2166AC"; COL_SAME <- "grey85"; COL_EE <- "#B2182B"; INK <- "#1A1A1A"
 # Read one arm's raw log fold changes as a matrix (rows = nodes, columns = dimensions); id_cols = the
 # number of leading identifier columns; columns empty for every node (adipose protein 0.5 / 24 h) dropped.
 read_raw <- function(file, id_cols, id_name) {
+  # read the table
   x <- fread(file.path(OUT, file))
+  # keep only the value columns, with each row named by the node identifier
   m <- as.matrix(x[, -(seq_len(id_cols)), with = FALSE]); rownames(m) <- x[[id_name]]
+  # drop the columns that are empty for every node
   m[, colSums(is.na(m)) < nrow(m), drop = FALSE]
 }
 # The ome of each dimension, from its column name ("muscle_rna_4h" -> "rna").
@@ -96,6 +107,7 @@ normalise <- function(E, R, option) {
   }))
   # divide every column by its ome's divisor (for that arm)
   dE <- div[arm == "EE"][match(om, ome), divisor]; dR <- div[arm == "RE"][match(om, ome), divisor]
+  # return the divided matrices of both arms and the divisors used
   list(EE = sweep(E, 2, dE, "/"), RE = sweep(R, 2, dR, "/"), div = div)
 }
 
@@ -107,6 +119,7 @@ compare <- function(E, R, a, b, network) {
   # normalise and weight under each option
   res <- lapply(OPTIONS, function(op) {
     n <- normalise(E, R, op)
+    # endurance and resistance weights for every edge, and their difference (endurance minus resistance)
     wE <- weights(n$EE, a, b); wR <- weights(n$RE, a, b)
     list(edges = data.table(option = op, a = a, b = b, w_EE = wE, w_RE = wR, w_diff = wE - wR), div = n$div)
   })
@@ -117,6 +130,9 @@ compare <- function(E, R, a, b, network) {
   # the 20 edges with the largest |difference| in the reference
   top_ref <- ref[order(-abs(w_diff))][1:20, paste(a, b)]
   # per-option summary numbers
+  # (per option: correlation of the two arms' weights; edges whose sign differs between arms; share of edges
+  #  with w_EE > w_RE; rank agreement of w_diff with option 1; how many of option 1's 20 largest differences
+  #  are also among this option's 20 largest)
   summ <- ed[, .(network = network,
                  cor_w_EE_w_RE = round(cor(w_EE, w_RE), 3),
                  edges_sign_change = sum(sign(w_EE) != sign(w_RE)),
@@ -124,6 +140,7 @@ compare <- function(E, R, a, b, network) {
                  spearman_w_diff_vs_option1 = round(cor(w_diff, ref$w_diff, method = "spearman"), 3),
                  top20_overlap_with_option1 = sum(paste(a, b)[order(-abs(w_diff))][1:20] %in% top_ref)),
              by = option]
+  # return the edges, the summary and the divisors (each labelled with the network name)
   list(edges = ed, summary = summ, div = rbindlist(lapply(res, `[[`, "div"))[, network := network])
 }
 
@@ -132,6 +149,7 @@ draw_grid <- function(ed, summ, node_order, edge_order, groups, title, file, lab
   # the network built exactly as in steps 10 / 11 (same vertex order, same edge order, same seed)
   g <- graph_from_data_frame(edge_order, directed = FALSE,
                              vertices = data.table(node = node_order[node_order %in% c(edge_order$a, edge_order$b)]))
+  # same seed, so the positions are the same as in steps 10 / 11
   set.seed(SEED); L0 <- layout_with_fr(g)
   # node positions scaled to 0..1
   norm01 <- function(v) (v - min(v)) / diff(range(v))
@@ -146,7 +164,9 @@ draw_grid <- function(ed, summ, node_order, edge_order, groups, title, file, lab
   # per-panel node strength difference (sum of |w_EE| minus sum of |w_RE|), relative like the edges
   both <- rbind(E[, .(option, node = a, w_EE, w_RE)], E[, .(option, node = b, w_EE, w_RE)])
   N <- both[, .(delta = sum(abs(w_EE)) - sum(abs(w_RE))), by = .(option, node)]
+  # add each node's position
   N <- merge(N, pos, by = "node")
+  # node size relative to the largest strength difference in the same panel
   N[, rel_delta := abs(delta) / max(abs(delta)), by = option]
   # labels: every node (metabolites) or the 6 largest strength differences per panel (genes)
   N[, rk := frank(-abs(delta), ties.method = "first"), by = option]
@@ -154,14 +174,18 @@ draw_grid <- function(ed, summ, node_order, edge_order, groups, title, file, lab
   # class labels above each connected group (metabolites only)
   GL <- NULL
   if (!is.null(groups)) {
+    # the connected group of every node
     comp <- components(g)$membership
+    # one class label per group and panel, centred above the group
     GL <- merge(N[, .(option, node, x, y)], data.table(node = names(comp), comp = comp), by = "node")[
       , .(x = mean(range(x)), y = max(y) + 0.07, lab = groups[node[1]]), by = .(option, comp)]
   }
   # panel titles with the key numbers
   summ <- copy(summ)[, strip := sprintf("%s\ncor(EE, RE) = %.2f  |  sign changes = %d  |  top-20 overlap with option 1 = %d/20",
                                        option, cor_w_EE_w_RE, edges_sign_change, top20_overlap_with_option1)]
+  # look-up from option to its panel title
   lab_of <- setNames(summ$strip, summ$option)
+  # attach the panel titles, in the fixed option order, to the edges, nodes and class labels
   E[, panel := factor(lab_of[option], levels = lab_of[OPTIONS])]
   N[, panel := factor(lab_of[option], levels = lab_of[OPTIONS])]
   if (!is.null(GL)) GL[, panel := factor(lab_of[option], levels = lab_of[OPTIONS])]
@@ -182,11 +206,16 @@ draw_grid <- function(ed, summ, node_order, edge_order, groups, title, file, lab
     scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-1, 1), oob = scales::squish,
                            breaks = c(-1, 0, 1), labels = c("higher in resistance", "same", "higher in endurance"),
                            name = "edge difference w_EE − w_RE\n(relative to each panel's 95th percentile)") +
+    # widths and node sizes (no legend: they are relative within each panel)
     scale_linewidth(range = c(0.08, 1.4), guide = "none") +
     scale_size(range = c(0.5, 3.5), guide = "none") +
+    # colour-bar size and title position
     guides(colour = guide_colourbar(barwidth = unit(7, "cm"), barheight = unit(0.25, "cm"), title.position = "top", title.hjust = 0.5)) +
+    # plotting area, with a little room above for the class labels
     coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.1), clip = "off") +
+    # title
     labs(title = title) +
+    # theme: no axes, light-grey panel titles, legend at the bottom
     theme_classic(base_size = 8) %+replace% theme(
       axis.line = element_blank(), axis.text = element_blank(), axis.ticks = element_blank(), axis.title = element_blank(),
       strip.background = element_rect(fill = "#EDF0F2", colour = NA), strip.text = element_text(size = 7, face = "bold", colour = "#20262B", margin = margin(3, 3, 3, 3)),
@@ -195,6 +224,7 @@ draw_grid <- function(ed, summ, node_order, edge_order, groups, title, file, lab
       plot.background = element_rect(fill = "white", colour = NA))
   # save
   ggsave(file, p, width = width, height = height, dpi = 300, bg = "white")
+  # report the saved file
   message("-> ", file)
 }
 
@@ -247,6 +277,7 @@ robust <- function(ed, net, col) rbindlist(lapply(TOP_PCT, function(pct) {
   sg <- ed[paste(a, b) %in% common, .(same = uniqueN(sign(get(col))) == 1), by = .(a, b)][, mean(same)]
   # option 1's |weight| at the cut-off (its own units) and as a share of option 1's largest |weight|
   r1 <- sort(abs(ed[option == OPTIONS[1]][[col]]), decreasing = TRUE)
+  # one row of results for this network, weight and cut-off
   data.table(network = net, weight = col, top_pct = pct, k = k, kept_by_all_4 = length(common),
              min_jaccard = round(min(pj), 2), mean_jaccard = round(mean(pj), 2),
              sign_agreement = if (length(common)) round(sg, 2) else NA_real_,
@@ -254,13 +285,17 @@ robust <- function(ed, net, col) rbindlist(lapply(TOP_PCT, function(pct) {
 }))
 # Every network x weight combination.
 thr <- rbindlist(lapply(c("w_diff", "w_EE", "w_RE"), function(col) rbind(robust(G$edges, "genes", col), robust(M$edges, "metabolites", col))))
+# save
 fwrite(thr, file.path(OUT, "12_threshold_robustness.csv"))
 # Pairwise overlaps (which options disagree) at the top 10% and 20% of |w_diff|.
 pw <- rbindlist(lapply(list(genes = G$edges, metabolites = M$edges), function(ed) rbindlist(lapply(c(10, 20), function(pct) {
+  # number of edges in the top X%, and the edge set each option keeps
   k <- round(pct / 100 * uniqueN(paste(ed$a, ed$b))); sets <- kept(ed, "w_diff", k)
+  # Jaccard overlap for each of the 6 pairs of options
   rbindlist(combn(length(OPTIONS), 2, function(ix) data.table(top_pct = pct, option_a = OPTIONS[ix[1]], option_b = OPTIONS[ix[2]],
                                                                jaccard = round(jac(sets[[ix[1]]], sets[[ix[2]]]), 2)), simplify = FALSE))
 }))), idcol = "network")
+# save
 fwrite(pw, file.path(OUT, "12_threshold_pairwise.csv"))
 # Show the w_diff rows.
 print(thr[weight == "w_diff"])

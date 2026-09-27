@@ -3,16 +3,22 @@
 # 06_metabolite_network.R — STEP 6: THE METABOLITE-ONLY NETWORKS (ENDURANCE AND RESISTANCE)
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   Which of our metabolites are plausibly linked through shared (or interacting) enzymes, and do linked
+#   metabolites respond to endurance and resistance exercise alike?
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   Builds two metabolite-to-metabolite networks, one per exercise arm, with the SAME edges and different
 #   edge weights, exactly like the gene networks (steps 2-3).
 #   EDGE RULE (the team's rule, applied as an on/off gate that never uses the exercise data):
 #     two metabolites are connected if BOTH
 #       (a) they are handled by the SAME protein, OR by two DIFFERENT proteins that interact in STRING
-#           (combined score >= 700, i.e. an edge of the step 2 gene network). Proteins must be among our
+#           (score >= 700, i.e. an edge of the step 2 gene network, whichever edge source step 2
+#           used; the default is now the team's mnet resource). Proteins must be among our
 #           471 genes, and "handled" means Rhea records the metabolite in a reaction that protein
-#           catalyses (step 5). The STRING part was adopted by the team after step 8 (experiment 3): it
-#           adds 25 edges and no metabolites. Set METAB_LINK=shared to use the same-protein rule only;
+#           catalyses (step 5; with the default mnet source, also a reaction in which it transports the
+#           metabolite). The STRING part was adopted by the team after step 8 (experiment 3): on the
+#           legacy inputs it adds 25 edges and no metabolites. Set METAB_LINK=shared to use the same-protein rule only;
 #       (b) they belong to the same RefMet SUPER class (14 broad families, e.g. both "Nucleic acids",
 #           both "Fatty Acyls"; from step 1c). The team chose the super class over the 50 main classes
 #           after step 8 showed the main-class rule left only 39 metabolites connected (super class: 44).
@@ -36,6 +42,16 @@
 #                                               protein pairs, w_EE, w_RE, w_diff, sig_*
 #          $HACK_OUT/06_metabolite_nodes.csv    one row per metabolite: class, proteins, degree, component
 #          $HACK_OUT/06_metabolite_summary.csv  headline counts
+#
+# HOW TO RUN
+#   After steps 1b, 1c, 2 and 5:   Rscript network/06_metabolite_network.R
+#   Options: METAB_LINK=shared (same-protein rule only), METAB_CLASS_LEVEL=main_class (narrower classes).
+#
+# KNOWN LIMITS
+#   - Only metabolites that one of our 471 proteins acts on can have edges, so most of the 450 metabolites
+#     are isolated.
+#   - Metabolites with no RefMet class never get an edge.
+#   - A single busy protein connects every same-class metabolite it handles (no hub removal; see step 7).
 # =====================================================================================================
 
 # Load packages quietly.
@@ -87,14 +103,17 @@ pairs <- merge(pairs, ids[, .(m1 = metabolite, class1 = rule_class, main_class_a
 pairs <- merge(pairs, ids[, .(m2 = metabolite, class2 = rule_class, main_class_b = main_class)], by = "m2")
 # Keep pairs in the same rule class (a missing class never matches).
 e <- pairs[!is.na(class1) & class1 != "" & class1 == class2]
-# Report how many shared-protein pairs the class rule keeps.
+# Report how many protein-linked pairs there are, and how many of them the class rule keeps.
 message(sprintf("rule %s: linked pairs %d; also same %s (edges): %d", METAB_LINK, nrow(pairs), CLASS_LEVEL, nrow(e)))
 
 # ---- edge weights per arm (dot products of the 9-number vectors) --------------------------------
 # Helper: read one arm's metabolite vectors as a matrix (row names = metabolite names).
 vec <- function(arm) {
+  # read the step 1b node table for this arm
   x <- fread(file.path(OUT, sprintf("01b_metab_nodes_%s.csv", arm)))
+  # keep the 9 numeric columns (drop the name column) and label each row with its metabolite name
   m <- as.matrix(x[, -1]); rownames(m) <- x$metabolite
+  # hand the matrix back
   m
 }
 # Both arms.

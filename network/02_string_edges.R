@@ -3,6 +3,10 @@
 # 02_string_edges.R — STEP 2: WHICH GENES ARE CONNECTED (THE EDGES), USING THE STRING DATABASE
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   Which of our 471 genes are known to work together at the protein level? Those pairs become the edges
+#   of the gene network, fixed before any exercise data is looked at.
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   Step 1 made the nodes (471 genes). This step decides which pairs of genes are joined by an edge.
 #   An edge exists only if the STRING database says the two genes' proteins interact with high
@@ -25,6 +29,11 @@
 #   (e.g. 842.4), so the file has been processed beyond a raw STRING download; its exact STRING release
 #   and processing are not recorded in the file. A second curated file is expected later; point
 #   STRING_PARQUET at it and rerun.
+#   UPDATE (2026-09-26): the file above is now the "legacy" source (EDGE_SOURCE=legacy). By DEFAULT the
+#   script reads the team's mnet resource instead (EDGE_SOURCE=mnet: $MNET_DIR/edges.parquet, protein-
+#   protein rows with score >= 700; see the comments in the code below). The counts quoted in this header
+#   (124,099 pairs, hub cutoff 741, busiest protein 407, ...) describe the legacy file; the mnet numbers
+#   are printed on screen and saved in 02_network_summary.csv.
 #
 # THE RULES WE FOLLOW: El-Kebir et al. 2015, "xHeinz", Bioinformatics 31:3147, section 3.3
 #   1. The background network is STRING protein-protein interactions.
@@ -56,10 +65,24 @@
 #   R 4.4; data.table (tables), nanoparquet (reads the .parquet file), igraph (network components),
 #   MotrpacHumanPreSuspensionAnalysis (gene/protein lookup table).
 #
-# INPUTS:  $STRING_PARQUET (default: the file above in ~/Downloads), $HACK_OUT/01_nodes_{EE,RE}.csv
+# HOW TO RUN
+#   After step 1:   Rscript network/02_string_edges.R        (default edge source: mnet)
+#                   EDGE_SOURCE=legacy Rscript network/02_string_edges.R   (the first curated STRING file)
+#
+# INPUTS:  default $MNET_DIR/edges.parquet (mnet, default ~/Desktop/output/hackathon/resources/mo_annotation);
+#          with EDGE_SOURCE=legacy, $STRING_PARQUET (default: the file above in ~/Downloads);
+#          always $HACK_OUT/01_nodes_{EE,RE}.csv and the package's HUMAN_FEATURE_TO_GENE lookup table
 # OUTPUTS: $HACK_OUT/02_edges.csv          one row per edge
 #          $HACK_OUT/02_nodes_string.csv   per gene: in STRING or not, number of partners, component
 #          $HACK_OUT/02_network_summary.csv  headline counts
+#
+# KNOWN LIMITS
+#   - The background network (all-evidence STRING) is broader than El-Kebir's (see above), so some edges
+#     rest on co-expression or text mining rather than a physical interaction.
+#   - The default legacy file path points into ~/Downloads, so EDGE_SOURCE=legacy only works on a computer
+#     where that file has been placed there (or STRING_PARQUET is set).
+#   - A gene's protein IDs come only from the proteins MoTrPAC measured; other isoforms or accessions of
+#     the same gene that STRING knows under a different ID are not searched.
 # =====================================================================================================
 
 # Load the packages quietly.
@@ -86,11 +109,14 @@ HUB_IQR_MULT <- 40
 # ---- rules 1-2: background network, no direction, no self-links, one row per pair ------------------
 # Read the STRING file and keep the two protein IDs (as text) and the score (as a number).
 s <- if (EDGE_SOURCE == "mnet") {
-  # mnet protein-protein edges (node IDs are UniProt accessions), high-confidence only
+  # mnet protein-protein edges (node IDs are UniProt accessions), high-confidence only; isoform suffixes
+  # such as "-2" are cut off so the IDs match the canonical accessions used for our genes
   as.data.table(read_parquet(file.path(MNET_DIR, "edges.parquet")))[edge_type == "ppi" & score >= MIN_SCORE,
     .(a = sub("-[0-9]+$", "", as.character(node1)), b = sub("-[0-9]+$", "", as.character(node2)), combined_score = as.numeric(score))]
+  # otherwise (legacy): the first curated STRING file, already filtered to scores >= 700 upstream
 } else as.data.table(read_parquet(STRING_PARQUET))[, .(a = as.character(protein1), b = as.character(protein2),
                                                      combined_score = as.numeric(combined_score))]
+# Say on screen which edge source was used.
 message("edge source: ", EDGE_SOURCE)
 # Remember how many rows the file had.
 n_raw <- nrow(s)

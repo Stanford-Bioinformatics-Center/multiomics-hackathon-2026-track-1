@@ -67,6 +67,7 @@ CLASS_PULL <- 3
 INK <- "#1A1A1A"; HAIR <- "#3A3A3A"
 # Edge colours and line types by type (as in step 14).
 TYPE_COL <- c("protein - protein" = "grey55", "metabolite - metabolite" = "#1B7837", "metabolite - protein" = "#8C510A")
+# (TYPE_COL colours the edges by type in 15a; TYPE_LTY sets their line type in 15b)
 TYPE_LTY <- c("protein - protein" = "solid", "metabolite - metabolite" = "42", "metabolite - protein" = "11")
 # Node shapes: circles for proteins, triangles for metabolites.
 SHAPES <- c(protein = 21, metabolite = 24)
@@ -88,6 +89,7 @@ print(nodes[node_type == "metabolite", .N, by = class][order(-N)])
 # ---- grouped layout: same-class metabolites pulled together -------------------------------------------
 # Real edges (weight 1) plus layout-only links between every pair of metabolites in the same class.
 met <- nodes[node_type == "metabolite", .(node, class)]
+# (the metabolite list is joined to itself by class; each same-class pair is kept once, as a < b)
 pull <- met[met, on = "class", allow.cartesian = TRUE][node < i.node, .(a = node, b = i.node, weight = CLASS_PULL)]
 # The layout graph (these extra links are used here and nowhere else).
 gl <- graph_from_data_frame(rbind(E[, .(a, b, weight = 1)], pull), directed = FALSE, vertices = nodes[, .(node)])
@@ -95,6 +97,7 @@ gl <- graph_from_data_frame(rbind(E[, .(a, b, weight = 1)], pull), directed = FA
 set.seed(SEED); L1 <- layout_with_fr(gl, weights = E(gl)$weight)
 # Positions scaled to 0..1.
 norm01 <- function(v) (v - min(v)) / diff(range(v))
+# (grp = the step 14 node table plus the new x, y positions, matched by name)
 grp <- copy(nodes)[, `:=`(x = norm01(L1[, 1])[match(node, V(gl)$name)], y = norm01(L1[, 2])[match(node, V(gl)$name)])]
 # Save the grouped layout.
 fwrite(grp[, .(node, node_type, class, x, y)], file.path(OUT, "15_class_layout.csv"))
@@ -155,10 +158,12 @@ p <- ggplot() +
   geom_point(data = lay, aes(x, y, fill = resp, size = strength, shape = node_type), colour = "grey25", stroke = 0.22) +
   # class names, protein labels, layer names
   class_text(cn, 2.3) +
+  # (protein labels)
   geom_text_repel(data = lab[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
                   segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
+  # (layer names on the left)
   geom_text(data = SL, aes(x, y, label = lab), angle = 90, size = 2.6, colour = "grey30", fontface = "bold", lineheight = 0.9) +
-  # scales
+  # scales: edge colours by type, line types, widths, node fill colours, node sizes, shapes
   scale_colour_manual(values = TYPE_COL, name = "edge type") +
   scale_linetype_manual(values = c("same direction (w > 0)" = "solid", "opposite direction (w < 0)" = "22"), name = "edge weight sign", drop = FALSE) +
   scale_linewidth(range = c(0.08, 1.2), guide = "none") +
@@ -166,13 +171,17 @@ p <- ggplot() +
                        oob = scales::squish, name = "mean response (normalised logFC)") +
   scale_size(range = c(0.6, 4), name = "node strength (sum |w|)") +
   scale_shape_manual(values = SHAPES, name = "node") +
+  # legend order and look
   guides(shape = guide_legend(order = 1, override.aes = list(fill = "grey85", size = 2.6)),
          colour = guide_legend(order = 2, override.aes = list(linewidth = 0.8, alpha = 1)), linetype = guide_legend(order = 3),
          size = guide_legend(order = 4), fill = guide_colourbar(order = 5, barwidth = unit(4, "cm"), barheight = unit(0.25, "cm"))) +
+  # plotting area, with room on the left for the layer names
   coord_cartesian(xlim = c(-0.1, 1.02), ylim = c(-0.02, 1.0), clip = "off") +
+  # title and theme
   labs(title = "Joint protein-metabolite networks, metabolites grouped by RefMet super class: endurance vs resistance") + theme_net()
 # Save.
 ggsave(file.path(FIG, "15a_joint_classes_EE_vs_RE.png"), p, width = 11, height = 7.5, dpi = 300, bg = "white")
+# report the saved file
 message("-> ", file.path(FIG, "15a_joint_classes_EE_vs_RE.png"))
 
 # ---- figure 15b: one network, edges = w_EE - w_RE, same grouped layout ----------------------------------
@@ -192,7 +201,7 @@ q <- ggplot() +
   class_text(class_names(N), 2.4) +
   geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
                   segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
-  # scales
+  # scales: difference colours, line types by edge type, widths, node sizes, shapes
   scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-lim_d, lim_d), oob = scales::squish,
                          breaks = c(-lim_d, 0, lim_d), labels = c("higher in resistance\n(w_RE > w_EE)", "same", "higher in endurance\n(w_EE > w_RE)"),
                          name = "edge difference  w_EE − w_RE") +
@@ -200,11 +209,14 @@ q <- ggplot() +
   scale_linewidth(range = c(0.1, 1.6), guide = "none") +
   scale_size(range = c(0.6, 4), name = "node strength difference (absolute)") +
   scale_shape_manual(values = SHAPES, name = "node") +
+  # legend order and look
   guides(colour = guide_colourbar(order = 1, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"), title.position = "top", title.hjust = 0.5),
          linetype = guide_legend(order = 2, override.aes = list(colour = "grey30", linewidth = 0.6)),
          shape = guide_legend(order = 3, override.aes = list(fill = "grey80", size = 2.6)), size = guide_legend(order = 4)) +
+  # plotting area, title and theme
   coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.05), clip = "off") +
   labs(title = "Joint protein-metabolite network, metabolites grouped by RefMet super class: endurance minus resistance edge weights") + theme_net()
 # Save.
 ggsave(file.path(FIG, "15b_joint_classes_edge_difference.png"), q, width = 11, height = 7, dpi = 300, bg = "white")
+# report the saved file
 message("-> ", file.path(FIG, "15b_joint_classes_edge_difference.png"))

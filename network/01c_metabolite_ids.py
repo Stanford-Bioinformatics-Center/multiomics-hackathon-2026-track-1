@@ -59,11 +59,16 @@
 #          optional second copy: path in $EXPORT_COPY (e.g. ~/Desktop/metabolite_chebi_ids.csv)
 # =====================================================================================================
 
+# Postpone evaluation of type hints (so they are only documentation and never run as code).
+from __future__ import annotations
+
 # Built-in modules: csv (read/write tables), json (decode web answers), os (file paths, settings),
 # re (text patterns), threading (a lock for the shared error counter), time (pauses), urllib (web requests).
 import csv, json, os, re, threading, time, urllib.error, urllib.parse, urllib.request
 # ThreadPoolExecutor runs several lookups at the same time (4 at once, to stay polite to the servers).
 from concurrent.futures import ThreadPoolExecutor
+# Type names used only in the function type hints (they document what goes in and out; no effect on results).
+from typing import Any, Dict, Iterable, List, Optional
 
 # Results folder: the HACK_OUT setting if given, otherwise the same default folder the R steps use.
 OUT = os.environ.get("HACK_OUT", os.path.expanduser("~/Desktop/output/hackathon-2026-track1/network"))
@@ -89,7 +94,7 @@ class FetchError(Exception):
 
 
 # Helper: download a web address and decode its JSON answer, retrying when the server is busy.
-def fetch(url, data=None, headers=None):
+def fetch(url: str, data: Optional[bytes] = None, headers: Optional[Dict[str, str]] = None) -> Any:
     """Return the decoded JSON answer ({} if the service says 'not found'); raise FetchError on failure."""
     # Try up to ATTEMPTS times.
     for attempt in range(ATTEMPTS):
@@ -134,7 +139,8 @@ ERR_LOCK = threading.Lock()
 
 
 # Helper: like fetch(), but a failure is counted and noted in the row instead of stopping the whole run.
-def safe_fetch(status, url, data=None, headers=None):
+def safe_fetch(status: List[str], url: str, data: Optional[bytes] = None,
+               headers: Optional[Dict[str, str]] = None) -> Any:
     """fetch() that records a failure in `status` (a one-item list) and returns {} so the row can continue."""
     # Try the request.
     try:
@@ -148,7 +154,7 @@ def safe_fetch(status, url, data=None, headers=None):
 
 
 # Helper: RefMet sometimes answers with a list of records instead of one record.
-def first_record(d):
+def first_record(d: Any) -> Dict[str, Any]:
     """RefMet sometimes answers with a list; return its first entry as a dictionary (or empty)."""
     # If the answer is a list, take its first entry (or nothing if the list is empty).
     if isinstance(d, list):
@@ -158,7 +164,7 @@ def first_record(d):
 
 
 # Step 1: find one metabolite's RefMet record.
-def refmet_lookup(name, status):
+def refmet_lookup(name: str, status: List[str]) -> Dict[str, Any]:
     """Step 1: RefMet record (ID, class, PubChem CID, InChIKey) for one metabolite name."""
     # Names without "/" can be looked up directly by exact name.
     if "/" not in name:
@@ -187,14 +193,14 @@ def refmet_lookup(name, status):
 
 
 # Helper: put ChEBI IDs in numeric order.
-def chebi_sort(ids):
+def chebi_sort(ids: Iterable[str]) -> List[str]:
     """Sort ChEBI IDs by their number (CHEBI:422 before CHEBI:16651)."""
     # Remove duplicates, then sort by the number after "CHEBI:".
     return sorted(set(ids), key=lambda x: int(x.split(":")[1]))
 
 
 # Step 2: exact structure -> ChEBI, via UniChem.
-def chebi_from_inchikey(inchikey, status):
+def chebi_from_inchikey(inchikey: str, status: List[str]) -> List[str]:
     """Step 2: ChEBI IDs for an exact structure, via UniChem."""
     # Ask UniChem which database entries share this structure fingerprint.
     d = safe_fetch(status, UNICHEM, json.dumps({"type": "inchikey", "compound": inchikey}).encode(),
@@ -207,7 +213,7 @@ def chebi_from_inchikey(inchikey, status):
 
 
 # Fallback for step 2: ChEBI IDs listed among a PubChem compound's alternative names.
-def chebi_from_pubchem(cid, status):
+def chebi_from_pubchem(cid: str, status: List[str]) -> List[str]:
     """Fallback for step 2: ChEBI IDs listed among a PubChem compound's synonyms."""
     # Download the compound's list of synonyms (alternative names and IDs).
     d = safe_fetch(status, PUBCHEM % cid)
@@ -218,7 +224,7 @@ def chebi_from_pubchem(cid, status):
 
 
 # Step 3 (only for metabolites without a structure): one fixed reformat, then an exact ChEBI name match.
-def chebi_from_exact_label(name, status):
+def chebi_from_exact_label(name: str, status: List[str]) -> List[str]:
     """Step 3 (metabolites without a structure): one fixed reformat, then an exact ChEBI name match."""
     # Split the name at its first space into class and chains, e.g. "PC" and "16:0_18:1".
     m = re.fullmatch(r"(\S+) (.+)", name)
@@ -234,7 +240,7 @@ def chebi_from_exact_label(name, status):
 
 
 # All steps for one metabolite, producing one row of the output table.
-def lookup(name):
+def lookup(name: str) -> Dict[str, Any]:
     """All steps for one metabolite; returns one output row."""
     # This row's status; any failed request below switches it to "error".
     status = ["ok"]
@@ -271,7 +277,8 @@ def lookup(name):
 
 
 # The main program.
-def main():
+def main() -> None:
+    """Read the 450 names, look them all up, write the table(s) and print a summary."""
     # Open step 1b's node table...
     with open(os.path.join(OUT, "01b_metab_nodes_EE.csv"), newline="") as f:
         # ...and read the metabolite name from every row.

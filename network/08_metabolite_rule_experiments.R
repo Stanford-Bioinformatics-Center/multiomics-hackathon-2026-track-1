@@ -5,6 +5,11 @@
 # pipeline itself now uses the team's mnet resource (EDGE_SOURCE=mnet, steps 2 / 5).
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   How sensitive is the metabolite network to each choice in its edge rule (which proteins may link
+#   metabolites, how broad a chemical class must match, whether STRING-interacting proteins count)? This
+#   is the evidence behind the rule the team adopted for step 6.
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   The metabolite network (step 6) connects two metabolites if they share a protein that handles both
 #   (Rhea, step 5) AND belong to the same chemical class. This script tests, one change at a time, how
@@ -38,6 +43,18 @@
 #          the protein pair(s) that link them and both arms' weights
 #          $HACK_OUT/08_metabolite_rule_experiments.csv   one row per rule: metabolites with a protein,
 #          metabolite pairs sharing a protein, edges, metabolites in the network, change vs baseline
+#
+# HOW TO RUN
+#   After steps 1, 1b, 1c, 5 and 6:   Rscript network/08_metabolite_rule_experiments.R
+#   Needs the legacy STRING file (STRING_PARQUET, default in ~/Downloads) even when EDGE_SOURCE=mnet.
+#
+# KNOWN LIMITS
+#   - Report only, on the LEGACY inputs (see the note at the top); the numbers do not describe the
+#     current mnet-based network.
+#   - The human Swiss-Prot list is downloaded once from UniProt and cached; a fresh download later may
+#     contain a slightly different set of proteins.
+#   - Experiment 3's STRING check compares protein IDs directly, while step 6 compares genes; the two can
+#     differ only when one gene has several protein IDs.
 # =====================================================================================================
 
 # Load packages quietly.
@@ -153,6 +170,7 @@ run_rule <- function(protein_set, class_col, label, link = "shared") {
 }
 
 # ---- run the rules ---------------------------------------------------------------------------------
+# Apply the rule five times, once per variant; each result holds a counts row and an edge list.
 runs <- list(
   # the original main-class rule
   run_rule(ours, "main_class", "baseline: our 471 genes, main class"),
@@ -167,11 +185,16 @@ runs <- list(
 # The counts table, one row per rule.
 res <- rbindlist(lapply(runs, `[[`, "row"))
 # The edges experiment 3 adds to experiment 2 (same proteins and class; only the STRING step differs).
+# (run 3 = experiment 2, run 5 = experiment 3, in the order of the list above)
 e2 <- runs[[3]]$edges; e3 <- runs[[5]]$edges
+# edges present in experiment 3 but not in experiment 2, labelled with the first metabolite's super class
 extra <- e3[!paste(m1, m2) %in% paste(e2$m1, e2$m2)][, class := ids$super_class[match(m1, ids$metabolite)]]
 # (UniProt accessions shown as gene symbols for readability, using the package's lookup table)
 u2s <- unique(as.data.table(HUMAN_FEATURE_TO_GENE)[!is.na(uniprot), .(u = sub("-[0-9]+$", "", as.character(uniprot)), g = as.character(gene_symbol))])
+# helper: replace every accession found in a text with its gene symbol, one accession at a time (whole
+# words only, so one accession is never replaced inside a longer one)
 sym <- function(x) { for (i in seq_len(nrow(u2s))) x <- gsub(paste0("\\b", u2s$u[i], "\\b"), u2s$g[i], x); x }
+# the linking protein pairs, written with gene symbols
 extra[, via_genes := sym(via)]
 # Save the extra edges.
 fwrite(extra[, .(metabolite_a = m1, metabolite_b = m2, class, linked_by = via_genes, w_EE, w_RE, w_diff = w_EE - w_RE)],
@@ -179,6 +202,7 @@ fwrite(extra[, .(metabolite_a = m1, metabolite_b = m2, class, linked_by = via_ge
 # Change in the number of metabolites in the network relative to the baseline.
 res[, change_vs_baseline := metabolites_in_network - metabolites_in_network[1]]
 # Safety check: the rule matching step 6's class level reproduces step 6 exactly.
+# read step 6's headline counts as a named list of values (metric name -> value)
 s6 <- fread(file.path(OUT, "06_metabolite_summary.csv")); v6 <- setNames(s6$value, s6$metric)
 # (row 1 = main class, row 3 = super class, row 5 = super class + STRING-interacting proteins; our 471 genes)
 row6 <- if (v6[["class_level"]] == "main_class") 1 else if (v6[["link_rule"]] == "shared") 3 else 5
@@ -186,10 +210,13 @@ row6 <- if (v6[["class_level"]] == "main_class") 1 else if (v6[["link_rule"]] ==
 # inputs (direct Rhea + the first curated STRING file); since 2026-09-26 step 6 uses the team's mnet resource by
 # default, so with EDGE_SOURCE=mnet the check is against the legacy step 6 result instead (147 edges, 44 metabolites).
 if (Sys.getenv("EDGE_SOURCE", unset = "mnet") == "legacy") {
+  # legacy run: the matching rule must reproduce step 6's edge and metabolite counts exactly
   stopifnot(res$edges[row6] == as.numeric(v6[["edges_same_class"]]),
             res$metabolites_in_network[row6] == as.numeric(v6[["metabolites_with_edges"]]))
 } else {
+  # mnet run: experiment 3 must reproduce the recorded legacy step 6 result
   stopifnot(res$edges[5] == 147, res$metabolites_in_network[5] == 44)
+  # say so on screen
   message("rule experiments use the legacy inputs; experiment 3 reproduces the legacy step 6 (147 edges, 44 metabolites)")
 }
 # Save and show.

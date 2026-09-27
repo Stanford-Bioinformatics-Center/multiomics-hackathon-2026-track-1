@@ -56,9 +56,9 @@ ens <- unique(map[assay == "transcript-rna-seq" & entrez_gene %in% prot$entrez_g
 # STRING presence and number of partners in our network (step 2).
 str2 <- fread(file.path(OUT, "02_nodes_string.csv"), colClasses = list(character = "entrez_gene"))[
   , .(entrez_gene, in_string, network_degree = degree)]
-# Put the columns together, one row per gene.
+# Put the columns together, one row per gene (left joins onto the 471 genes, so none is lost).
 prot <- str2[ens[uni[prot, on = "entrez_gene"], on = "entrez_gene"], on = "entrez_gene"]
-# Column order and alphabetical row order.
+# Column order.
 setcolorder(prot, c("gene_symbol", "entrez_gene", "uniprot", "ensembl_gene", "in_string", "network_degree"))
 # Rows in alphabetical order of gene symbol.
 setorder(prot, gene_symbol)
@@ -76,14 +76,14 @@ kegg <- unique(map[assay == "metab" & feature_id %in% met$metabolite & !is.na(ke
   , .(kegg_id = paste(sort(unique(kegg_id)), collapse = ";")), by = metabolite]
 # The platform that measured each metabolite in each tissue (step 1b).
 plat <- fread(file.path(OUT, "01b_metab_nodes_provenance.csv"))
-# Put the columns together, one row per metabolite.
+# Put the columns together, one row per metabolite (left joins onto the 450 metabolites).
 met <- plat[kegg[met, on = "metabolite"], on = "metabolite"]
-# Column order and alphabetical row order (ignoring upper/lower case).
+# Column order.
 setcolorder(met, c("metabolite", "refmet_id", "super_class", "main_class", "chebi_id", "chebi_all",
                    "pubchem_cid", "inchi_key", "kegg_id", "platform_adipose", "platform_blood", "platform_muscle"))
 # Rows in alphabetical order of metabolite name (ignoring upper/lower case).
 met <- met[order(tolower(metabolite))]
-# Safety check: 450 metabolites, each with its three platforms.
+# Safety check: 450 metabolites, each with a muscle platform (only the muscle column is checked).
 stopifnot(nrow(met) == 450, !anyNA(met$platform_muscle))
 # Save.
 fwrite(met, file.path(RES, "metabolites_450.csv"))

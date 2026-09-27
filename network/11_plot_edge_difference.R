@@ -36,6 +36,15 @@
 #   - Only nodes with at least one edge are drawn (286 genes, 44 metabolites).
 #   Titles are descriptive only; interpretation belongs in the report text.
 #
+# HOW TO RUN
+#   After steps 1, 1b, 1c, 3 and 6 (and ideally step 10, to compare):
+#     Rscript network/11_plot_edge_difference.R
+#
+# KNOWN LIMITS
+#   The layout is recomputed here with step 10's code and seed (the saved 10_layout_*.csv files are not
+#   read), so the two match only while both scripts use the same node order, edge order and seed.
+#   Differences are not tested against noise (see above).
+#
 # TECH STACK
 #   R 4.4; data.table, igraph (layout), ggplot2, ggrepel (labels).
 #
@@ -93,6 +102,7 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
   pos <- data.table(node = V(g)$name, x = norm01(L0[, 1]), y = norm01(L0[, 2]))
   # edge segments with their difference
   E <- copy(edges)
+  # (look up the start (a) and end (b) position of every edge by node name)
   E[, `:=`(x = pos$x[match(a, pos$node)], y = pos$y[match(a, pos$node)],
            xend = pos$x[match(b, pos$node)], yend = pos$y[match(b, pos$node)])]
   # drawing order: smallest to largest difference, so the large differences sit on top
@@ -103,6 +113,7 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
   # node table with positions, the strength difference and the shape key
   N <- merge(pos, nodes, by = "node")
   # labels for the chosen nodes
+  # rank the nodes by the size of their strength difference (1 = largest)
   N[, rk := frank(-abs(delta), ties.method = "first")]
   N[, lab := fifelse(label_rule(rk), node, NA_character_)]
   # which connected group each node belongs to
@@ -134,13 +145,17 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
     scale_size(range = c(0.8, 4.5), name = "node strength difference (absolute)") +
     scale_shape_manual(values = shape_values, name = shape_name) +
     # legends
+    # legend order: colour bar first, then shapes, then node sizes
     guides(colour = guide_colourbar(order = 1, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"),
                                     title.position = "top", title.hjust = 0.5),
            shape = guide_legend(order = 3, override.aes = list(size = 2.6)), size = guide_legend(order = 4)) +
+    # plotting area, with a little room above for the class labels
     coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.1), clip = "off") +
+    # title and theme
     labs(title = title) + theme_net()
   # save with a white background at 300 dpi
   ggsave(file, p, width = width, height = height, dpi = 300, bg = "white")
+  # report the saved file, the network size and the colour limit used
   message(sprintf("-> %s (%d nodes, %d edges; colour limit +-%.1f)", file, vcount(g), ecount(g), lim))
 }
 

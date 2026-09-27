@@ -3,6 +3,11 @@
 # 01_node_embeddings.R — STEP 1 OF THE NETWORK: ONE "NODE" PER GENE, EACH WITH TWO RESPONSE VECTORS
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   How did each gene respond to one bout of endurance or resistance exercise, across tissues, molecular
+#   layers and time? The answer, one row of numbers per gene per arm, is the raw material of every later
+#   network step.
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   A network is made of nodes (here: genes) joined by edges (here: known protein interactions, step 2).
 #   This script builds the nodes. For every gene it writes down how that gene changed after one bout of
@@ -57,7 +62,8 @@
 #      + muscle MS). Every value then lies between -1 and +1, the single largest change in each ome is
 #      exactly +-1, and RNA and protein are on the same -1..+1 footing.
 #      Why this matters: the network's edge weights are DOT PRODUCTS of these vectors (step 3), i.e. sums
-#      of products across the 16 dimensions. Without a common scale, the ome with the largest raw log fold
+#      of products across the 16 dimensions that hold data (18 minus the 2 empty adipose-protein columns,
+#      see point 5). Without a common scale, the ome with the largest raw log fold
 #      changes would dominate every sum simply because of its units, not its biology.
 #      What it keeps: one divisor per ome is shared by all tissues, timepoints and both arms, so every
 #      difference WITHIN an ome (between arms, times and tissues) is preserved exactly; signs and zero are
@@ -86,6 +92,15 @@
 # TECH STACK
 #   R 4.4; packages data.table (tables), MotrpacHumanPreSuspensionAnalysis (the data).
 #
+# HOW TO RUN
+#   First step of the pipeline (no earlier step needed):   Rscript network/01_node_embeddings.R
+#   or as part of everything:                              bash network/run_all.sh
+#
+# INPUTS
+#   Only objects inside the installed MotrpacHumanPreSuspensionAnalysis package: the six *_DA result tables
+#   (ADIPOSE/BLOOD/MUSCLE_TRNSCRPT_DA, ADIPOSE_PROT_PR_DA, MUSCLE_PROT_PR_DA, BLOOD_PROT_OL_DA) and the
+#   feature -> gene lookup table HUMAN_FEATURE_TO_GENE. No files are read.
+#
 # OUTPUTS (folder $HACK_OUT, default ~/Desktop/output/hackathon-2026-track1/network; kept outside the repo)
 #   01_nodes_EE.csv, 01_nodes_RE.csv            the scaled 18-number vectors (the node tables)
 #   01_nodes_EE_raw_logFC.csv, ..._RE_raw_...   the same before scaling
@@ -93,6 +108,15 @@
 #   01_nodes_arm_corr.csv                        correlation between the errors of a gene's EE and RE estimates
 #   01_scale_factors.csv                         the divisor for each ome (max |logFC|) and which value sets it
 #   01_nodes_feature_provenance.csv              which transcript/protein was used for each gene
+#
+# KNOWN LIMITS
+#   - The gene count (471) is hard-coded as a safety check: a different package version stops the script
+#     on purpose rather than silently producing a different network.
+#   - Adipose protein exists at 4 h only, so two of the 18 columns are empty for every gene.
+#   - For MS proteomics the "highest AveExpr" choice between duplicate proteins is a fixed tie-break, not
+#     a biological preference (20 genes affected).
+#   - Each ome's divisor comes from a single most-extreme value (see point 4 above).
+#   - When one Entrez ID carries several gene symbols in the lookup table, the first one listed is shown.
 # =====================================================================================================
 
 # Load the two packages quietly: the MoTrPAC data package and data.table (fast tables).
@@ -246,6 +270,7 @@ to_wide <- function(a, value) {
   setorder(wide, gene_symbol)
   # safety check: 471 genes and 2 + 18 columns
   stopifnot(nrow(wide) == 471, ncol(wide) == 2 + 18)
+  # hand the finished table back to the caller
   wide
 }
 
@@ -255,6 +280,7 @@ for (a in ARMS) {
   tag <- sub("-CON", "", a)
   # the main node table: scaled values
   f <- file.path(OUT, sprintf("01_nodes_%s.csv", tag))
+  # build the wide table of scaled values and write it to that file
   fwrite(to_wide(a, "scaled"), f)
   # the same numbers before scaling, for reference
   fwrite(to_wide(a, "logFC"), file.path(OUT, sprintf("01_nodes_%s_raw_logFC.csv", tag)))
@@ -272,7 +298,7 @@ prov <- dcast(chosen, entrez_gene ~ paste(tissue, ome, sep = "_"),
               value.var = c("feature_id", "n_candidates"))
 # add gene symbols
 prov <- symbols[prov, on = "entrez_gene"]
-# save and report
+# save the provenance table
 fwrite(prov, file.path(OUT, "01_nodes_feature_provenance.csv"))
 # Report where the provenance file was written.
 message("provenance -> ", file.path(OUT, "01_nodes_feature_provenance.csv"))

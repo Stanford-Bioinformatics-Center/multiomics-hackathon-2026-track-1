@@ -3,6 +3,10 @@
 # 01b_metabolite_embeddings.R — STEP 1b: ONE NODE PER METABOLITE, EACH WITH TWO 9-NUMBER RESPONSE VECTORS
 # =====================================================================================================
 #
+# PURPOSE (the question this answers)
+#   How did each metabolite respond to one bout of endurance or resistance exercise, across tissues and
+#   time? One row of numbers per metabolite per arm, used by the metabolite network (step 6).
+#
 # WHAT THIS SCRIPT DOES (plain language)
 #   The metabolite counterpart of step 1 (01_node_embeddings.R, which does genes). For every metabolite
 #   (a small molecule such as an amino acid, a lipid or a sugar) it writes down how that metabolite
@@ -68,6 +72,13 @@
 # TECH STACK
 #   R 4.4; data.table (tables), MotrpacHumanPreSuspensionAnalysis (the data).
 #
+# HOW TO RUN
+#   No earlier step needed:   Rscript network/01b_metabolite_embeddings.R   (or bash network/run_all.sh)
+#
+# INPUTS
+#   Only objects inside the installed MotrpacHumanPreSuspensionAnalysis package: ADIPOSE_METAB_DA,
+#   BLOOD_METAB_DA and MUSCLE_METAB_DA. No files are read.
+#
 # OUTPUTS (folder $HACK_OUT, default ~/Desktop/output/hackathon-2026-track1/network; outside the repo)
 #   01b_metab_nodes_EE.csv, 01b_metab_nodes_RE.csv      scaled 9-number vectors (the node tables)
 #   01b_metab_nodes_EE_raw_logFC.csv, ..._RE_...        the same before scaling
@@ -75,6 +86,13 @@
 #   01b_metab_nodes_arm_corr.csv                         correlation between the errors of EE and RE estimates
 #   01b_metab_scale_factors.csv                          the divisor (max |logFC|) and which value sets it
 #   01b_metab_nodes_provenance.csv                       which platform measured each metabolite in each tissue
+#
+# KNOWN LIMITS
+#   - The metabolite count (450) is hard-coded as a safety check: a different package version stops the
+#     script on purpose.
+#   - Exact-name matching across tissues is strict by design: a metabolite named slightly differently in
+#     one tissue is left out rather than risk merging two different molecules.
+#   - The single divisor comes from one most-extreme value (see point 4 above).
 # =====================================================================================================
 
 # Load the two packages quietly: the MoTrPAC data package and data.table (fast tables).
@@ -106,7 +124,7 @@ da <- rbindlist(lapply(TISSUES, function(tis) {
     .(metabolite = as.character(feature_id), platform = as.character(platform),
       arm = as.character(contrast_category), tp = names(TPS)[match(as.character(Timepoint), TPS)],
       logFC, se = fifelse(!is.na(t) & t != 0, logFC / t, (CI.R - CI.L) / (2 * qt(0.975, degrees_of_freedom))))]
-  # label every row with its tissue
+  # label every row with its tissue (this labelled table is also what the function hands back)
   x[, tissue := tis]
 }))
 # Safety check: one platform per metabolite per tissue (the consortium's lowest-CV rule), so exactly one
@@ -176,6 +194,7 @@ to_wide <- function(a, value) {
   setorder(wide, metabolite)
   # safety check: 450 metabolites, 1 + 9 columns, nothing missing
   stopifnot(nrow(wide) == 450, ncol(wide) == 1 + 9, !anyNA(wide))
+  # hand the finished table back to the caller
   wide
 }
 
@@ -185,6 +204,7 @@ for (a in ARMS) {
   tag <- sub("-CON", "", a)
   # the main node table: scaled values
   f <- file.path(OUT, sprintf("01b_metab_nodes_%s.csv", tag))
+  # build the wide table of scaled values and write it to that file
   fwrite(to_wide(a, "scaled"), f)
   # the same numbers before scaling, for reference
   fwrite(to_wide(a, "logFC"), file.path(OUT, sprintf("01b_metab_nodes_%s_raw_logFC.csv", tag)))

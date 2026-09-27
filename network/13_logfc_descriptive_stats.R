@@ -79,6 +79,7 @@ OME_NAME <- c(rna = "RNA (RNA-seq)", prot = "Protein (MS; blood OLINK)", metab =
 # ---- gather every log fold change in one long table ---------------------------------------------
 # Helper: read one raw-logFC table and reshape it to one row per value (feature, dimension, value).
 long <- function(file, id_cols, arm) {
+  # read the table
   x <- fread(file.path(OUT, file))
   # the dimension columns (everything after the identifier columns)
   dims <- names(x)[-(seq_len(id_cols))]
@@ -89,6 +90,7 @@ long <- function(file, id_cols, arm) {
   v[, ome := sub("^[a-z]+_([a-z]+)_.*$", "\\1", as.character(dim))]
   # label the arm
   v[, arm := arm]
+  # keep only the ome, arm and value columns
   v[, .(ome, arm, logFC)]
 }
 # All values: genes (two identifier columns) and metabolites (one), both arms.
@@ -99,6 +101,7 @@ stopifnot(setequal(unique(d$ome), names(OME_NAME)))
 
 # ---- the statistics -------------------------------------------------------------------------------
 # Helper: n, min, max, mean and SD of a set of values.
+# (the SD is the ordinary sample standard deviation)
 stats <- function(v) list(n = length(v), min = min(v), max = max(v), mean = mean(v), sd = sd(v))
 # Table 1: pooled across the two arms, per ome.
 t1 <- d[, stats(logFC), by = ome][, arm := "Both arms (pooled)"]
@@ -187,12 +190,15 @@ tex_file <- file.path(FIG, "13_logfc_descriptive_stats.tex")
 # (write it)
 writeLines(tex, tex_file)
 # Compile it to PDF with pdflatex (TinyTeX installs any missing LaTeX package automatically).
+# (work inside the figure folder so LaTeX's helper files land there. Note: at the top level of a script
+#  on.exit() never runs, so the working folder is not switched back; harmless, nothing is written after this)
 old <- setwd(FIG); on.exit(setwd(old), add = TRUE)
-# (compile; returns the PDF file name)
 # Reproducible PDF: pdfTeX takes its creation date and document ID from SOURCE_DATE_EPOCH when
 # FORCE_SOURCE_DATE=1 (fixed at 2026-09-26 unless set by the caller), so reruns give a byte-identical file.
 if (Sys.getenv("SOURCE_DATE_EPOCH") == "") Sys.setenv(SOURCE_DATE_EPOCH = as.character(as.integer(as.POSIXct("2026-09-26", tz = "UTC"))))
+# (tell pdfTeX to use that fixed date)
 Sys.setenv(FORCE_SOURCE_DATE = "1")
+# (compile; returns the PDF file name)
 pdf <- tinytex::pdflatex(basename(tex_file))
 # Report where it was written, and show the numbers.
 message("-> ", file.path(FIG, pdf))

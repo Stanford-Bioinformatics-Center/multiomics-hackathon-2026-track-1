@@ -93,6 +93,7 @@ COL_RE <- "#2166AC"; COL_SAME <- "grey85"; COL_EE <- "#B2182B"
 
 # ---- node vectors ---------------------------------------------------------------------------------
 # Helper: read a normalised node table as a matrix (rows = node names).
+# (drops the identifier columns, keeps the value columns, and names each row by the chosen identifier)
 mat <- function(file, id) { x <- fread(file.path(OUT, file)); keep <- setdiff(names(x), c("entrez_gene", "gene_symbol", "metabolite"))
   m <- as.matrix(x[, ..keep]); rownames(m) <- x[[id]]; m }
 # Genes: 18 columns (adipose protein 0.5 / 24 h empty), rows named by gene symbol, both arms.
@@ -112,12 +113,14 @@ stopifnot(!anyNA(dbl_idx), all(tabulate(dbl_idx, length(key_m)) == 2))
 ME18 <- ME[, dbl_idx]; colnames(ME18) <- colnames(GE)
 MR18 <- MR[, dbl_idx]; colnames(MR18) <- colnames(GR)
 # The Rhea links (step 5): one row per metabolite - gene pair.
+# (unique() removes exact duplicate rows)
 mp <- unique(fread(file.path(OUT, "05_metabolite_protein_links.csv"))[, .(a = metabolite, b = gene_symbol, n_reactions)])
 # One dot product per pair and arm: the metabolite's 18 values times the gene's 18 values, summed. The two
 # empty gene dimensions (adipose protein at 0.5 h and 24 h) are skipped (na.rm), leaving 16 terms.
 dot18 <- function(M18, G, m, g) unname(rowSums(M18[m, , drop = FALSE] * G[g, , drop = FALSE], na.rm = TRUE))
 mp[, `:=`(edge_type = "metabolite - protein", w_EE = dot18(ME18, GE, a, b), w_RE = dot18(MR18, GR, a, b))]
 # Safety check: the first pair's weight, recomputed by hand over the 16 observed dimensions, matches.
+# (which of the first pair's gene dimensions are not empty)
 obs <- !is.na(GE[mp$b[1], ])
 stopifnot(sum(obs) == 16, isTRUE(all.equal(sum(ME18[mp$a[1], obs] * GE[mp$b[1], obs]), mp$w_EE[1])))
 
@@ -127,6 +130,7 @@ pp <- fread(file.path(OUT, "03_weighted_edges.csv"))[, .(a = symbol_a, b = symbo
 # Metabolite - metabolite edges with their weights.
 mm <- fread(file.path(OUT, "06_metabolite_edges.csv"))[, .(a = metabolite_a, b = metabolite_b, w_EE, w_RE)][, edge_type := "metabolite - metabolite"]
 # Safety check: recomputing a protein-protein weight from the vectors reproduces step 3 (first edge).
+# (the gene columns that are not empty for every gene)
 gcols <- colnames(GE)[colSums(is.na(GE)) < nrow(GE)]
 stopifnot(isTRUE(all.equal(sum(GE[pp$a[1], gcols] * GE[pp$b[1], gcols]), pp$w_EE[1])))
 # All edges in one table.
@@ -139,35 +143,44 @@ E[, edge_type := factor(edge_type, levels = names(TYPE_COL))]
 # ---- nodes and layout --------------------------------------------------------------------------------
 # Node table: every node with at least one edge, its type and (for metabolites) its super class.
 ids <- fread(file.path(OUT, "01c_metabolite_ids.csv"))
+# every node that appears in at least one edge
 nodes <- data.table(node = unique(c(E$a, E$b)))
+# a node is a metabolite if it is in the metabolite table, otherwise a protein
 nodes[, node_type := fifelse(node %in% rownames(ME), "metabolite", "protein")]
+# metabolites get their RefMet super class; proteins get the class "protein"
 nodes[, class := fifelse(node_type == "metabolite", ids$super_class[match(node, ids$metabolite)], "protein")]
 # Safety check: no name is both a gene symbol and a metabolite name.
 stopifnot(!any(rownames(ME) %in% rownames(GE)))
 # Each node's mean response per arm (across its observed dimensions), for the node colour in 14a.
 resp <- function(G, M) c(rowMeans(G, na.rm = TRUE), rowMeans(M))
+# per-arm mean responses of every gene and metabolite, looked up by node name
 rE <- resp(GE, ME); rR <- resp(GR, MR)
 nodes[, `:=`(resp_EE = rE[node], resp_RE = rR[node])]
 # The joint graph (edges in table order) and one layout for everything (fixed seed).
 g <- graph_from_data_frame(E[, .(a, b)], directed = FALSE, vertices = nodes[, .(node)])
+# fixed seed, then the force-directed (Fruchterman-Reingold) layout
 set.seed(SEED); L0 <- layout_with_fr(g)
 # Positions scaled to 0..1.
 norm01 <- function(v) (v - min(v)) / diff(range(v))
+# attach each node's position (matched by name)
 nodes[, `:=`(x = norm01(L0[, 1])[match(node, V(g)$name)], y = norm01(L0[, 2])[match(node, V(g)$name)])]
 # Node strength per arm (sum of |w| over the node's edges) and degree per edge type.
 both <- rbind(E[, .(node = a, edge_type, w_EE, w_RE)], E[, .(node = b, edge_type, w_EE, w_RE)])
 st <- both[, .(strength_EE = sum(abs(w_EE)), strength_RE = sum(abs(w_RE)), degree = .N,
                degree_pp = sum(edge_type == "protein - protein"), degree_mm = sum(edge_type == "metabolite - metabolite"),
                degree_mp = sum(edge_type == "metabolite - protein")), by = node]
+# add these numbers to the node table
 nodes <- st[nodes, on = "node"]
 
 # ---- save the tables -----------------------------------------------------------------------------
+# Edge table.
 fwrite(E[, .(node_a = a, node_b = b, edge_type, w_EE, w_RE, w_diff)], file.path(OUT, "14_joint_edges.csv"))
 # Node table.
 fwrite(nodes, file.path(OUT, "14_joint_nodes.csv"))
 # Summary per edge type: counts, correlation between the arms, sign changes.
 summ <- E[, .(edges = .N, cor_w_EE_w_RE = round(cor(w_EE, w_RE), 3), sign_changes = sum(sign(w_EE) != sign(w_RE)),
               median_abs_w = signif(median(abs(c(w_EE, w_RE))), 3)), by = edge_type]
+# add one "all" row over every edge
 summ <- rbind(summ, data.table(edge_type = "all", edges = nrow(E), cor_w_EE_w_RE = round(cor(E$w_EE, E$w_RE), 3),
                                sign_changes = sum(sign(E$w_EE) != sign(E$w_RE)), median_abs_w = signif(median(abs(c(E$w_EE, E$w_RE))), 3)))
 fwrite(summ, file.path(OUT, "14_joint_summary.csv"))
@@ -175,6 +188,7 @@ fwrite(summ, file.path(OUT, "14_joint_summary.csv"))
 print(summ)
 
 # ---- figure theme ------------------------------------------------------------------------------------
+# Figure theme: small text, no axes (a network has no meaningful axes), legend at the bottom.
 theme_net <- function(base = 8) {
   theme_classic(base_size = base) %+replace% theme(
     text = element_text(colour = INK, size = base),
@@ -198,6 +212,7 @@ lay <- rbind(nodes[, .(node, node_type, arm = "EE", x, y = 0.55 + 0.40 * y, resp
              nodes[, .(node, node_type, arm = "RE", x, y = 0.05 + 0.40 * y, resp = resp_RE, strength = strength_RE)])
 # Edges of each layer with that arm's weight.
 S <- rbindlist(lapply(c("EE", "RE"), function(ar) { s <- seg(lay[lay$arm == ar]); s[, `:=`(arm = ar, w = if (ar == "EE") w_EE else w_RE)]; s }))
+# line type from the sign of that arm's weight
 S[, sign := factor(fifelse(w >= 0, "same direction (w > 0)", "opposite direction (w < 0)"), levels = c("same direction (w > 0)", "opposite direction (w < 0)"))]
 # Labels per layer.
 lab <- rbindlist(lapply(c("EE", "RE"), function(ar) top_labels(lay[lay$arm == ar], "strength")))
@@ -219,7 +234,7 @@ p <- ggplot() +
                   segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
   # layer names
   geom_text(data = SL, aes(x, y, label = lab), angle = 90, size = 2.6, colour = "grey30", fontface = "bold", lineheight = 0.9) +
-  # scales
+  # scales: edge colours by type, line types, widths, node sizes, shapes, node fill colours
   scale_colour_manual(values = TYPE_COL, name = "edge type") +
   scale_linetype_manual(values = c("same direction (w > 0)" = "solid", "opposite direction (w < 0)" = "22"), name = "edge weight sign", drop = FALSE) +
   scale_linewidth(range = c(0.08, 1.2), guide = "none") +
@@ -227,13 +242,17 @@ p <- ggplot() +
   scale_shape_manual(values = SHAPES, name = "node") +
   scale_fill_gradient2(low = "#6A3D9A", mid = "white", high = "#E66100", midpoint = 0, limits = c(-lim_r, lim_r),
                        oob = scales::squish, name = "mean response (normalised logFC)") +
+  # legend order and look
   guides(shape = guide_legend(order = 1, override.aes = list(fill = "grey85", size = 2.6)),
          colour = guide_legend(order = 2, override.aes = list(linewidth = 0.8, alpha = 1)), linetype = guide_legend(order = 3),
          size = guide_legend(order = 4), fill = guide_colourbar(order = 5, barwidth = unit(4, "cm"), barheight = unit(0.25, "cm"))) +
+  # plotting area, with room on the left for the layer names
   coord_cartesian(xlim = c(-0.1, 1.02), ylim = c(-0.02, 1.0), clip = "off") +
+  # title and theme
   labs(title = "Joint protein-metabolite networks: endurance vs resistance (STRING, Rhea and class-rule edges)") + theme_net()
 # Save.
 ggsave(file.path(FIG, "14a_joint_network_EE_vs_RE.png"), p, width = 11, height = 7, dpi = 300, bg = "white")
+# report the saved file
 message("-> ", file.path(FIG, "14a_joint_network_EE_vs_RE.png"))
 
 # ---- figure 14b: one network, edges = w_EE - w_RE -----------------------------------------------------
@@ -253,7 +272,7 @@ q <- ggplot() +
   # labels
   geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
                   segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
-  # scales
+  # scales: difference colours, line types by edge type, widths, node sizes, shapes
   scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-lim_d, lim_d), oob = scales::squish,
                          breaks = c(-lim_d, 0, lim_d), labels = c("higher in resistance\n(w_RE > w_EE)", "same", "higher in endurance\n(w_EE > w_RE)"),
                          name = "edge difference  w_EE − w_RE") +
@@ -261,11 +280,14 @@ q <- ggplot() +
   scale_linewidth(range = c(0.1, 1.6), guide = "none") +
   scale_size(range = c(0.6, 4), name = "node strength difference (absolute)") +
   scale_shape_manual(values = SHAPES, name = "node") +
+  # legend order and look
   guides(colour = guide_colourbar(order = 1, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"), title.position = "top", title.hjust = 0.5),
          linetype = guide_legend(order = 2, override.aes = list(colour = "grey30", linewidth = 0.6)),
          shape = guide_legend(order = 3, override.aes = list(size = 2.6)), size = guide_legend(order = 4)) +
+  # plotting area, title and theme
   coord_cartesian(xlim = c(-0.02, 1.02), ylim = c(-0.02, 1.02), clip = "off") +
   labs(title = "Joint protein-metabolite network: endurance minus resistance edge weights") + theme_net()
 # Save.
 ggsave(file.path(FIG, "14b_joint_network_edge_difference.png"), q, width = 11, height = 6.5, dpi = 300, bg = "white")
+# report the saved file
 message("-> ", file.path(FIG, "14b_joint_network_edge_difference.png"))
