@@ -164,7 +164,7 @@ default `~/Desktop/output/hackathon`).
 
 ```bash
 bash network/run_all.sh                     # every step in order, then validation (section 7) and the reproducibility manifest
-bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 99v 99m)
+bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 18bc 99v 99m)
 REFRESH_ONLINE=1 bash network/run_all.sh    # also redo the web lookups of step 1c
 ```
 
@@ -198,6 +198,7 @@ Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/1
 Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/18_disease_modules.R          # disease filter vs overlay modules (Amar 2024 disease sets) -> figures 18a / 18b
 Rscript network/18_option_c_graphical_modules.R  # option C: paper-style repfdr modules + direction concordance -> figure 18c
+Rscript network/18_option_bc_hybrid.R         # hybrid B + C: structural modules + paper-style disease test -> figure 18d
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
@@ -764,6 +765,17 @@ protein–protein edges among 471 genes). Tables: `18c_module_summary.csv`, `18c
 `18_approach_comparison_ABC.csv`. **Read with care:** acute human exercise (2 arms × 3 times) replaces 8-week rat
 training (2 sexes × 4 times); the any-cell selection replaces the paper's F-test; thresholds are scaled to our data.
 
+**Step 18bc — hybrid B + C: option-B modules with option C's disease test (figure 18d).** Modules: option B
+(structural Louvain modules of the whole joint network; disease not used). Disease connection: option C / Amar et
+al. 2024 — each member feature's exercise direction per arm from the repfdr states (up or down if its non-null
+states at 0.5 / 4 / 24 h agree), concordance with disease-significant genes, binomial sign test, BH within set.
+Result: the test is **underpowered on our network** — only 44 (EE) / 65 (RE) member features are directional, and
+11–12 of their genes are T2D-significant, so no module has more than 4 genes in a T2D test; no T2D link at FDR
+< 0.05; the one FDR link is cell adhesion (M01) with liver cirrhosis after resistance (11 / 11 concordant,
+tissue-mismatched). Background: after endurance only 2 / 11 directional T2D-significant genes move in the T2D
+direction (p 0.065), after resistance 4 / 12 — the same "exercise opposes T2D" trend as options B and C. Tables:
+`18bc_module_disease.csv`, `18bc_module_summary.csv`, `18_approach_comparison_ABCD.csv`.
+
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
 figures). Each network (mnet inputs — joint: 353 nodes / 704 edges, class-grouped layout of 15a / 15b; genes:
@@ -829,7 +841,7 @@ and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **38 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **39 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
@@ -982,6 +994,7 @@ network/
   18_t2d_lipid_classes.R         step 18  T2D-relevant lipid classes per arm (tables behind section 7b)
   18_disease_modules.R           step 18d disease-filtered vs disease-overlaid modules (Amar 2024 disease sets), figures 18a / 18b
   18_option_c_graphical_modules.R  step 18c option C: modules + disease links as in Amar et al. 2024 (repfdr, graphical sets), figure 18c
+  18_option_bc_hybrid.R          step 18bc hybrid: option-B modules + option-C disease test, figure 18d
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)

@@ -246,6 +246,9 @@ mc <- rd("18c_modules.csv"); fs <- rd("18c_feature_states.csv")
 check(all(mc$node %in% jn18$node) && all(mc[, .N, by = module]$N >= 5) && all(unlist(strsplit(mc$features, ";")) %in% fs$feature),
       "step 18c: option-C modules are joint-network nodes (>= 5) built from selected, state-assigned features")
 note("step18c_modules", uniqueN(mc$module), 35)
+# Option B+C: the concordance counts add up and use only option-B modules
+bcd <- rd("18bc_module_disease.csv")
+check(all(bcd$module %in% dm[approach == "B", module]) && all(bcd[n > 0, concordant + discordant == n]), "step 18bc: B+C tests use option-B modules; concordant + discordant = n")
 
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.

@@ -64,6 +64,7 @@ STEPS=(
   "18|Rscript $HERE/18_t2d_lipid_classes.R"
   "18d|Rscript $HERE/18_disease_modules.R"
   "18c|Rscript $HERE/18_option_c_graphical_modules.R"
+  "18bc|Rscript $HERE/18_option_bc_hybrid.R"
   "99v|Rscript $HERE/99_validate_outputs.R"
   "99m|Rscript $HERE/99_manifest.R"
 )
