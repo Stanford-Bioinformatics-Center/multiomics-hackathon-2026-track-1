@@ -52,7 +52,7 @@ flowchart LR
   F --> G
   G --> H[Step 6<br/>metabolite networks EE / RE<br/>shared protein + same class]
   B --> H
-  D --> K[Step 7<br/>hub report, all 4 networks]
+  D --> K[Step 7<br/>hubs = highest summed<br/>edge weight]
   H --> K
   H --> P
   D --> J[Step 14<br/>joint protein + metabolite network<br/>Rhea cross-edges, doubled metabolite vector]
@@ -82,7 +82,9 @@ flowchart LR
    such a protein (or two such proteins interact in STRING) AND the same RefMet super class; edge weights
    are dot products of their 9-number
    vectors, per arm. Same edges in both arms, as for genes.
-7. **Hub report (step 7).** How many hubs each of the four networks has, and what hangs on them.
+7. **Hub report (step 7).** The **hub** is the node with the highest summed edge weight (strength = sum of |w|,
+   per arm; team definition 2026-09-26): SRC in the gene and joint networks (1.62 endurance, 2.09 resistance),
+   inosine in the metabolite network. Strength hubs above the Tukey fence and degree-based hubs are also listed.
    Nothing is removed.
 8. **Normalisation comparison (step 12).** The edge weights rebuilt under four normalisations, side by
    side, to choose the approach.
@@ -460,7 +462,15 @@ scale s = 0.0070). The two arms' metabolite edge weights correlate at r = 0.18 a
 sign (no noise reference or test yet). The edge table keeps both metabolites' main classes
 (`main_class_a`, `main_class_b`) so cross-main-class edges are visible.
 
-**Step 7 — hubs (nothing removed).**
+**Step 7 — hubs (nothing removed).** **Definition (team, 2026-09-26): the hub is the node with the highest summed
+edge weight** — strength = sum of |w| over its edges (weights are signed dot products), per arm; overall = the larger
+arm. Results (mnet inputs): **SRC** is the hub of the gene and the joint networks in both arms (strength 1.62 after
+endurance, 2.09 after resistance, from 12 edges), **inosine** of the metabolite network (0.21 / 0.94), **NT5E**
+among the proteins that mediate metabolite edges (0.47 / 1.17). "Strength hubs" = strength above the Tukey fence
+(75th percentile + 1.5 × IQR): 27 in the joint network (SRC, STIP1, CDC37, NT5E, BAX, HSPA1A, DNAJB1 …). The step
+runs after step 14 so it can include the joint network. The degree-based rules below are kept for reference (the
+El-Kebir rule prunes edges in step 2; the most-connected node, NT5E with 25 edges in the joint network, is not
+the hub under the strength definition).
 
 | Network (EE and RE share edges) | Hub type | Connected nodes | El-Kebir hubs | Tukey hubs (cutoff) | Top hub (what hangs on it) |
 |---|---|---|---|---|---|
@@ -872,7 +882,7 @@ and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **39 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **40 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
@@ -1007,7 +1017,7 @@ network/
   03_edge_weights.R        step 3   per-arm edge weights
   05_rhea_metabolite_protein.R  step 5  metabolite-protein links (Rhea)
   06_metabolite_network.R  step 6   metabolite networks
-  07_hub_report.R          step 7   hub report (all four networks)
+  07_hub_report.R          step 7   hubs: highest summed edge weight (gene, metabolite, joint networks); runs after 14
   08_metabolite_rule_experiments.R  step 8  metabolite edge-rule experiments
   10_plot_arm_networks.R   step 10  figures of the EE vs RE networks (written outside the repo)
   11_plot_edge_difference.R  step 11  figures of the EE − RE edge differences (written outside the repo)

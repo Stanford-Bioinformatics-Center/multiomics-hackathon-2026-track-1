@@ -46,7 +46,6 @@ STEPS=(
   "03|Rscript $HERE/03_edge_weights.R"
   "05|Rscript $HERE/05_rhea_metabolite_protein.R"
   "06|Rscript $HERE/06_metabolite_network.R"
-  "07|Rscript $HERE/07_hub_report.R"
   "08|Rscript $HERE/08_metabolite_rule_experiments.R"
   "09|Rscript $HERE/resource/export_feature_lists.R"
   "10|Rscript $HERE/10_plot_arm_networks.R"
@@ -54,6 +53,7 @@ STEPS=(
   "12|Rscript $HERE/12_normalization_comparison.R"
   "13|Rscript $HERE/13_logfc_descriptive_stats.R"
   "14|Rscript $HERE/14_joint_network.R"
+  "07|Rscript $HERE/07_hub_report.R"      # hub report (after 14: it includes the joint network)
   "15|Rscript $HERE/15_joint_network_classes.R"
   "inv1|python3 $HERE/inventory/glygen_protein_inventory.py"
   "inv2|Rscript $HERE/inventory/glygen_motrpac_inventory.R"

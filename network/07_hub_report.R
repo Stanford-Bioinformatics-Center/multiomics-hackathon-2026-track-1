@@ -3,13 +3,20 @@
 # 07_hub_report.R — STEP 7: HOW MANY HUBS ARE THERE, AND HOW MANY ANALYTES HANG ON EACH? (NOTHING REMOVED)
 # =====================================================================================================
 #
+# HUB DEFINITION (team decision, 2026-09-26): the HUB is the node with the highest summed edge weight
+#   ("strength" = sum of |w| over its edges, per arm; the weights are signed dot products, so their sizes are
+#   summed). "Strength hubs" are all nodes whose strength (the larger of the two arms) is above the Tukey fence
+#   of the strength distribution (75th percentile + 1.5 x interquartile range). The degree-based rules below are
+#   kept for reference (the El-Kebir rule is the one used to prune edges in step 2).
+#
 # WHAT THIS SCRIPT DOES (plain language)
-#   A "hub" is a node with far more connections than the rest. Hubs can dominate a network (one hub can
+#   A degree-"hub" is a node with far more connections than the rest. Hubs can dominate a network (one hub can
 #   tie together everything around it), so the team wants to see them before deciding whether to remove
 #   any. This script only REPORTS hubs; it removes nothing.
-#   It covers all four networks:
+#   It covers the gene, metabolite and joint networks:
 #     - gene networks, endurance (EE) and resistance (RE): same edges (STRING, step 2), different weights;
-#     - metabolite networks, EE and RE: same edges (Rhea + class rule, step 6), different weights.
+#     - metabolite networks, EE and RE: same edges (Rhea + class rule, step 6), different weights;
+#     - the joint protein-metabolite network (step 14), so run_all.sh runs this step after step 14.
 #   Because the two arms share their edges, the number of connections (degree) of every node is the same
 #   in both arms; what differs by arm is how STRONG each node's connections are ("strength" = sum of the
 #   sizes of its edge weights), which is reported per arm.
@@ -27,9 +34,11 @@
 # TECH STACK
 #   R 4.4; data.table.
 #
-# INPUTS:  $HACK_OUT/03_weighted_edges.csv, 06_metabolite_edges.csv, 05_metabolite_protein_links.csv
-# OUTPUTS: $HACK_OUT/07_hub_summary.csv   one row per network x hub type: cutoffs, number of hubs, top hub
-#          $HACK_OUT/07_hub_list.csv      every node above the Tukey fence, with what is attached to it
+# INPUTS:  $HACK_OUT/03_weighted_edges.csv, 06_metabolite_edges.csv, 05_metabolite_protein_links.csv, 14_joint_edges.csv
+# OUTPUTS: $HACK_OUT/07_hub_summary.csv   one row per network x hub type: THE HUB (highest strength, per arm and
+#                                         overall), strength-hub count, and the degree cutoffs / counts for reference
+#          $HACK_OUT/07_hub_list.csv      every node above the strength fence or the degree Tukey fence, with its
+#                                         strength per arm, degree, and what is attached to it
 # =====================================================================================================
 
 # Load data.table quietly.
@@ -49,8 +58,15 @@ hubs <- function(nodes, network, hub_type) {
   cut_ek <- q[2] + 40 * iqr; cut_tk <- q[2] + 1.5 * iqr
   # the node with the most connections (ties: first alphabetically)
   top <- nodes[order(-degree, node)][1]
+  # THE HUB (team definition): highest summed edge weight; per arm, and overall = the larger of the two arms
+  nodes[, strength_max := pmax(strength_EE, strength_RE)]
+  sm <- nodes[degree > 0, strength_max]; qs <- quantile(sm, c(.25, .75), names = FALSE); cut_st <- qs[2] + 1.5 * (qs[2] - qs[1])
+  hub <- nodes[order(-strength_max, node)][1]
   # the one-row summary
   s <- data.table(network = network, hub_type = hub_type, connected_nodes = length(d),
+                  hub = hub$node, hub_strength_EE = round(hub$strength_EE, 3), hub_strength_RE = round(hub$strength_RE, 3), hub_degree = hub$degree,
+                  hub_EE = nodes[order(-strength_EE, node)][1, node], hub_RE = nodes[order(-strength_RE, node)][1, node],
+                  strength_cutoff = round(cut_st, 3), n_strength_hubs = sum(sm > cut_st),
                   median_degree = median(d), q75 = q[2], iqr = iqr,
                   elkebir_cutoff = cut_ek, n_hubs_elkebir = sum(d > cut_ek),
                   tukey_cutoff = cut_tk, n_hubs_tukey = sum(d > cut_tk),
@@ -58,9 +74,10 @@ hubs <- function(nodes, network, hub_type) {
                   top_hub_attached = top$attached,
                   top_strength_EE = nodes[order(-strength_EE)][1, paste0(node, " (", round(strength_EE, 1), ")")],
                   top_strength_RE = nodes[order(-strength_RE)][1, paste0(node, " (", round(strength_RE, 1), ")")])
-  # every node above the Tukey fence, most connected first
-  l <- nodes[degree > cut_tk][order(-degree)][, .(network = network, hub_type = hub_type, node, degree,
-                                                    above_elkebir = degree > cut_ek,
+  # every node above the strength fence or the degree Tukey fence, strongest first
+  l <- nodes[strength_max > cut_st | degree > cut_tk][order(-strength_max)][, .(network = network, hub_type = hub_type, node, degree,
+                                                    strength_hub = strength_max > cut_st, is_the_hub = node == hub$node,
+                                                    above_degree_tukey = degree > cut_tk, above_elkebir = degree > cut_ek,
                                                     strength_EE = round(strength_EE, 2), strength_RE = round(strength_RE, 2),
                                                     attached)]
   # return both
@@ -110,12 +127,16 @@ r3$list <- pn[, .(node, edges_supported)][r3$list, on = "node"]
 # And in the summary, how many edges the top protein supports.
 r3$summary[, top_hub_edges_supported := pn[node == r3$summary$top_hub, edges_supported]]
 
+# ---- joint protein-metabolite network (step 14) -----------------------------------------------------
+je <- fread(file.path(OUT, "14_joint_edges.csv"))[, .(a = node_a, b = node_b, w_EE, w_RE)]
+r4 <- hubs(node_table(je), "joint protein-metabolite network (EE & RE)", "protein or metabolite (joint)")
+
 # ---- write --------------------------------------------------------------------------------------
 # One summary table for all hub types.
-summ <- rbind(r1$summary, r2$summary, r3$summary, fill = TRUE)
+summ <- rbind(r1$summary, r2$summary, r3$summary, r4$summary, fill = TRUE)
 # Save it.
 fwrite(summ, file.path(OUT, "07_hub_summary.csv"))
 # One list of all flagged nodes.
-fwrite(rbind(r1$list, r2$list, r3$list, fill = TRUE), file.path(OUT, "07_hub_list.csv"))
+fwrite(rbind(r1$list, r2$list, r3$list, r4$list, fill = TRUE), file.path(OUT, "07_hub_list.csv"))
 # Show the summary without the long "attached" column.
 print(summ[, !"top_hub_attached"])

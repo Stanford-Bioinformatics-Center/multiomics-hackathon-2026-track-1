@@ -235,6 +235,12 @@ check(length(cj$nodes) == nrow(jn) && nrow(cj$edges) == nrow(je) && nrow(cg$edge
 # Check the exported weights equal the source weights (joint = step 14, genes = step 3).
 check(isTRUE(all.equal(cj$edges$w_diff, je$w_diff)) && isTRUE(all.equal(cg$edges$w_EE, w$w_EE)), "step 17: Cytoscape weights unchanged")
 
+# ---- step 7: the hub = the node with the highest summed edge weight --------------------------------------
+hs7 <- rd("07_hub_summary.csv"); je7 <- rd("14_joint_edges.csv")
+st7 <- rbind(je7[, .(node = node_a, w_EE, w_RE)], je7[, .(node = node_b, w_EE, w_RE)])[, .(s = max(sum(abs(w_EE)), sum(abs(w_RE)))), by = node]
+check(hs7[grepl("joint", network), hub] == st7[which.max(s), node], "step 7: the joint-network hub is the node with the highest summed edge weight")
+note("step7_joint_hub", hs7[grepl("joint", network), hub], "SRC")
+
 # ---- step 18d: disease-filtered vs disease-overlaid modules ----------------------------------------------------
 dm <- rd("18_disease_modules.csv"); jn18 <- rd("14_joint_nodes.csv"); cmp18 <- rd("18_approach_comparison.csv")
 # Check every module member is a joint-network node, modules have >= 5 members, and each approach is compared.
