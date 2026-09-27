@@ -87,6 +87,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--backend", choices=tuple(lyrics.BACKENDS), default="cli", help="how to ask Claude (default %(default)s)")
     ap.add_argument("--model", default=lyrics.DEFAULT_MODEL)
     ap.add_argument("--audio", help="the song file (skip waiting)")
+    ap.add_argument("--stop-after-lyrics", action="store_true",
+                    help="stop once the lyrics are written and on the clipboard (01_lyrics_from_walk.py); make the video later with 02_video_from_song.py")
     ap.add_argument("--lyrics", help="reuse saved lyrics (a lyrics.json from an earlier run or 01_lyrics_from_walk.py) instead of writing new ones; its walk is used")
     ap.add_argument("--downloads", default=str(Path.home() / "Downloads"), help="folder watched for the Suno download")
     ap.add_argument("--fps", type=int, default=20)
@@ -172,6 +174,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print(f"      title: {lyr['title']}")
             if not args.no_open:
                 webbrowser.open("https://suno.com/create")
+
+        if args.stop_after_lyrics:                          # the two-sitting flow: the song comes back later (02_video_from_song.py)
+            rec = {"walk": list(path), "seed": seed, "arm": args.arm if p_steps else None, "title": lyr["title"], "suno_style": lyr["suno_style"],
+                   "personas": lyr["personas"], "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"]} for b in lyr["bars"]],
+                   "model": args.model, "backend": args.backend}
+            (dest / "lyrics.json").write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            here = os.path.relpath(HERE, Path.cwd())
+            print(f"\nLyrics saved in {dest}\nWhen the song is ready, make the video with:\n"
+                  f"  python3 {here}/02_video_from_song.py \"{dest}\" <the song file>     (or leave the song out: it asks, or waits for the download)")
+            return 0
 
         # 5. the song
         if args.audio:

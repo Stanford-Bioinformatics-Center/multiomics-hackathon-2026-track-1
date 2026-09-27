@@ -8,8 +8,17 @@ python3 network/video/make_music_video.py            # asks for a node, writes t
 python3 network/video/make_music_video.py --start HYOU1 --seed 7                 # reproducible random walk
 python3 network/video/make_music_video.py --walk HYOU1,HSP90B1,CDC37,SRC         # a fixed walk
 python3 network/video/make_music_video.py --start SRC --audio ~/Downloads/song.mp3   # song already made
-python3 network/video/01_lyrics_from_walk.py --start CDC37                       # lyrics only (no Suno, no video)
 ```
+
+**In two sittings** (the song is made later, or by someone else):
+
+```bash
+python3 network/video/01_lyrics_from_walk.py          # asks for a node -> the team's random walk -> 16 bars -> clipboard; stops
+python3 network/video/02_video_from_song.py <the walk folder it printed> ~/Downloads/song.mp3     # the song back -> the video
+```
+Part 1 takes every `make_music_video.py` option (`--start HYOU1 --arm RE --seed 7`, `--walk ...`); it saves everything
+part 2 needs in `$HACK_OUT/video/<walk>/` and prints the exact part-2 command. Leave the song out of part 2 and it asks
+for it (drag it in) or waits for the next download.
 
 **Just the rat, on any song:** `rat_dance.py` makes a video of the dancing rat stepping exactly on the beats of whatever
 song you give it (about 7 s for a 90 s song; no Node, no network data):
@@ -23,8 +32,9 @@ python3 network/video/rat_dance.py song.mp3 --nudge -0.03             # steps 30
 python3 network/video/rat_dance.py song.mp3 --no-bandana              # the plain rat
 ```
 The rat wears the red Team 2-PAC bandana, tied 2Pac-style with the knot in front (`exvideo/costume.py`: the GIF is
-enlarged 4x, the head is found per frame from the ears and nose, the band is drawn under the ears and clipped to the
-head, the knot sits above the nose with both ends up and out; colours from the team's badge art). Same rat, same flag,
+enlarged 4x; the band is fitted once, under the ears of the most typical frame, and then carried by the head's own
+motion, found by matching the whole head frame to frame, so it stays put; clipped to the head; knot above the nose with
+both ends up and out; colours from the team's badge art). Same rat, same flag,
 in the music video.
 Checked on synthetic drum grooves at 70, 92, 128 and 174 BPM and a 100→120 BPM ramp: tempo found in all five (70 at
 double time), every beat within 14 ms, and the rat on a step-hit pose at every beat it steps on.
