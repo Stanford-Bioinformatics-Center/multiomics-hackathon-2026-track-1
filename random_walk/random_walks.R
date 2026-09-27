@@ -43,6 +43,8 @@
 #      - arm = "coin": a fair coin flip at EVERY step picks endurance or
 #        resistance weights for that step (the weights still favour the
 #        likely paths; the coin mixes the two arms).
+#      - within = <node names>: the walk must stay inside those nodes (from
+#        the command line: a file of names, one per line, in RW_WITHIN).
 #      - lookahead = TRUE (now the default): a step may only go to a
 #        neighbour from which the walk can still reach 3 different nodes, so
 #        there are no dead ends and no retries, and every walk has exactly 4
@@ -183,10 +185,10 @@ NBR <- split(D$to, D$from)
 # can_finish(node, visited, left): can a walk standing at `node` (with
 # `visited` already used, `node` included) still take `left` more steps to new
 # nodes? A depth-first search; `left` is at most 2 here, so it is quick.
-can_finish <- function(node, visited, left) {
+can_finish <- function(node, visited, left, nbr = NBR) {
   if (left == 0) return(TRUE)
-  for (v in setdiff(NBR[[node]], visited)) {
-    if (can_finish(v, c(visited, v), left - 1)) return(TRUE)
+  for (v in setdiff(nbr[[node]], visited)) {
+    if (can_finish(v, c(visited, v), left - 1, nbr)) return(TRUE)
   }
   FALSE
 }
@@ -215,9 +217,12 @@ can_finish <- function(node, visited, left) {
 #   revisit = TRUE: a plain random walk (any neighbour, may step back).
 #   seed: set it for a reproducible walk; NULL (default) gives a new walk every
 #     call.
+#   within: NULL (default) = the whole network; or a set of node names the walk
+#     must stay inside (every node of the walk is one of them; used by the
+#     music video to keep walks on one story slide).
 random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
                         revisit = FALSE, seed = NULL, max_tries = 1000,
-                        lookahead = TRUE) {
+                        lookahead = TRUE, within = NULL) {
   # check the arguments
   arm <- match.arg(arm, c(ARMS, "coin"))
   if (!is.null(seed)) set.seed(seed)
@@ -227,12 +232,19 @@ random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
       "(see 14_joint_nodes.csv)"
     )
   }
+  # the network the walk may use: all of it, or only the `within` nodes
+  Dw <- if (is.null(within)) D else D[from %in% within & to %in% within]
+  nbr <- if (is.null(within)) NBR else split(Dw$to, Dw$from)
+  nodes <- sort(unique(Dw$from))
+  if (!is.null(within) && !is.null(start) && !start %in% within) {
+    stop("'", start, "' is not one of the nodes the walk must stay within")
+  }
   ahead <- lookahead && !revisit
   if (ahead) {
     # only start nodes that have at least one full walk
     ok <- if (is.null(start)) {
-      Filter(function(u) can_finish(u, u, n_steps), NODES)
-    } else if (can_finish(start, start, n_steps)) start else character(0)
+      Filter(function(u) can_finish(u, u, n_steps, nbr), nodes)
+    } else if (can_finish(start, start, n_steps, nbr)) start else character(0)
     if (!length(ok)) {
       stop(
         "no walk of ", n_steps + 1, " different nodes exists from '", start,
@@ -249,7 +261,7 @@ random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
     # the start: the given node, or a random one (a new one on every try)
     from <- if (!is.null(start)) start else if (ahead) {
       ok[sample.int(length(ok), 1)]
-    } else sample(NODES, 1)
+    } else sample(nodes, 1)
     # the walk so far: the start node, reached with probability 1
     path <- from
     arms <- NA_character_
@@ -259,12 +271,13 @@ random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
       a <- if (arm == "coin") sample(ARMS, 1) else arm
       # the current node's neighbours and that arm's step probabilities
       nb <- D[.(path[k]), .(to, p = get(paste0("p_", a)))]
+      if (!is.null(within)) nb <- nb[to %in% within]
       # without revisits: drop visited nodes; with the look-ahead, also drop
       # neighbours from which the rest of the walk cannot be finished
       if (!revisit) nb <- nb[!to %in% path]
       if (ahead) {
         keep <- vapply(nb$to, function(v) {
-          can_finish(v, c(path, v), n_steps - k)
+          can_finish(v, c(path, v), n_steps - k, nbr)
         }, logical(1))
         nb <- nb[keep]
       }
@@ -319,8 +332,11 @@ if (sys.nframe() == 0L) {
   )
   RW_OUT <- Sys.getenv("RW_OUT", unset = dirname(normalizePath(here)))
   dir.create(RW_OUT, recursive = TRUE, showWarnings = FALSE)
+  # optional: stay within the nodes listed (one per line) in the file RW_WITHIN
+  wf <- Sys.getenv("RW_WITHIN", unset = "")
+  within <- if (nzchar(wf)) readLines(wf, warn = FALSE) else NULL
   # the walk
-  walk <- random_walk(start, arm, seed = seed)
+  walk <- random_walk(start, arm, seed = seed, within = within)
   # Safety check: no node repeats, and every step follows an edge of the
   # network.
   x <- walk$node

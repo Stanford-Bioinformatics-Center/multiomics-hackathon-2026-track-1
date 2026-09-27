@@ -1,6 +1,7 @@
 # Keep data and figures out of the repository: the pipeline writes them to $HACK_OUT / $HACK_RES / $HACK_FIG
 # (outside the repo). Only code and documentation are committed.
 *.csv
+!network/video/exvideo/slide_nodes.csv
 *.tsv
 *.parquet
 *.rds

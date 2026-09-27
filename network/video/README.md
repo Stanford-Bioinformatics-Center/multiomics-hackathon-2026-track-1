@@ -16,9 +16,12 @@ python3 network/video/make_music_video.py --start SRC --audio ~/Downloads/song.m
 python3 network/video/01_lyrics_from_walk.py          # asks for a node -> the team's random walk -> 16 bars -> clipboard; stops
 python3 network/video/02_video_from_song.py <the walk folder it printed> ~/Downloads/song.mp3     # the song back -> the video
 ```
-Part 1 opens with a **menu of start nodes: the strongest markers of our three stories** (T2D muscle, T2D blood,
-ageing blood; `exvideo/starts.py`, computed from step 20's own sets and exercise responses: a big change in the
-disease that the story's winning arm pushes back the other way; saved as `$HACK_OUT/video/start_menu.csv`). Pick a
+Part 1 opens with a **menu of start nodes from the team's story slides**: every node of a walk must be on ONE of
+the `clean_for_slides` figures (`--scope`, default `T2D blood`: blood_t2d.png is the only slide with 4-node walks on
+figure 17 edges; the slide nodes are in `exvideo/slide_nodes.csv`). The menu offers the slide's nodes from which every
+3-step walk stays on the slide and goes the full distance (CD74, SCARB2, CES2, MFGE8, ITGA5, PRCP), and the team's
+walker is confined to the slide (`within`); the video still flies over the whole figure 17 network.
+`choose_your_own_adventure.py` draws the menu as one picture to point at.
 number, or type any node. The start node must be a node of figure 17 (the 17a joint network) that a full 4-node walk can start from (315 of the
 353; the prompt suggests close names and refuses dead ends; Enter = a random start). The walk is the team's
 `random_walk/random_walks.R` with a **coin flip at every step** (`--arm coin`, the default): heads endurance, tails

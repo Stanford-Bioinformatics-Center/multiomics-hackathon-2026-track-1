@@ -72,6 +72,12 @@ def load_network(out: Path) -> Network:
     return Network(nodes, edges)
 
 
+def subnetwork(net: Network, nodes) -> Network:
+    """The network restricted to `nodes` (the edges between them only), e.g. one story slide."""
+    keep = {n for n in nodes if n in net.nodes}
+    return Network({n: net.nodes[n] for n in keep}, {k: e for k, e in net.edges.items() if k <= keep})
+
+
 def build_facts(walk: Sequence[str], net: Network, out: Path) -> Dict[str, Any]:
     """What the figure 17 data say about every node and edge of the walk (the walk must already be checked)."""
     # Arm-specific threshold over ALL joint edges and both arms (the figure 17 rule), and the hub ranking.

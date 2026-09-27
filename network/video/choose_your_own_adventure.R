@@ -10,12 +10,14 @@ GROUPS <- c("T2D muscle", "T2D blood", "T2D + ageing blood", "Ageing blood")
 COL <- c("T2D muscle" = "#2a78d6", "T2D blood" = "#eb6834", "T2D + ageing blood" = "#1baf7a", "Ageing blood" = "#4a3aa7")
 E[, group := factor(group, levels = GROUPS)]
 
-# layout: groups left to right; T2D muscle (the largest) in two sub-columns; choices top to bottom in menu order
+# layout: the groups present, left to right; each group in columns of up to 3 choices, top to bottom in menu order
 ch <- unique(E[, .(choice, group)])
+ch[, group := droplevels(group)]
 ch[, k := seq_len(.N), by = group]
-ch[, ncol := ifelse(group == "T2D muscle", 2L, 1L)]
-gx <- c("T2D muscle" = 0, "T2D blood" = 2.2, "T2D + ageing blood" = 3.4, "Ageing blood" = 4.6)
-ch[, `:=`(x = gx[as.character(group)] + ((k - 1) %% ncol) * 1.1, y = -((k - 1) %/% ncol) * 1.25)]
+ch[, ncol := as.integer(ceiling(.N / 3)), by = group]
+starts_x <- cumsum(c(0, head(ch[, .(w = max(ncol)), by = group]$w, -1) * 1.1 + 0.4))
+names(starts_x) <- as.character(unique(ch$group))
+ch[, `:=`(x = starts_x[as.character(group)] + ((k - 1) %/% 3) * 1.1, y = -((k - 1) %% 3) * 1.25)]
 R <- 0.36
 N <- merge(E, ch[, .(choice, x0 = x, y0 = y)], by = "choice")
 N[, `:=`(i = seq_len(.N), n = .N), by = choice]
@@ -33,14 +35,13 @@ p <- ggplot() +
   geom_label(data = ch, aes(x, y - 0.13, label = choice), fill = "#fcfcfb", colour = "#0b0b0b", label.size = 0,
              fontface = "bold", size = 3.6, vjust = 1, label.padding = unit(0.08, "lines")) +
   geom_text(data = heads, aes(x, y, label = group, colour = group), fontface = "bold", size = 4.2, show.legend = FALSE) +
-  scale_colour_manual(values = COL, breaks = GROUPS, name = "Story") +
+  scale_colour_manual(values = COL, breaks = GROUPS, name = "Story", guide = if (nlevels(droplevels(ch$group)) > 1) "legend" else "none") +
   coord_equal(clip = "off") +
-  labs(title = "Choose Your Own Adventure",
-       subtitle = "Start nodes for the Team 2-PAC song: the strongest markers of our three stories. Grey = where the walk can go first.") +
+  labs(title = "Choose Your Own Adventure") +                     # title only: no hint of what the choice is for
   theme_void(base_size = 12) +
   theme(plot.background = element_rect(fill = "#fcfcfb", colour = NA),
-        plot.title = element_text(face = "bold", size = 22, colour = "#0b0b0b", hjust = 0.5, margin = margin(b = 4)),
+        plot.title = element_text(face = "bold", size = 22, colour = "#0b0b0b", hjust = 0.5, margin = margin(b = 16)),
         plot.subtitle = element_text(size = 10.5, colour = "#52514e", hjust = 0.5, margin = margin(b = 14)),
         legend.position = "bottom", legend.text = element_text(colour = "#0b0b0b"), legend.title = element_text(colour = "#52514e"),
         plot.margin = margin(18, 24, 14, 24))
-ggsave(args[2], p, width = 11, height = 6.4, dpi = 200, bg = "#fcfcfb")
+ggsave(args[2], p, width = max(6.5, 2.2 * (max(ch$x) - min(ch$x) + 2.2)), height = 6.4, dpi = 200, bg = "#fcfcfb")

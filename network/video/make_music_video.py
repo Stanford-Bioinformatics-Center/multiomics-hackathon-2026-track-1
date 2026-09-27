@@ -66,25 +66,37 @@ from exvideo.errors import VideoStageError, WalkError  # noqa: E402
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
 
 
-def ask_start(net: network.Network, out: Path, steps: int = 3) -> str:
-    """Offer the story markers (exvideo/starts.py: the top markers of T2D muscle, T2D blood and ageing blood) as a
-    numbered menu; take a number, any other figure 17 node that a full walk can start from, or Enter for random."""
+def scoped_start(name: str, wnet: network.Network, full: network.Network, steps: int, scope: Optional[str]) -> str:
+    """resolve_start inside the scope, with a clear message for a figure 17 node that is not on the scope's slide."""
+    if scope:
+        node = walk.resolve_node(name, full)
+        if node not in wnet.nodes:
+            raise WalkError(f"{node} is in figure 17 but not on the {scope} slide; the walk has to stay on that slide")
+    return walk.resolve_start(name, wnet, steps)
+
+
+def ask_start(net: network.Network, out: Path, steps: int = 3, scope: Optional[str] = None, full: Optional[network.Network] = None) -> str:
+    """Offer the story-slide nodes (exvideo/starts.py) as a numbered menu; take a number, any other node the walk can
+    start from (inside the scope, if any), or Enter for random. `net` is the network the walk may use (the scope's
+    slide, or all of figure 17)."""
     try:
-        menu = starts.super_list(out, net)
+        menu = starts.super_list(out, full or net, stories=None if scope is None else [scope])   # red/blue counts need the full network
         starts.write_menu(menu, out / "video" / "start_menu.csv")
     except VideoStageError as err:
         print(f"  (no story menu: {err})"); menu = []
     ok = walk.walkable_starts(net, steps)
     if menu:
-        print("\nWhere should the walk start? The strongest markers of our three stories")
-        print("(big change in the disease, and the winning exercise arm pushes it back the other way):\n")
+        where = f"the {scope} slide" if scope else "our story slides"
+        print(f"\nWhere should the walk start? Nodes on {where} from which every {steps}-step walk stays on the slide")
+        print("and goes the full distance:\n")
         story = None
         for i, e in enumerate(menu, 1):
             first = e["stories"][0]["story"]
             if first != story:
                 story = first; print(f"  {story.upper()}")
             print(f"  {i:>2}. {starts.describe(e)}")
-    print(f"\nPick a number" + (f" (1-{len(menu)})" if menu else "") + f", or type any of the {len(ok)} figure 17 nodes a {steps + 1}-node walk can start from.")
+    print(f"\nPick a number" + (f" (1-{len(menu)})" if menu else "") + f", or type any of the {len(ok)} "
+          + (f"{scope} slide nodes" if scope else "figure 17 nodes") + f" a {steps + 1}-node walk can start from.")
     while True:
         typed = input("Start node (number, name, or Enter = random): ").strip()
         if not typed:
@@ -95,7 +107,7 @@ def ask_start(net: network.Network, out: Path, steps: int = 3) -> str:
                 print(f"  start: {menu[k - 1]['node']}"); return str(menu[k - 1]["node"])
             print(f"  pick 1-{len(menu)}"); continue
         try:
-            return walk.resolve_start(typed, net, steps)
+            return scoped_start(typed, net, full or net, steps, scope)
         except WalkError as err:
             print(f"  {err}")
 
@@ -116,6 +128,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--audio", help="the song file (skip waiting)")
     ap.add_argument("--max-seconds", type=float, default=90.0,
                     help="cut the song (and video) at this many seconds, with a 3 s fade-out, if it runs longer (default %(default)s = 1:30; 0 = never)")
+    ap.add_argument("--scope", default="T2D blood", choices=("T2D blood", "T2D muscle", "ageing blood", "none"),
+                    help="the story slide every node of the walk must be on (clean_for_slides; default %(default)s, the only slide with "
+                         "4-node walks on figure 17 edges); none = anywhere in figure 17. The video still shows the whole figure 17 network")
     ap.add_argument("--stop-after-lyrics", action="store_true",
                     help="stop once the lyrics are written and on the clipboard (01_lyrics_from_walk.py); make the video later with 02_video_from_song.py")
     ap.add_argument("--lyrics", help="reuse saved lyrics (a lyrics.json from an earlier run or 01_lyrics_from_walk.py) instead of writing new ones; its walk is used")
@@ -154,23 +169,32 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 raise VideoStageError(f"{args.lyrics} is not a lyrics.json (needs 'walk' and 'bars')")
             path = tuple(saved["walk"]); walk.check_walk(path, net); seed = saved.get("seed")
             lyrics.parse_lyrics(json.dumps({"sections": [{"node": n, "persona": saved.get("personas", {}).get(n, ""), "bars": [b["text"] for b in saved["bars"] if b["node"] == n]} for n in path]}), path)
-        elif args.walk:
-            path = tuple(walk.resolve_node(n, net) for n in args.walk.split(",") if n.strip()); walk.check_walk(path, net); seed = None
         else:
-            start = walk.resolve_start(args.start, net, args.steps) if args.start else ask_start(net, out, args.steps)
-            if args.walker == "team" and args.steps == 3:
-                path, seed, p_steps, step_arms = walk.team_walk(start, args.arm, args.seed, out, out / "video" / "_walker")
-                walk.check_walk(path, net)                  # every step must be a physical edge (our hard gate)
-                if len(path) < 4:
-                    raise WalkError(f"{start} sits in a piece of the network too small for a 4-node walk")
+            # the walk's world: one story slide's figure 17 nodes (--scope; the video still shows all of figure 17)
+            scope = None if args.scope == "none" else args.scope
+            within = starts.scope_nodes(scope, net) if scope else None
+            wnet = network.subnetwork(net, within) if scope else net
+            if scope and not walk.walkable_starts(wnet, args.steps):
+                raise WalkError(f"no {args.steps + 1}-node walk stays on the {scope} slide (figure 17 edges between its nodes are too few); use --scope 'T2D blood'")
+            if args.walk:
+                path = tuple(walk.resolve_node(n, net) for n in args.walk.split(",") if n.strip()); seed = None
+                walk.check_walk(path, wnet)                 # a fixed walk must stay in the scope too
             else:
-                path, seed = walk.random_walk(start, args.steps, net, args.seed); p_steps = None
+                start = scoped_start(args.start, wnet, net, args.steps, scope) if args.start else ask_start(wnet, out, args.steps, scope, net)
+                if args.walker == "team" and args.steps == 3:
+                    path, seed, p_steps, step_arms = walk.team_walk(start, args.arm, args.seed, out, out / "video" / "_walker", within)
+                    walk.check_walk(path, wnet)             # every step a physical edge, every node in the scope (our hard gate)
+                    if len(path) < 4:
+                        raise WalkError(f"{start} sits in a piece of the network too small for a 4-node walk")
+                else:
+                    path, seed = walk.random_walk(start, args.steps, wnet, args.seed); p_steps = None
         arm_note = (f", team walker, coin flip per step: {', '.join(a for a in step_arms[1:])}" if args.arm == "coin" else f", team walker, {args.arm} weights") if p_steps else ""
         print(f"\n[1/4] walk: {' -> '.join(path)}" + (f"   (seed {seed}{arm_note})" if seed is not None else ""))
         dest = out / "video" / "_".join(path); dest.mkdir(parents=True, exist_ok=True)
         (dest / "walk.json").write_text(json.dumps({"walk": list(path), "seed": seed, "steps": len(path) - 1,
                                                     "walker": ("team (random_walk/random_walks.R)" if p_steps else "builtin") if seed is not None else "fixed",
-                                                    "arm": args.arm if p_steps else None, "step_arms": step_arms, "p_step": p_steps}, indent=2) + "\n")
+                                                    "arm": args.arm if p_steps else None, "step_arms": step_arms, "p_step": p_steps,
+                                                    "scope": None if args.lyrics or args.scope == "none" else f"{args.scope} slide (clean_for_slides)"}, indent=2) + "\n")
 
         # 3. facts -> prompt -> lyrics
         facts = network.build_facts(path, net, out)

@@ -83,13 +83,15 @@ def check_walk(walk: Sequence[str], net: Network) -> None:
 TEAM_WALKER = Path(__file__).resolve().parents[3] / "random_walk" / "random_walks.R"
 
 
-def team_walk(start: str, arm: str, seed: Optional[int], out: Path, work: Path) -> Tuple[Tuple[str, ...], int, List[float], List[Optional[str]]]:
+def team_walk(start: str, arm: str, seed: Optional[int], out: Path, work: Path,
+              within: Optional[Sequence[str]] = None) -> Tuple[Tuple[str, ...], int, List[float], List[Optional[str]]]:
     """A 3-step walk from `start` with the TEAM's walker (random_walk/random_walks.R, Rscript).
 
     Its rule: each step goes to a not-yet-visited neighbour, only one from which the walk can still be finished (no
     dead ends, no repeats), with probability set by the arm's edge weights: EE = endurance, RE = resistance, or coin =
     a coin flip picks EE or RE at every step (see random_walk/random_walks.R). The walk is then checked here against
-    the physical edges. Returns (walk, seed, step probabilities, the arm of each step; None for the start).
+    the physical edges. `within` (optional) keeps every node of the walk inside that set (one story slide).
+    Returns (walk, seed, step probabilities, the arm of each step; None for the start).
     """
     if not TEAM_WALKER.exists():
         raise WalkError(f"the team's walker is not in the repository ({TEAM_WALKER}); use --walker builtin")
@@ -97,8 +99,12 @@ def team_walk(start: str, arm: str, seed: Optional[int], out: Path, work: Path) 
         raise WalkError("Rscript not found (needed by the team's walker); use --walker builtin")
     seed = random.SystemRandom().randrange(1, 10**6) if seed is None else seed
     work.mkdir(parents=True, exist_ok=True)
-    res = subprocess.run(["Rscript", str(TEAM_WALKER), start, arm, str(seed)], capture_output=True, text=True,
-                         env={**os.environ, "HACK_OUT": str(out), "RW_OUT": str(work)})
+    env = {**os.environ, "HACK_OUT": str(out), "RW_OUT": str(work)}
+    if within is not None:                                  # stay inside these nodes (e.g. one story slide)
+        wf = work / "within.txt"; wf.write_text("\n".join(within) + "\n", encoding="utf-8"); env["RW_WITHIN"] = str(wf)
+    else:
+        env.pop("RW_WITHIN", None)
+    res = subprocess.run(["Rscript", str(TEAM_WALKER), start, arm, str(seed)], capture_output=True, text=True, env=env)
     f = work / "18_walk.csv"
     if res.returncode != 0 or not f.exists():
         raise WalkError(f"the team's walker failed: {(res.stderr or res.stdout).strip()[-400:]}")

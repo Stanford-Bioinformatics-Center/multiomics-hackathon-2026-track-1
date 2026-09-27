@@ -4,11 +4,11 @@
 # =====================================================================================================
 #
 # PURPOSE
-#   The start-node menu of the music video (exvideo/starts.py: the strongest markers of T2D muscle, T2D blood and
-#   ageing blood from which every 3-step walk goes the full distance) as one simple picture titled "Choose Your Own
-#   Adventure": each choice is a coloured dot (colour = its story) with its first-step neighbours in grey around it,
-#   so anyone can point at a node and send its name for the lyrics. The choices share no edges with each other, so
-#   each is drawn with its own neighbourhood (the subgraph of figure 17's joint network on the choices + 1 step).
+#   The start-node menu of the music video as one simple picture titled "Choose Your Own Adventure": the nodes of the
+#   blood future-T2D story slide (clean_for_slides/blood_t2d.png; the only slide with 4-node walks on figure 17 edges)
+#   from which every 3-step walk stays on the slide and goes the full distance (exvideo/starts.py). Each choice is a
+#   coloured dot with its first-step neighbours ON THE SLIDE in grey around it, so anyone can point at a node and
+#   send its name. CYOA_SCOPE=<story> draws another slide's menu (as make_music_video.py --scope).
 #
 # HOW TO RUN
 #   python3 network/video/choose_your_own_adventure.py            # -> $HACK_OUT/video/choose_your_own_adventure.png
@@ -35,14 +35,16 @@ GROUP = {("T2D muscle",): "T2D muscle", ("T2D blood",): "T2D blood", ("ageing bl
 def main() -> int:
     out = Path(os.environ.get("HACK_OUT", str(Path.home() / "Desktop/output/hackathon-2026-track1/network")))
     net = network.load_network(out)
-    menu = starts.super_list(out, net)
+    scope = os.environ.get("CYOA_SCOPE", "T2D blood")                # the slide the walks stay on (as make_music_video --scope)
+    menu = starts.super_list(out, net, stories=[scope])
+    wnet = network.subnetwork(net, starts.scope_nodes(scope, net))    # first steps drawn = the ones the walk can take
     dest = out / "video"; dest.mkdir(parents=True, exist_ok=True)
     starts.write_menu(menu, dest / "start_menu.csv")
     with (dest / "start_menu_edges.csv").open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh); w.writerow(["choice", "group", "neighbour"])
         for e in menu:
             g = GROUP[tuple(sorted({d["story"] for d in e["stories"]}, key=["T2D muscle", "T2D blood", "ageing blood"].index))]
-            for nb in sorted(x.other(e["node"]) for x in net.neighbours(e["node"])):
+            for nb in sorted(x.other(e["node"]) for x in wnet.neighbours(e["node"])):
                 w.writerow([e["node"], g, nb])
     png = dest / "choose_your_own_adventure.png"
     res = subprocess.run(["Rscript", str(HERE / "choose_your_own_adventure.R"), str(dest / "start_menu_edges.csv"), str(png)], capture_output=True, text=True)
