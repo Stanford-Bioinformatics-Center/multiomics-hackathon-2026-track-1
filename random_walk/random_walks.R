@@ -39,6 +39,16 @@
 #      than 4 nodes.
 #      revisit = TRUE gives a plain random walk instead (it may step back,
 #      e.g. A -> B -> A -> B).
+#      Two additions (2026-09-27, for the music video):
+#      - arm = "coin": a fair coin flip at EVERY step picks endurance or
+#        resistance weights for that step (the weights still favour the
+#        likely paths; the coin mixes the two arms).
+#      - lookahead = TRUE (now the default): a step may only go to a
+#        neighbour from which the walk can still reach 3 different nodes, so
+#        there are no dead ends and no retries, and every walk has exactly 4
+#        different nodes; a start node with no such walk is an error, never a
+#        shorter walk. lookahead = FALSE restores the throw-away-and-retry
+#        rule above.
 #
 # HOW TO RUN
 #   From the command line: ONE walk (4 nodes). Arguments, all optional: start
@@ -52,6 +62,8 @@
 #       Rscript random_walk/random_walks.R PPIB RE
 #       # random start, resistance weights, reproducible
 #       Rscript random_walk/random_walks.R random RE 7
+#       # start at CCN1, a coin flip picks the arm at every step
+#       Rscript random_walk/random_walks.R CCN1 coin
 #       # quote names with spaces
 #       Rscript random_walk/random_walks.R "Palmitic acid"
 #   From R (defines the function, runs nothing):
@@ -73,7 +85,8 @@
 #                             s, w_EE, w_RE, sig_EE, sig_RE, p_EE, p_RE,
 #                             p_diff (= p_EE - p_RE)
 #   18_walk.csv               the walk just generated, one row per node
-#                             (4 rows): step (0 = start), node, p_step (the
+#                             (4 rows): step (0 = start), node, arm (whose
+#                             weights chose the step; NA for the start), p_step (the
 #                             probability of the step that reached the node,
 #                             among the neighbours it could choose)
 #
@@ -164,10 +177,49 @@ stopifnot(
 #     never runs into a dead end.
 #   seed: set it for a reproducible walk; NULL (default) gives a new walk every
 #     call.
+# Each node's neighbours (for the look-ahead below).
+NBR <- split(D$to, D$from)
+
+# can_finish(node, visited, left): can a walk standing at `node` (with
+# `visited` already used, `node` included) still take `left` more steps to new
+# nodes? A depth-first search; `left` is at most 2 here, so it is quick.
+can_finish <- function(node, visited, left) {
+  if (left == 0) return(TRUE)
+  for (v in setdiff(NBR[[node]], visited)) {
+    if (can_finish(v, c(visited, v), left - 1)) return(TRUE)
+  }
+  FALSE
+}
+
+# random_walk(start, arm): one walk from `start` (any node; a random one if not
+# given) to n_steps other nodes.
+# Returns a data.table with one row per node visited, n_steps + 1 = 4 rows:
+# step (0 = start), node, arm (whose weights chose the step that reached the
+# node; NA for the start), p_step (that step's probability among the
+# neighbours it could choose).
+#   arm: "EE" (endurance) or "RE" (resistance) weights for every step, or
+#     "coin": a fair coin flip at EVERY step picks EE or RE, and that arm's
+#     step probabilities choose the next node (the weights still pull the walk
+#     toward the likely paths; the coin adds variety between the arms).
+#   lookahead = TRUE (default): a step may only go to a neighbour from which
+#     the walk can still reach n_steps different nodes, so the walk never runs
+#     into a dead end and never repeats a node, and always has exactly
+#     n_steps + 1 nodes; a start node with no such walk at all is an error
+#     (never a shorter walk). The chosen arm's probabilities are rescaled to
+#     add up to 1 over the allowed neighbours.
+#   lookahead = FALSE: the original rule: only unvisited neighbours, and a
+#     walk that runs into a dead end is thrown away and started again, from a
+#     new random node if no start was given, up to max_tries times (a start
+#     whose part of the network is too small then gives a shorter walk, with
+#     a warning).
+#   revisit = TRUE: a plain random walk (any neighbour, may step back).
+#   seed: set it for a reproducible walk; NULL (default) gives a new walk every
+#     call.
 random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
-                        revisit = FALSE, seed = NULL, max_tries = 1000) {
+                        revisit = FALSE, seed = NULL, max_tries = 1000,
+                        lookahead = TRUE) {
   # check the arguments
-  arm <- match.arg(arm, ARMS)
+  arm <- match.arg(arm, c(ARMS, "coin"))
   if (!is.null(seed)) set.seed(seed)
   if (!is.null(start) && !start %in% NODES) {
     stop(
@@ -175,33 +227,60 @@ random_walk <- function(start = NULL, arm = "EE", n_steps = N_STEPS,
       "(see 14_joint_nodes.csv)"
     )
   }
-  # try until the walk reaches n_steps other nodes (a dead end ends a try
-  # early); keep the longest try
+  ahead <- lookahead && !revisit
+  if (ahead) {
+    # only start nodes that have at least one full walk
+    ok <- if (is.null(start)) {
+      Filter(function(u) can_finish(u, u, n_steps), NODES)
+    } else if (can_finish(start, start, n_steps)) start else character(0)
+    if (!length(ok)) {
+      stop(
+        "no walk of ", n_steps + 1, " different nodes exists from '", start,
+        "' (its part of the network is too small or ends too soon); ",
+        "choose another start node"
+      )
+    }
+    max_tries <- 1
+  }
+  # try until the walk reaches n_steps other nodes (with the look-ahead the
+  # first try always does); keep the longest try
   best <- NULL
   for (try in seq_len(max_tries)) {
-    # the start: the given node, or any node of the network at random (a new
-    # one on every try)
-    from <- if (is.null(start)) sample(NODES, 1) else start
+    # the start: the given node, or a random one (a new one on every try)
+    from <- if (!is.null(start)) start else if (ahead) {
+      ok[sample.int(length(ok), 1)]
+    } else sample(NODES, 1)
     # the walk so far: the start node, reached with probability 1
     path <- from
+    arms <- NA_character_
     p_step <- 1
     for (k in seq_len(n_steps)) {
-      # the current node's neighbours and this arm's step probabilities
-      nb <- D[.(path[k]), .(to, p = get(paste0("p_", arm)))]
-      # without revisits: drop visited nodes, rescale the rest to add up to 1;
-      # stop if none is left
+      # whose weights choose this step: the given arm, or a coin flip
+      a <- if (arm == "coin") sample(ARMS, 1) else arm
+      # the current node's neighbours and that arm's step probabilities
+      nb <- D[.(path[k]), .(to, p = get(paste0("p_", a)))]
+      # without revisits: drop visited nodes; with the look-ahead, also drop
+      # neighbours from which the rest of the walk cannot be finished
       if (!revisit) nb <- nb[!to %in% path]
+      if (ahead) {
+        keep <- vapply(nb$to, function(v) {
+          can_finish(v, c(path, v), n_steps - k)
+        }, logical(1))
+        nb <- nb[keep]
+      }
       if (!nrow(nb)) break
+      # rescale the rest to add up to 1
       nb[, p := p / sum(p)]
       # choose the next node (by row number: sample() on a single value would
       # draw from 1..value instead)
       i <- sample.int(nrow(nb), 1, prob = nb$p)
       path <- c(path, nb$to[i])
+      arms <- c(arms, a)
       p_step <- c(p_step, nb$p[i])
     }
     if (is.null(best) || length(path) > nrow(best)) {
       best <- data.table(
-        step = seq_along(path) - 1L, node = path, p_step = p_step
+        step = seq_along(path) - 1L, node = path, arm = arms, p_step = p_step
       )
     }
     if (length(path) == n_steps + 1) break
@@ -226,8 +305,10 @@ if (sys.nframe() == 0L) {
   # start node: the first argument, or a random node if none is given (or if
   # it is "random")
   start <- if (length(args) && args[1] != "random") args[1] else NULL
-  # arm: whose weights set the step probabilities (default endurance)
-  arm <- if (length(args) > 1) toupper(args[2]) else "EE"
+  # arm: whose weights set the step probabilities (default endurance), or
+  # "coin" (a coin flip picks EE or RE at every step)
+  arm <- if (length(args) > 1) args[2] else "EE"
+  if (toupper(arm) %in% ARMS) arm <- toupper(arm) else arm <- tolower(arm)
   # seed: makes the walk reproducible (default: a new walk every run)
   seed <- if (length(args) > 2) as.integer(args[3]) else NULL
   # Where the results go (override with RW_OUT): the folder the script is in.
@@ -257,7 +338,8 @@ if (sys.nframe() == 0L) {
   fwrite(walk, file.path(RW_OUT, "18_walk.csv"))
   cat(sprintf(
     "Random walk (%s weights), start %s:\n  %s%s\n",
-    c(EE = "endurance", RE = "resistance")[match.arg(arm, ARMS)],
+    c(EE = "endurance", RE = "resistance",
+      coin = paste0("coin flip per step: ", paste(walk$arm[-1], collapse = ", ")))[arm],
     if (is.null(start)) "chosen at random" else "given",
     paste(x, collapse = " -> "),
     if (length(x) < N_STEPS + 1) {

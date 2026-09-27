@@ -16,7 +16,12 @@ python3 network/video/make_music_video.py --start SRC --audio ~/Downloads/song.m
 python3 network/video/01_lyrics_from_walk.py          # asks for a node -> the team's random walk -> 16 bars -> clipboard; stops
 python3 network/video/02_video_from_song.py <the walk folder it printed> ~/Downloads/song.mp3     # the song back -> the video
 ```
-Part 1 takes every `make_music_video.py` option (`--start HYOU1 --arm RE --seed 7`, `--walk ...`); it saves everything
+The start node must be a node of figure 17 (the 17a joint network) that a full 4-node walk can start from (315 of the
+353; the prompt suggests close names and refuses dead ends; Enter = a random start). The walk is the team's
+`random_walk/random_walks.R` with a **coin flip at every step** (`--arm coin`, the default): heads endurance, tails
+resistance weights choose that step, so the likely paths stay likely but the arms mix. It only takes steps from which
+the walk can still be finished, so every walk has exactly 4 different nodes (no dead ends, no repeats, no retries).
+`--arm EE` / `--arm RE` use one arm throughout. Part 1 takes every `make_music_video.py` option (`--start HYOU1 --seed 7`, `--walk ...`); it saves everything
 part 2 needs in `$HACK_OUT/video/<walk>/` and prints the exact part-2 command. Leave the song out of part 2 and it asks
 for it (drag it in) or waits for the next download.
 

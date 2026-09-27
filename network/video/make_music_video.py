@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import shutil
 import statistics
 import subprocess
@@ -65,11 +66,16 @@ from exvideo.errors import VideoStageError, WalkError  # noqa: E402
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
 
 
-def ask_start(net: network.Network) -> str:
-    """Ask for a start node until the name matches the network."""
+def ask_start(net: network.Network, steps: int = 3) -> str:
+    """Ask for a start node until it is a figure 17 node that a full walk can start from (Enter = a random one)."""
+    ok = walk.walkable_starts(net, steps)
+    print(f"\nStart node: any of the {len(ok)} figure 17 nodes (17a joint network) a {steps + 1}-node walk can start from.")
     while True:
+        typed = input("Start node / feature (e.g. HYOU1, SRC, Glutathione; Enter = random): ").strip()
+        if not typed:
+            node = random.SystemRandom().choice(ok); print(f"  random start: {node}"); return node
         try:
-            return walk.resolve_node(input("Start node / feature (e.g. HYOU1, SRC, Glutathione): "), net)
+            return walk.resolve_start(typed, net, steps)
         except WalkError as err:
             print(f"  {err}")
 
@@ -83,7 +89,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--walk", help="a fixed walk instead, comma-separated (e.g. HYOU1,HSP90B1,CDC37,SRC)")
     ap.add_argument("--walker", choices=("team", "builtin"), default="team",
                     help="team (default): the team's random_walk/random_walks.R; builtin: exvideo.walk.random_walk")
-    ap.add_argument("--arm", choices=("EE", "RE"), default="EE", help="team walker: whose edge weights set the step probabilities (default %(default)s)")
+    ap.add_argument("--arm", choices=("coin", "EE", "RE"), default="coin",
+                    help="team walker: whose edge weights set the step probabilities: coin (default) = a coin flip picks EE or RE at every step; EE = endurance; RE = resistance")
     ap.add_argument("--backend", choices=tuple(lyrics.BACKENDS), default="cli", help="how to ask Claude (default %(default)s)")
     ap.add_argument("--model", default=lyrics.DEFAULT_MODEL)
     ap.add_argument("--audio", help="the song file (skip waiting)")
@@ -118,7 +125,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         width, height = (int(x) for x in args.size.lower().split("x"))
 
         # 1-2. the walk (from saved lyrics, a fixed walk, or a random walk)
-        saved = None; p_steps = None
+        saved = None; p_steps = None; step_arms = None
         if args.lyrics:
             saved = json.loads(audio.clean_path(args.lyrics).read_text(encoding="utf-8"))
             if not isinstance(saved.get("bars"), list) or not saved.get("walk"):
@@ -128,19 +135,20 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         elif args.walk:
             path = tuple(walk.resolve_node(n, net) for n in args.walk.split(",") if n.strip()); walk.check_walk(path, net); seed = None
         else:
-            start = walk.resolve_node(args.start, net) if args.start else ask_start(net)
+            start = walk.resolve_start(args.start, net, args.steps) if args.start else ask_start(net, args.steps)
             if args.walker == "team" and args.steps == 3:
-                path, seed, p_steps = walk.team_walk(start, args.arm, args.seed, out, out / "video" / "_walker")
+                path, seed, p_steps, step_arms = walk.team_walk(start, args.arm, args.seed, out, out / "video" / "_walker")
                 walk.check_walk(path, net)                  # every step must be a physical edge (our hard gate)
                 if len(path) < 4:
                     raise WalkError(f"{start} sits in a piece of the network too small for a 4-node walk")
             else:
                 path, seed = walk.random_walk(start, args.steps, net, args.seed); p_steps = None
-        print(f"\n[1/4] walk: {' -> '.join(path)}" + (f"   (seed {seed}" + (f", team walker, {args.arm} weights" if p_steps else "") + ")" if seed is not None else ""))
+        arm_note = (f", team walker, coin flip per step: {', '.join(a for a in step_arms[1:])}" if args.arm == "coin" else f", team walker, {args.arm} weights") if p_steps else ""
+        print(f"\n[1/4] walk: {' -> '.join(path)}" + (f"   (seed {seed}{arm_note})" if seed is not None else ""))
         dest = out / "video" / "_".join(path); dest.mkdir(parents=True, exist_ok=True)
         (dest / "walk.json").write_text(json.dumps({"walk": list(path), "seed": seed, "steps": len(path) - 1,
                                                     "walker": ("team (random_walk/random_walks.R)" if p_steps else "builtin") if seed is not None else "fixed",
-                                                    "arm": args.arm if p_steps else None, "p_step": p_steps}, indent=2) + "\n")
+                                                    "arm": args.arm if p_steps else None, "step_arms": step_arms, "p_step": p_steps}, indent=2) + "\n")
 
         # 3. facts -> prompt -> lyrics
         facts = network.build_facts(path, net, out)
@@ -176,7 +184,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 webbrowser.open("https://suno.com/create")
 
         if args.stop_after_lyrics:                          # the two-sitting flow: the song comes back later (02_video_from_song.py)
-            rec = {"walk": list(path), "seed": seed, "arm": args.arm if p_steps else None, "title": lyr["title"], "suno_style": lyr["suno_style"],
+            rec = {"walk": list(path), "seed": seed, "arm": args.arm if p_steps else None, "step_arms": step_arms, "title": lyr["title"], "suno_style": lyr["suno_style"],
                    "personas": lyr["personas"], "bars": [{"bar": b["bar"], "node": b["node"], "text": b["text"]} for b in lyr["bars"]],
                    "model": args.model, "backend": args.backend}
             (dest / "lyrics.json").write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

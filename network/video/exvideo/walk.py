@@ -27,6 +27,30 @@ def resolve_node(name: str, net: Network) -> str:
     raise WalkError(f"{name!r} is not a node of the joint network (353 nodes with at least one edge){hint}")
 
 
+def can_finish(node: str, visited: Sequence[str], left: int, net: Network) -> bool:
+    """Can a walk standing at `node` still take `left` more steps to nodes not in `visited`? (the team walker's
+    look-ahead rule, random_walk/random_walks.R::can_finish)"""
+    if left == 0:
+        return True
+    return any(can_finish(v, (*visited, v), left - 1, net)
+               for v in (e.other(node) for e in net.neighbours(node)) if v not in visited)
+
+
+def walkable_starts(net: Network, steps: int = 3) -> List[str]:
+    """The figure 17 nodes a walk of `steps` steps to different nodes can start from (315 of the 353 for 3 steps)."""
+    return [n for n in sorted(net.nodes) if can_finish(n, (n,), steps, net)]
+
+
+def resolve_start(name: str, net: Network, steps: int = 3) -> str:
+    """resolve_node, plus: the node must be able to start a full walk (no dead end within `steps` steps)."""
+    node = resolve_node(name, net)
+    if not can_finish(node, (node,), steps, net):
+        nb = ", ".join(e.other(node) for e in net.neighbours(node))
+        raise WalkError(f"{node} is in figure 17, but no walk of {steps + 1} different nodes starts there "
+                        f"(its only links lead to dead ends: {nb}); choose another node")
+    return node
+
+
 def check_walk(walk: Sequence[str], net: Network) -> None:
     """Every node must be in the network, none twice, and every consecutive pair must be a (physical) edge."""
     if len(walk) < 2:
@@ -44,12 +68,13 @@ def check_walk(walk: Sequence[str], net: Network) -> None:
 TEAM_WALKER = Path(__file__).resolve().parents[3] / "random_walk" / "random_walks.R"
 
 
-def team_walk(start: str, arm: str, seed: Optional[int], out: Path, work: Path) -> Tuple[Tuple[str, ...], int, List[float]]:
+def team_walk(start: str, arm: str, seed: Optional[int], out: Path, work: Path) -> Tuple[Tuple[str, ...], int, List[float], List[Optional[str]]]:
     """A 3-step walk from `start` with the TEAM's walker (random_walk/random_walks.R, Rscript).
 
-    Its rule: each step goes to a not-yet-visited neighbour with probability set by the chosen arm's edge weights
-    (EE = endurance, RE = resistance); dead ends are redrawn (see random_walk/README.md). The walk is then checked here
-    against the physical edges. Returns (walk, seed, step probabilities).
+    Its rule: each step goes to a not-yet-visited neighbour, only one from which the walk can still be finished (no
+    dead ends, no repeats), with probability set by the arm's edge weights: EE = endurance, RE = resistance, or coin =
+    a coin flip picks EE or RE at every step (see random_walk/random_walks.R). The walk is then checked here against
+    the physical edges. Returns (walk, seed, step probabilities, the arm of each step; None for the start).
     """
     if not TEAM_WALKER.exists():
         raise WalkError(f"the team's walker is not in the repository ({TEAM_WALKER}); use --walker builtin")
@@ -64,7 +89,7 @@ def team_walk(start: str, arm: str, seed: Optional[int], out: Path, work: Path) 
         raise WalkError(f"the team's walker failed: {(res.stderr or res.stdout).strip()[-400:]}")
     with f.open(newline="", encoding="utf-8") as fh:
         rows = sorted(csv.DictReader(fh), key=lambda r: int(r["step"]))
-    return tuple(r["node"] for r in rows), seed, [float(r["p_step"]) for r in rows]
+    return tuple(r["node"] for r in rows), seed, [float(r["p_step"]) for r in rows], [r.get("arm") or None for r in rows]
 
 
 def random_walk(start: str, steps: int, net: Network, seed: Optional[int] = None, tries: int = 200) -> Tuple[Tuple[str, ...], int]:
