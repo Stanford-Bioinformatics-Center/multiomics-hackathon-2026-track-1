@@ -27,11 +27,13 @@ or an older snapshot on the side branch (see [Older copies](#older-copies-on-sid
 |---|---|---|---|---|
 | [Vidal M. Arroyo](#vidal-m-arroyo) | 6, one of them shared (the root README) | 3 | 1,815 | `main` |
 | [jspaul2003](#jean-sebastien-paul) | 2 | 13 | 1,566 | `differential_analysis` |
-| [gandhimonil9823](#gandhimonil9823) | 1 | 8 | 700 | `main` |
+| [gandhimonil9823](#monil-gandhi) | 1 | 8 | 700 | `main` |
 | [Subarna Bhattacharya](#subarna-bhattacharya) | 1 | 0 | 555 | `main` |
 
 Lines are counted per author by `git blame`, so a shared document is split. The root README has 107 lines:
 43 by Subarna Bhattacharya, 42 by Vidal M. Arroyo, and 22 by Jimmy Zhen (the organisers' track brief).
+[Tia Kohir](#tia-kohir) drafted the final presentation, created the roadmap, kept the checkpoints and
+compiled this page.
 
 ## Vidal M. Arroyo
 
@@ -49,7 +51,7 @@ The network pipeline and everything built on it. All on `main`.
 | [network/docs/FIGURES.md](../network/docs/FIGURES.md) | 35 | Captions for Fig. 1, the method figure and figures 17, 19 and 20. |
 | [network/docs/PRESENTATION.md](../network/docs/PRESENTATION.md) | 21 | 11-slide outline mapped to the judging criteria, plus the live demo steps. |
 
-## gandhimonil9823
+## Monil Gandhi 
 
 The interaction database ("mnet") that supplies the network's edges. All on `main`.
 
@@ -85,6 +87,20 @@ links go to GitHub. Base path: `bic/`.
 | [presentations/output/](https://github.com/Stanford-Bioinformatics-Center/multiomics-hackathon-2026-track-1/tree/differential_analysis/bic/presentations/output) (3 files) | 164 | Text of a four-slide fractalkine and WARS1 deck in three near-identical versions: plain, with figures, both exercise modes. |
 | [motrpac-exploration/portal_c2.0/package_NEWS.md](https://github.com/Stanford-Bioinformatics-Center/multiomics-hackathon-2026-track-1/blob/differential_analysis/bic/motrpac-exploration/portal_c2.0/package_NEWS.md) | 461 | A saved copy of the MoTrPAC R package's changelog, kept for version provenance. Not written by the team. |
 
+## Tia Kohir
+
+Project coordination and documentation. Not in the table above, which counts only the documents this page
+indexes.
+
+| Contribution | Where |
+|---|---|
+| Drafted the final presentation | outside the repository |
+| Created the project roadmap and kept the team's checkpoints | outside the repository |
+| This documentation index | [documentation/README.md](README.md) |
+| The project-wide list of Python packages, R packages and system tools | [requirements.txt](../requirements.txt) |
+
+The first two rows are as reported by the author; they cannot be read from `git blame`.
+
 ## Older copies on side branches
 
 | Document | Older snapshot on | Lines there vs `main` |
@@ -110,7 +126,7 @@ Found while reading the documents. Each one is checked against the files.
 |---|---|---|
 | 1 | **No README** for the three R scripts in `data_scripts/` | branch `diabetes_data` |
 | 2 | The `bic/` work is **not mentioned in any document on `main`**, and is not merged | branch `differential_analysis` |
-| 3 | The contributors table omits Subarna Bhattacharya and jspaul2003 | `network/README.md`, section 8 |
+| 3 | The contributors table omits Subarna Bhattacharya, jspaul2003 and Tia Kohir | `network/README.md`, section 8 |
 | 4 | **Two MoTrPAC package versions** are cited: 0.2.4 by the network pipeline, 2.0.8 by the `bic/` analyses | `network/README.md`; `bic/README.md` |
 | 5 | **Outdated network size:** 364 nodes / 764 edges, where `network/README.md` now reports 353 / 704 | `network/neo4j/README.md`; `random_walk/README.md` |
 
