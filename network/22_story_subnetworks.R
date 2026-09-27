@@ -26,8 +26,9 @@
 #      (>= 700) to another altered protein: up to 25 of them in our exercise network (MEASURED: the 353 nodes of
 #      step 14 for now; STORY_MEASURED=genes471 switches to step 1's 471 genes), by |z|, then the top-|z| others
 #      (15; S1: 5). Drawn: ppi_physical and Rhea edges, partners with >= 2 of those seeds (S1: >= 1 of them in our
-#      network; raised to 3, then 4, while the graph has more than 80 nodes), metabolites only if measured or linked to >= 2 seeds, plus our measured
-#      metabolites with a Rhea link to a seed (labelled), the largest connected component, and Louvain clusters laid
+#      network; raised to 3, then 4, while the drawn graph has more than 80 nodes), metabolites only if measured or linked to >= 2 seeds, plus our measured
+#      metabolites with a Rhea link to a seed (labelled); connected components ranked by outlined seeds (ties: size),
+#      added while the total stays <= 80 nodes (the first always; none without an outlined seed); Louvain clusters laid
 #      out one per box (no overlapping hulls), those with >= 5 nodes as hulls named by their 3 most connected nodes
 #      (seeds first). Marks beside proteins: G = glycosylated (mnet); P (S1) = a MoTrPAC muscle phosphosite
 #      responding to exercise (adj. p < 0.05, step 17s) when that file exists, else the interim "phosphosites
@@ -285,12 +286,23 @@ pack_layout <- function(g, cl) {
     if (x0 > 0 && x0 + side[i] > W) { x0 <- 0; y0 <- y0 - row_h; row_h <- 0 }
     v <- names(cl)[cl == names(sz)[i]]; sg <- induced_subgraph(g, v)
     set.seed(SEED); xy <- if (length(v) > 1) layout_with_fr(sg, niter = 1500) else matrix(0, 1, 2)
-    xy <- apply(xy, 2, function(u) if (diff(range(u)) > 0) (u - min(u)) / diff(range(u)) - 0.5 else u * 0)
+    xy <- matrix(apply(xy, 2, function(u) if (diff(range(u)) > 0) (u - min(u)) / diff(range(u)) - 0.5 else u * 0), ncol = 2)
     inner <- side[i] - 1.2   # 0.6 margin on each side for the hull and its label
     pos[[i]] <- data.table(node_id = V(sg)$name, x = x0 + side[i] / 2 + xy[, 1] * inner, y = y0 - side[i] / 2 + xy[, 2] * inner * 0.85)
     x0 <- x0 + side[i]; row_h <- max(row_h, side[i])
   }
   rbindlist(pos)
+}
+# Components to draw: ranked by outlined (in-network) seeds, ties by size; components without an outlined seed are
+# skipped; the first is always drawn, the next ones are added in rank order while the total stays <= target.
+pick_components <- function(g, s_in, target) {
+  cp <- components(g); m <- cp$membership
+  r <- data.table(comp = seq_along(cp$csize), size = cp$csize, n_out = tabulate(m[names(m) %in% s_in], nbins = length(cp$csize)))
+  r <- r[n_out > 0][order(-n_out, -size, comp)]
+  if (!nrow(r)) r <- data.table(comp = which.max(cp$csize), size = max(cp$csize), n_out = 0L)
+  take <- r$comp[1]; tot <- r$size[1]
+  for (i in seq_len(nrow(r))[-1]) { if (tot + r$size[i] > target) break; take <- c(take, r$comp[i]); tot <- tot + r$size[i] }
+  list(keep = names(m)[m %in% take], n_comp = length(take))
 }
 draw <- function(s, B) {
   N <- B$nodes; st_nodes <- N[node_origin %in% c("study_up", "study_down")]
@@ -314,16 +326,16 @@ draw <- function(s, B) {
     pt <- cands[node_type != "metabolite" | is_measured %in% TRUE | k >= 2, partner]
     e <- inc[(s1 & s2) | (s1 & node2 %in% pt) | (s2 & node1 %in% pt)]
     g <- graph_from_data_frame(e[, .(node1, node2)], directed = FALSE, vertices = data.table(node_id = unique(c(sd, pt))))
-    cp <- components(g); keep <- names(cp$membership)[cp$membership == which.max(cp$csize)]
+    pk <- pick_components(g, s_in, target); keep <- pk$keep
     if (length(keep) <= target) break
   }
-  # our measured metabolites with a Rhea link to >= 1 seed (currency metabolites are already out of the edge list)
+  # our measured metabolites with a Rhea link to >= 1 drawn seed (currency metabolites are already out of the edge list)
   mm <- setdiff(pl[node_type == "metabolite" & is_measured %in% TRUE, partner], pt)
-  mm <- mm[mm %in% inc[edge_type == "rhea", c(node1, node2)]]
+  mm <- mm[mm %in% inc[edge_type == "rhea" & (node1 %in% keep | node2 %in% keep), c(node1, node2)]]
   if (length(mm)) {
     e <- inc[(s1 & s2) | (s1 & node2 %in% pt) | (s2 & node1 %in% pt) | (edge_type == "rhea" & (node1 %in% mm | node2 %in% mm) & (s1 | s2))]
     g <- graph_from_data_frame(e[, .(node1, node2)], directed = FALSE, vertices = data.table(node_id = unique(c(sd, pt, mm))))
-    cp <- components(g); keep <- names(cp$membership)[cp$membership == which.max(cp$csize)]
+    keep <- c(keep, mm)
   }
   g <- induced_subgraph(g, keep); e <- e[node1 %in% keep & node2 %in% keep]
   set.seed(SEED); cl <- setNames(as.integer(membership(cluster_louvain(g))), V(g)$name)
@@ -355,11 +367,11 @@ draw <- function(s, B) {
   # ---- the texts (annotated PNG and the slide-text sidecar) ----
   n_up <- V[png_seed & node_origin == "study_up", .N]; n_dn <- V[png_seed & node_origin == "study_down", .N]; ns <- n_up + n_dn
   partner_rule <- sprintf(">= %d seeds%s", kmin, if (s$min_in_links > 0) sprintf(" (>= %d in our exercise network)", s$min_in_links) else "")
-  sub <- sprintf("Seeds: altered proteins with a physical link to another altered protein (%d); the top %d in our exercise network + the top %d outside it, by |z|; %d drawn, %d of them in our exercise network (%d up, %d down %s). Partners linked to %s: %d (%d unaltered proteins, %d other altered proteins, %d metabolites). %d physical PPI + %d Rhea edges; largest component, %d nodes%s; %d Louvain clusters >= %d nodes outlined. %d measured metabolites (Rhea). G: %d of %d drawn seeds glycosylated.%s",
+  sub <- sprintf("Seeds: altered proteins with a physical link to another altered protein (%d); the top %d in our exercise network + the top %d outside it, by |z|; %d drawn, %d of them in our exercise network (%d up, %d down %s). Partners linked to %s: %d (%d unaltered proteins, %d other altered proteins, %d metabolites). %d physical PPI + %d Rhea edges; %d components (ranked by outlined seeds), %d nodes%s; %d Louvain clusters >= %d nodes outlined. %d measured metabolites (Rhea). G: %d of %d drawn seeds glycosylated.%s",
                  nrow(cand), length(s_in), length(s_out), ns, V[png_seed & in_motrpac, .N], n_up, n_dn, s$dir, partner_rule, V[png_seed == FALSE, .N], V[node_origin == "physical_partner", .N],
                  V[png_seed == FALSE & node_origin %in% c("study_up", "study_down"), .N], V[node_type == "metabolite", .N],
-                 e[edge_type == "ppi_physical", .N], e[edge_type == "rhea", .N], nrow(V),
-                 if (nrow(V) > target) sprintf(" (above the %d target even at >= %d)", target, kmin) else "", nrow(big), PNG_MIN_CLUSTER,
+                 e[edge_type == "ppi_physical", .N], e[edge_type == "rhea", .N], pk$n_comp, nrow(V),
+                 if (nrow(V) > target) sprintf(" (above the %d target at >= %d)", target, kmin) else "", nrow(big), PNG_MIN_CLUSTER,
                  V[measured_met == TRUE, .N], V[png_seed & mark_G, .N], ns,
                  if (s$story %in% SITE_STORIES) sprintf(" P: %d of %d drawn seeds with %s (marked on labelled proteins).", V[png_seed & has_P, .N], ns,
                                                         if (HAVE_PHOS) "exercise-responsive muscle phosphosites" else "phosphosites measured in MoTrPAC muscle") else "")
@@ -439,7 +451,7 @@ draw <- function(s, B) {
           sprintf("<sub>Figure rules: %s</sub>", sub), "")
   writeLines(md, file.path(DEST, paste0(s$story, "_slide_text.md")))
   list(file = f_clean, md = md, png_seed_candidates = nrow(cand), png_seeds_in_network = length(s_in), png_seeds_outside = length(s_out),
-       png_seeds_drawn = sum(V$png_seed), png_seeds_drawn_outlined = V[png_seed & in_motrpac, .N], png_rule = kmin, png_min_in_links = s$min_in_links,
+       png_seeds_drawn = sum(V$png_seed), png_seeds_drawn_outlined = V[png_seed & in_motrpac, .N], png_rule = kmin, png_min_in_links = s$min_in_links, png_components = pk$n_comp,
        png_nodes = nrow(V), png_partners = V[png_seed == FALSE, .N], png_metabolites = V[node_type == "metabolite", .N], png_measured_metabolites = V[measured_met == TRUE, .N],
        png_metab_dropped = met_drop, png_edges = nrow(e), png_unconnected_seeds = length(sd) - sum(V$png_seed), png_clusters = nrow(big),
        png_labels = nrow(L), png_seeds_glyco = V[png_seed & mark_G, .N],
