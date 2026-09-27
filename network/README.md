@@ -164,7 +164,7 @@ default `~/Desktop/output/hackathon`).
 
 ```bash
 bash network/run_all.sh                     # every step in order, then validation (section 7) and the reproducibility manifest
-bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 99v 99m)
+bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 99v 99m)
 REFRESH_ONLINE=1 bash network/run_all.sh    # also redo the web lookups of step 1c
 ```
 
@@ -196,6 +196,7 @@ Rscript network/16_annotated_networks.R       # 15b with PTM tags: phospho 16a /
 Rscript network/17_filter_stats.R             # statistics, modules (CAMERA-PR) and annotation layers for the interactive pages
 Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/17_interactive; Cytoscape files -> $HACK_OUT/17_cytoscape
 Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
+Rscript network/18_disease_modules.R          # disease filter vs overlay modules (Amar 2024 disease sets) -> figures 18a / 18b
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
@@ -697,6 +698,40 @@ The page's module panel lists the top 5 significant sets with their member genes
 `17_module_names.csv`). **Read with care:** a name says what the module's members have in common in the
 databases, not what exercise does to it — that is the CAMERA-PR table below it.
 
+**Step 18d — disease-filtered vs disease-overlaid modules (figures 18a / 18b).** Disease data: all 8 proteomics
+datasets (9 disease sets) of Amar et al. 2024 (*Cell Metab* 36:1411; doi 10.1016/j.cmet.2023.12.021), processed in
+the Venus project week 6 (`DISEASE_SCORES`; directions median-centred, rodent genes as human orthologs): T2D muscle
+(Öhman 2021, full table; Chae 2018, significant proteins only), HCM heart (Coats 2018), heart failure rat heart
+(Havlenova 2021), MI mouse heart (Park 2019), NASH and cirrhosis liver (Niu 2022), NAFLD liver (Yuan 2020,
+significant only), ob/ob mouse liver (Stocks 2022). Approaches: **A** filter = proteins significant (p < 0.05) in
+any full-distribution set + neighbours; **At** = T2D-significant (Öhman) + neighbours; **As** = only edges between
+T2D-significant proteins; **B** overlay = modules of the whole network, disease overlaid; **B'** = overlay on the
+strength-trimmed graph. Modules: Louvain (seed fixed, ≥ 5 members), named by ORA. Each module: mean signed z per
+disease set with a within-graph permutation p (10,000 same-size sets), muscle exercise response (CAMERA-PR) and a
+tissue-swap control. Evaluation against the paper's T2D data: Öhman scores direction; **Chae is held out** (never
+used to filter) as replication.
+
+| | A any disease | At T2D + nb | As T2D edges | B overlay | B' overlay, strength |
+|---|---|---|---|---|---|
+| nodes / modules | 328 / 13 | 143 / 9 | 51 / 0 | 353 / 16 | 177 / 12 |
+| members T2D-measured | 44% | 61% | — | 43% | 40% |
+| modules T2D-significant | 0 | 2 | — | 0 | 1 |
+| replicated in held-out Chae | 1 | 0 | — | 0 | 0 |
+| exercise-responsive in muscle (muscle-specific) | 7 (4) | 6 (5) | — | 5 (4) | 3 (0) |
+| T2D-significant and exercise-responsive | 0 | 2 | — | 0 | 1 |
+
+Findings: filtering on *any* disease is not selective (93% of nodes kept: most network proteins change in some
+disease); the strictest edge filter fragments the graph (no module ≥ 5); the paper's two T2D sets agree in
+direction for only ~55% of shared proteins (6/11, 7/12, 4/7), so Chae is a weak replication test. The T2D filter
+(At) gives the two T2D + exercise modules: **At_M06 "Electron transport chain"** (COX5B, NDUFS6 with the polyol-
+pathway enzymes AKR1B1, SORD, DCXR, glucose, palmitate; lower in T2D, z −2.5, p 0.027, also lower in rat heart
+failure; up 24 h after endurance in muscle RNA, FDR 0.009; 0 / 28 tissue-swap cells) and **At_M08 "ERBB signalling"**
+(FOXO1, GYS1, PRKAB1, MAPK9, STAT5B, CRKL, PXN, UDP-glucose; lower in T2D, z −3.8, p 0.011 from 3 measured; up 4 h
+after endurance, FDR 0.048; 4 / 28 swap cells). **Read with care:** At is selected on Öhman significance, so its T2D
+scores are partly circular (the within-graph permutation mitigates, Chae did not replicate); heart and liver sets are
+tissue-mismatched to our exercise data; direction matches are not evidence of treatment. Full tables:
+`18_module_summary.csv`, `18_approach_comparison.csv`, `reports/18_disease_modules.md`.
+
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
 figures). Each network (mnet inputs — joint: 353 nodes / 704 edges, class-grouped layout of 15a / 15b; genes:
@@ -762,7 +797,7 @@ and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **36 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **37 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
@@ -913,6 +948,7 @@ network/
   neo4j/                         Neo4j graph of the networks for the visualiser: export_neo4j.R, import.cypher,
                                  queries.cypher, run_local_neo4j.sh, README.md (graph model, key-file map)
   18_t2d_lipid_classes.R         step 18  T2D-relevant lipid classes per arm (tables behind section 7b)
+  18_disease_modules.R           step 18d disease-filtered vs disease-overlaid modules (Amar 2024 disease sets), figures 18a / 18b
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)

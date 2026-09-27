@@ -67,6 +67,8 @@ rhea_rel <- tryCatch(paste(sub(".*=", "", grep("release", readLines(file.path(EX
 INP <- rbind(
   fp(list.files(MNET_DIR, full.names = TRUE, pattern = "\\.(csv|parquet|md)$"), "team mnet resource (MNET_DIR)"),
   fp(STRING_PARQUET, "legacy curated STRING file (STRING_PARQUET; used only with EDGE_SOURCE=legacy)"),
+  fp(Sys.getenv("DISEASE_SCORES", unset = path.expand("~/Desktop/output/week_6/_shared/disease_scores.csv.gz")),
+     "Amar et al. 2024 disease proteomics sets, processed in Venus week 6 (DISEASE_SCORES; step 18d)"),
   fp(list.files(EXT, full.names = TRUE), paste0("Rhea cache (HACK_EXT), release ", rhea_rel)),
   data.table(source = paste0("GlyGen API cache (inventory/glygen_cache), service release now: ", glygen_release), file = sprintf("%d per-protein files", length(gg_cache)),
              bytes = sum(file.size(gg_cache)), modified = if (length(gg_cache)) format(max(file.mtime(gg_cache)), "%Y-%m-%d %H:%M") else NA_character_,

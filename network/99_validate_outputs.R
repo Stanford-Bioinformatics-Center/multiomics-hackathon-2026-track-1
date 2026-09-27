@@ -235,6 +235,13 @@ check(length(cj$nodes) == nrow(jn) && nrow(cj$edges) == nrow(je) && nrow(cg$edge
 # Check the exported weights equal the source weights (joint = step 14, genes = step 3).
 check(isTRUE(all.equal(cj$edges$w_diff, je$w_diff)) && isTRUE(all.equal(cg$edges$w_EE, w$w_EE)), "step 17: Cytoscape weights unchanged")
 
+# ---- step 18d: disease-filtered vs disease-overlaid modules ----------------------------------------------------
+dm <- rd("18_disease_modules.csv"); jn18 <- rd("14_joint_nodes.csv"); cmp18 <- rd("18_approach_comparison.csv")
+# Check every module member is a joint-network node, modules have >= 5 members, and each approach is compared.
+check(all(dm$node %in% jn18$node) && all(dm[, .N, by = module]$N >= 5) && setequal(cmp18$approach, unique(dm$approach)),
+      "step 18d: disease modules are joint-network nodes, >= 5 members, all approaches compared")
+note("step18d_T2Dfilter_modules_t2d_sig", cmp18[approach == "At", modules_t2d_sig], 2)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))

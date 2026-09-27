@@ -13,6 +13,7 @@
 #   HACK_EXT [~/Desktop/output/hackathon-2026-track1/external/rhea]  Rhea cache
 #   MNET_DIR [~/Desktop/output/hackathon/resources/mo_annotation]   the team's mnet resource (edges, PTM)
 #   EDGE_SOURCE [mnet]  ("legacy" = the first curated STRING file + direct Rhea)
+#   DISEASE_SCORES [~/Desktop/output/week_6/_shared/disease_scores.csv.gz]  Amar et al. 2024 disease sets (step 18d)
 # ONLINE STEPS AND CACHES: step 1c queries RefMet / UniChem / PubChem (web services change over time), so it
 #   is skipped when its output exists unless REFRESH_ONLINE=1; step 5 downloads Rhea once into HACK_EXT; the
 #   inventory queries GlyGen once per protein and caches the answers (and GlyGen files) under
@@ -61,6 +62,7 @@ STEPS=(
   "17s|Rscript $HERE/17_filter_stats.R"
   "17i|Rscript $HERE/17_interactive_networks.R"
   "18|Rscript $HERE/18_t2d_lipid_classes.R"
+  "18d|Rscript $HERE/18_disease_modules.R"
   "99v|Rscript $HERE/99_validate_outputs.R"
   "99m|Rscript $HERE/99_manifest.R"
 )

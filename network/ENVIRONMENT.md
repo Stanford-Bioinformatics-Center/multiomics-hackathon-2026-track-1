@@ -54,6 +54,7 @@ versions and input checksums should give identical outputs (checked with `networ
 | team mnet resource (MNET_DIR) | proteins_ptm.csv | 1,626,004 | 2026-09-26 17:26 | cf772af47e699cd47ea5072b5f54839f |
 | team mnet resource (MNET_DIR) | README.md | 3,233 | 2026-09-26 17:26 | ab6a128f64b73a2d61f7ed98d819c72a |
 | legacy curated STRING file (STRING_PARQUET; used only with EDGE_SOURCE=legacy) | Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet | 585,329 | 2026-09-26 10:30 | 3a1fc7a9776d76553b8ac01cb152fdb3 |
+| Amar et al. 2024 disease proteomics sets, processed in Venus week 6 (DISEASE_SCORES; step 18d) | disease_scores.csv.gz | 995,726 | 2026-09-24 10:22 | d4a098ad84762f24f7f4335579b69420 |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | chebi_pH7_3_mapping.tsv | 3,099,222 | 2026-09-26 13:02 | adf14687a450d8366f9b364101202635 |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | rhea-kegg.reaction.gz | 1,556,033 | 2026-09-26 13:02 | 325907b498cfb6c89aa0fa6ff8605bab |
 | Rhea cache (HACK_EXT), release 142 / 2026-09-02 | rhea-release.properties | 53 | 2026-09-26 13:02 | 210aad03260f7186ef97170962e1666e |
