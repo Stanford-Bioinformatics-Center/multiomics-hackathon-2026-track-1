@@ -1,0 +1,212 @@
+Muscle RNA−seq
+ENSG00000142871.18
+Pre
+P15−45M P3.5/4H P24H
+2.0
+4.0
+6.0
+log2(normalized value)
+CCN1
+Adipose RNA−seq
+ENSG00000142871.18
+Pre
+P15−45M P3.5/4H P24H
+4.5
+5.0
+5.5
+6.0
+6.5
+7.0
+log2(normalized value)
+CCN1
+Blood Olink
+OID21368
+Pre D20M D40M P10M
+P15−45MP3.5/4H P24H
+−3.5
+−3.0
+−2.5
+−2.0
+−1.5
+−1.0
+log2(normalized value)
+CCN1
+Muscle Prot(MS)
+O00622
+Pre
+P15−45M P3.5/4H P24H
+−3.0
+−2.5
+−2.0
+log2(normalized value)
+CCN1
+adj p >= 0.05 adj p < 0.05
+ CON EE RE
+Muscle RNA−seq
+ENSG00000006210.7
+Pre
+P15−45M P3.5/4H P24H
+2.0
+3.0
+4.0
+5.0
+6.0
+log2(normalized value)
+CX3CL1
+Adipose RNA−seq
+ENSG00000006210.7
+Pre
+P15−45M P3.5/4H P24H
+5.2
+5.5
+5.8
+6.0
+6.2
+6.5
+log2(normalized value)
+CX3CL1
+Blood Olink
+OID20976
+Pre D20M D40M P10M
+P15−45MP3.5/4H P24H
+0.8
+1.2
+1.6
+log2(normalized value)
+CX3CL1
+adj p >= 0.05 adj p < 0.05
+ CON EE RE
+a b
+c
+d
+CX3CL1
+CCN1
+TNFSF10
+HSPB6
+GNLY
+WARS1
+ANGPT2
+SERPINB8
+ARSA
+FGR
+FLT1
+B4GAT1
+IL1R1
+VEGFD
+PLAU
+MSR1
+GGT1
+ITGAV
+FLT3LG
+SPOCK1
+MASP1
+CEACAM8
+GZMB
+GZMH
+GZMA
+ITGB7
+CD22
+PHOSPHO1
+CD8A
+CD79B
+CD5
+EPS8L2
+PGLYRP1
+IL16
+MME
+CXCL16
+VNN2
+ADGRE5
+MNDA
+MMP9
+S100A12
+CD6
+FMNL1
+S100A11
+ST6GAL1
+COL18A1
+LSP1
+MMP8
+IDUA
+CORO1A
+Muscle − Transcript
+Muscle − Protein
+Muscle − Phospho
+Adipose − Transcript
+Adipose − Protein
+Blood − Transcript
+Exercise
+3.5
+4
+4.5
+5
+Score
+Blood & Tissue Direction
+Blood Up + Tissue Up
+Blood Up + Tissue Down
+Blood Up + Tissue Up/Down
+Absent
+Exercise
+Both
+EE
+RE
+*
+**
+**
+*
+*
+*
+*
+** **
+**
+**
+*
+* ***
+**
+**
+**
+*
+*
+EE RE
+AdiposeMuscle
+P15−45MP3.5−4H
+P24H
+P15−45MP3.5−4H
+P24H
+ITGA2B
+ITGA5
+ITGA6
+ITGAD
+ITGAM
+ITGAV
+ITGB1
+ITGB2
+ITGB3
+ITGB5
+KDR
+LRP1
+SDC4
+TLR2
+TLR4
+ITGA5
+ITGA6
+ITGAD
+ITGAM
+ITGAV
+ITGB1
+ITGB2
+ITGB3
+ITGB5
+KDR
+LRP1
+SDC4
+TLR2
+TLR4
+bicor
+−1.0
+−0.5
+0.0
+0.5
+1.0
+DA gene
+(adj p < 0.05)

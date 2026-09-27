@@ -1,0 +1,3 @@
+gene_symbol,assay,tissue,contrast,Modality,Extracellular_score,Tissue_direction,Plasma_direction,Directionality_concordant,Temporally_concordant
+WARS1,transcript-rna-seq,muscle,EE_Post_3.5_4hr,Both,4.371,Up,Up,Yes,No
+WARS1,transcript-rna-seq,muscle,RE_Post_3.5_4hr,Both,4.371,Up,Up,Yes,No

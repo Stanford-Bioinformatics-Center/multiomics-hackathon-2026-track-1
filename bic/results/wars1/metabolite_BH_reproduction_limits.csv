@@ -1,0 +1,7 @@
+"source_object","attempted_family","max_difference","interpretation"
+"BLOOD_METAB_DA","tissue;assay;platform;contrast",0.439329847166276,"Source q retained; this grouping is not an independent reproduction of source correction"
+"BLOOD_METAB_DA","tissue;assay;contrast",0.577447428108499,"Source q retained; this grouping is not an independent reproduction of source correction"
+"MUSCLE_METAB_DA","tissue;assay;platform;contrast",0.424085348079622,"Source q retained; this grouping is not an independent reproduction of source correction"
+"MUSCLE_METAB_DA","tissue;assay;contrast",0.711564512154939,"Source q retained; this grouping is not an independent reproduction of source correction"
+"ADIPOSE_METAB_DA","tissue;assay;platform;contrast",0.481043198950726,"Source q retained; this grouping is not an independent reproduction of source correction"
+"ADIPOSE_METAB_DA","tissue;assay;contrast",0.832398256897343,"Source q retained; this grouping is not an independent reproduction of source correction"

@@ -1,8 +1,10 @@
 # MoTrPAC exercise–disease exploration
 
-Work completed on 25–26 September 2026.
+Work completed on 25–27 September 2026.
 
-The project now lives in `/Users/acheron/BIC`. Start with the executed [fractalkine differential-analysis notebook](fractalkine_differential_analysis.ipynb); the original exploration remains in `motrpac-exploration/`. The supplied review PDF is also available locally in `references/`.
+**27 September novelty correction:** WARS1 is explicitly included in MoTrPAC's current Supplementary Table 7 and secretome Figure 7. Its absence from the older Table S8 was a version-specific finding, not evidence that MoTrPAC had never nominated it. Earlier exercise-related reports also exist, including muscle-cell vesicle proteomics (2023) and a human exercise conference abstract (2025). Use “MoTrPAC-nominated candidate exerkine with a vascular mechanism to test,” without an unqualified novelty claim. See the [literature review and version audit](results/wars1/novelty_review/REVIEW.md).
+
+The project now lives in `/Users/acheron/multiomics-hackathon-2026-track-1/bic`. The newest analysis is the executed [exerkine candidate screen](exerkine_candidate_screen.ipynb); the earlier [fractalkine notebook](fractalkine_differential_analysis.ipynb), CCN1 notebook, and original exploration in `motrpac-exploration/` remain available. The supplied review PDF is also available locally in `references/`.
 
 ## Purpose and current conclusion
 
@@ -10,11 +12,21 @@ Explore relationships between exercise-responsive human biology and disease usin
 
 The work progressed from an initial disease-hypothesis shortlist to a systematic screen of the 28 cardiometabolic exerkines in Table 3 of Chow et al., followed by a detailed significance audit of the 16 candidates with identifiable plasma measurements.
 
-**Main finding:** Of those 16 candidates, **fractalkine/CX3CL1 and lactate** have exercise-versus-control plasma responses passing the original MoTrPAC adjusted p-value threshold of 0.05. **FGF21 and IL-15** have secondary, exploratory evidence under a separate correction restricted to the candidate tests. Several candidates with nonsignificant plasma results have significant tissue RNA responses.
+**Original Table 3 finding:** Of those 16 candidates, **fractalkine/CX3CL1 and lactate** have exercise-versus-control plasma responses passing the original MoTrPAC adjusted p-value threshold of 0.05. **FGF21 and IL-15** have secondary, exploratory evidence under a separate correction restricted to the candidate tests. Several candidates with nonsignificant plasma results have significant tissue RNA responses.
 
-CX3CL1 is the leading circulating protein candidate for a subsequent disease-evidence analysis. Type 2 diabetes is the proposed disease focus, but a systematic disease-genetics or disease-expression integration has not yet been performed.
+CX3CL1 was the leading circulating protein candidate in that Table 3 screen. Type 2 diabetes is the proposed disease focus, but a systematic disease-genetics or disease-expression integration has not yet been performed.
+
+## Latest expansion: screen beyond CCN1
+
+The [new notebook](exerkine_candidate_screen.ipynb) screens the full human plasma Olink assay and matches positive responses to muscle/adipose RNA or total protein after the same exercise mode. At original assay-wide BH < 0.05, **142 genes have positive control-adjusted plasma effects and 15 also have matching positive tissue effects**. BH was reproduced across 58 source families and 713,660 feature–contrast tests; the previous CCN1 and CX3CL1 plasma results were reproduced.
+
+**CD300LG, ANGPT2, and WARS1** are prioritized beyond the earlier benchmarks. CD300LG has the strongest external human diabetes rationale in this shortlist. Fourteen of the 15 genes occur in the original preprint's Table S8; WARS1 is absent from that older file, including its alias WARS. **WARS1 is present in the current Table 7 and Figure 7**, as verified on 27 September. It should not be presented as a new nomination beyond current MoTrPAC results.
+
+All qualifying sampled tissue responses occur later than their qualifying plasma responses under this rule. The overlap therefore does not establish muscle/adipose secretion or a mechanism for the early plasma pulse. Source p-values were supplied by MoTrPAC, no participant-level models were refit, and the multi-omics intersection has no claimed candidate-level 5% FDR guarantee. See [the complete findings and references](results/exerkine_screen/FINDINGS.md) for numeric results, secondary leads, and testable hypotheses.
 
 ## Data used and access verified
+
+The focused [WARS1 follow-up](wars1_differential_analysis.ipynb) now checks 180 source estimates, including 52 primary exercise effects. Plasma RE post 10 minutes passes source BH (q 0.0312), with an independently significant within-RE rise (q 0.00812); muscle RNA rises after both modes at 3.5 hours. Muscle total protein does not have a significant response, and direct EE-RE comparisons do not establish resistance specificity. The analysis also extracts published WARS1 disease/tissue-QTL tables and distinguishes intracellular insulin-signaling effects from extracellular immune/vascular mechanisms. See [the detailed findings](results/wars1/FINDINGS.md). Separate metabolite context retains source q-values with an explicit unresolved correction-reproduction limitation.
 
 - **Study:** Acute Exercise in Human Sedentary Adults.
 - **Study identifier:** `human-precovid-sed-adu`.

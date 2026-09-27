@@ -1,0 +1,84 @@
+[
+  {
+    "sha": "85d047c706e9f24bc6aa03948cd9c0f65d9925f5",
+    "node_id": "C_kwDORTdw3NoAKDg1ZDA0N2M3MDZlOWYyNGJjNmFhMDM5NDhjZDljMGY2NWQ5OTI1ZjU",
+    "commit": {
+      "author": {
+        "name": "christopherjin",
+        "email": "christopherjin@gmail.com",
+        "date": "2026-09-22T22:02:31Z"
+      },
+      "committer": {
+        "name": "christopherjin",
+        "email": "christopherjin@gmail.com",
+        "date": "2026-09-22T22:02:31Z"
+      },
+      "message": "Reorganise figures/landscape/ around the manuscript's own numbering\n\nReplace the legacy per-tissue tree with one runnable script per manuscript\nfigure, ported from the reproduction pipeline. 94 panels across 17 figures and\n31 of the 36 numbered supplementary sub-tables.\n\nA main figure and its Extended Data supplement share a folder, because they are\nusually one computation split across two figure numbers: six helper files were\nread by both. Each folder carries that pair's scripts, its ST*.R tables, its\n*_helpers.R, any *_fit.R with the .env that configures it, and its sources/.\n\nconfig/panel_map.json and config/table_map.json are authoritative for the\nnumbering. A script reads its own output path, page size and RNG seed from the\nmanifest, so renumbering a panel is an edit to one JSON file.\n\nEach panel is a zero-argument function and run_panels() runs them, so the data\nload at the top of a figure script happens once for the whole figure and a\nsingle panel can still be rebuilt on its own. run_tables() does the same for\nsub-tables. Nineteen of the 31 sub-tables are written by a figure script rather\nthan a table script, because their numbers are a panel's numbers.\n\nThree panels read individual-level data that is not in this repository and may\nnot be published. ED1A, ED3D and ED3E report that and skip; the rest of their\nfigure still builds. Those inputs are gitignored by filename so a local copy\ncannot be committed. Sixteen panels read one of the four fits and skip with the\ncommand that produces it until it has been run.\n\nrun_all.R builds everything, each script in its own process, and writes\noutputs/run_report.tsv. The four fits are opt-in behind --fits.\n\nassembled/ carries the figures and tables as submitted, with a README stating\nthat panels come from these scripts and were re-typeset in Illustrator without\nany value or graphical element changing.\n\nCo-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>",
+      "tree": {
+        "sha": "a89dc319aee2b85729afc1f6111cec451300eced",
+        "url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/git/trees/a89dc319aee2b85729afc1f6111cec451300eced"
+      },
+      "url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/git/commits/85d047c706e9f24bc6aa03948cd9c0f65d9925f5",
+      "comment_count": 0,
+      "verification": {
+        "verified": false,
+        "reason": "unsigned",
+        "signature": null,
+        "payload": null,
+        "verified_at": null
+      }
+    },
+    "url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/commits/85d047c706e9f24bc6aa03948cd9c0f65d9925f5",
+    "html_url": "https://github.com/MoTrPAC/motrpac-human-presuspension-acute/commit/85d047c706e9f24bc6aa03948cd9c0f65d9925f5",
+    "comments_url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/commits/85d047c706e9f24bc6aa03948cd9c0f65d9925f5/comments",
+    "author": {
+      "login": "christopherjin",
+      "id": 22109548,
+      "node_id": "MDQ6VXNlcjIyMTA5NTQ4",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22109548?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/christopherjin",
+      "html_url": "https://github.com/christopherjin",
+      "followers_url": "https://api.github.com/users/christopherjin/followers",
+      "following_url": "https://api.github.com/users/christopherjin/following{/other_user}",
+      "gists_url": "https://api.github.com/users/christopherjin/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/christopherjin/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/christopherjin/subscriptions",
+      "organizations_url": "https://api.github.com/users/christopherjin/orgs",
+      "repos_url": "https://api.github.com/users/christopherjin/repos",
+      "events_url": "https://api.github.com/users/christopherjin/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/christopherjin/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "committer": {
+      "login": "christopherjin",
+      "id": 22109548,
+      "node_id": "MDQ6VXNlcjIyMTA5NTQ4",
+      "avatar_url": "https://avatars.githubusercontent.com/u/22109548?v=4",
+      "gravatar_id": "",
+      "url": "https://api.github.com/users/christopherjin",
+      "html_url": "https://github.com/christopherjin",
+      "followers_url": "https://api.github.com/users/christopherjin/followers",
+      "following_url": "https://api.github.com/users/christopherjin/following{/other_user}",
+      "gists_url": "https://api.github.com/users/christopherjin/gists{/gist_id}",
+      "starred_url": "https://api.github.com/users/christopherjin/starred{/owner}{/repo}",
+      "subscriptions_url": "https://api.github.com/users/christopherjin/subscriptions",
+      "organizations_url": "https://api.github.com/users/christopherjin/orgs",
+      "repos_url": "https://api.github.com/users/christopherjin/repos",
+      "events_url": "https://api.github.com/users/christopherjin/events{/privacy}",
+      "received_events_url": "https://api.github.com/users/christopherjin/received_events",
+      "type": "User",
+      "user_view_type": "public",
+      "site_admin": false
+    },
+    "parents": [
+      {
+        "sha": "ef7867e8c0fb5525855c00505f87a91281af7d97",
+        "url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/commits/ef7867e8c0fb5525855c00505f87a91281af7d97",
+        "html_url": "https://github.com/MoTrPAC/motrpac-human-presuspension-acute/commit/ef7867e8c0fb5525855c00505f87a91281af7d97"
+      }
+    ]
+  }
+]

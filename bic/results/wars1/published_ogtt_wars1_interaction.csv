@@ -1,0 +1,2 @@
+olink_id,gene,interaction_p,interaction_q,authors_interaction_threshold,passes_005,n_initial_participants,source_sheet,source_excel_row
+OID21084,WARS,0.000543445282254704,0.086226912769006,0.2,False,11,ESM Table 15,11

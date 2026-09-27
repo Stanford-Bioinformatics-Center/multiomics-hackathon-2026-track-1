@@ -1,5 +1,8 @@
 ## Contents
 
+- `wars1_differential_analysis.ipynb`: detailed WARS1 exercise responses, within-arm and direct-mode checks, molecular forms, diabetes/vascular evidence, and published genetic-table integration. See `results/wars1/FINDINGS.md` for the interpretation.
+- `exerkine_candidate_screen.ipynb`: executed assay-wide screen beyond CCN1, with all 15 tissue-supported genes, temporal checks, published-candidate overlap, and CD300LG/ANGPT2/WARS1 follow-up hypotheses.
+- `results/exerkine_screen/FINDINGS.md`: readable findings; accompanying CSVs retain full evidence pairs, nonsignificant focal results, BH audits, and provenance.
 - `ccn1_differential_analysis.ipynb`: CCN1 biology, diabetes relevance, and analysis with saved outputs. (Based on fractalkine_differential_analysis.ipynb, wholly ai generated...)
 - `fractalkine_differential_analysis.ipynb`: CX3CL1 analysis, with saved outputs.
 - `summary.md`: summary of the prior exploration, including all 28 Table 3 candidates.

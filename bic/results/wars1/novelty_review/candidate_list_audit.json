@@ -1,0 +1,32 @@
+[
+  {
+    "source": "original_preprint_table_s8",
+    "local_file": "results/exerkine_screen/reference_data/table_s8.xlsx",
+    "sheet": "Exerkine_Candidate_List",
+    "rows": 582,
+    "unique_genes": 168,
+    "wars1_rows": 0,
+    "all_sheet_alias_match_counts": {
+      "Legend": 0,
+      "Exerkine_Candidate_List": 0
+    },
+    "md5": "beaf62ed40e4618b6655078fef49d310"
+  },
+  {
+    "source": "current_repository_table_7",
+    "local_file": "results/wars1/novelty_review/reference_data/current_table7.xlsx",
+    "sheet": "Exerkine_Candidate_List",
+    "rows": 341,
+    "unique_genes": 115,
+    "wars1_rows": 2,
+    "all_sheet_alias_match_counts": {
+      "Legend": 0,
+      "Exerkine_Candidate_List": 2
+    },
+    "md5": "9d7ae53c582c5538c769d44700f7de45"
+  },
+  {
+    "source": "current_repository_figure7",
+    "wars1_label_in_pdf_text": true
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "source_BH_families_validated": 58,
+  "source_feature_contrasts_validated": 713660,
+  "max_BH_difference": 4.44089209850063e-15,
+  "plasma_assay_features": 1417,
+  "plasma_primary_tests": 14170,
+  "plasma_features_unmapped_or_ambiguous": 3,
+  "primary_plasma_up_genes": 142,
+  "primary_same_mode_genes": 15,
+  "primary_explicit_secreted_location_genes": 3,
+  "primary_any_tissue_at_or_before_plasma": 0,
+  "exploratory_010_plasma_up_genes": 247,
+  "exploratory_010_same_mode_genes": 38,
+  "pooled_BH_positive_plasma_genes": 97,
+  "uniprot_accessions_annotated": 248,
+  "published_table_s8_genes": 168,
+  "primary_genes_in_published_table_s8": 14,
+  "primary_genes_absent_published_table_s8": [
+    "WARS1"
+  ],
+  "benchmarks_reproduced": {
+    "CCN1": 10,
+    "CX3CL1": 10
+  }
+}

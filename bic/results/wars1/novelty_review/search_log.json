@@ -1,0 +1,19 @@
+{
+  "review_date": "2026-09-27",
+  "review_type": "Targeted scoping review and repository novelty audit",
+  "pubmed_queries": {
+    "pubmed_exercise": "(WARS1[All Fields] OR WARS[All Fields] OR \"tryptophanyl-tRNA synthetase\"[All Fields] OR \"tryptophanyl-tRNA synthase\"[All Fields] OR \"tryptophan-tRNA ligase\"[All Fields] OR TrpRS[All Fields] OR \"mini-WARS\"[All Fields]) AND (exercise[All Fields] OR training[All Fields] OR contraction[All Fields] OR myokine[All Fields] OR exerkine[All Fields] OR \"electrical pulse stimulation\"[All Fields])",
+    "pubmed_exerkine": "(WARS1[All Fields] OR \"tryptophanyl-tRNA synthetase\"[All Fields] OR \"tryptophan-tRNA ligase\"[All Fields] OR TrpRS[All Fields] OR \"mini-WARS\"[All Fields]) AND (exerkine[All Fields] OR myokine[All Fields])",
+    "pubmed_refined": "(\"WARS1\"[Title/Abstract] OR \"tryptophanyl\"[Title/Abstract] OR \"tryptophan-tRNA ligase\"[Title/Abstract] OR \"TrpRS\"[Title/Abstract] OR (\"WARS\"[Title/Abstract] AND (\"protein\"[Title/Abstract] OR \"synthetase\"[Title/Abstract]))) AND (\"exercise\"[Title/Abstract] OR \"training\"[Title/Abstract] OR \"contraction\"[Title/Abstract] OR \"myokine\"[Title/Abstract] OR \"exerkine\"[Title/Abstract] OR \"electrical pulse stimulation\"[Title/Abstract]) AND (\"1900/01/01\"[Date - Publication] : \"2026/09/27\"[Date - Publication])"
+  },
+  "screening_notes": {
+    "pubmed_exercise": "5022 broad-query hits; not exhaustively screened; substantial alias ambiguity.",
+    "pubmed_exerkine": "0 results; absence of indexed terms is not evidence of novelty.",
+    "pubmed_refined": "10 retrieved records; all screened. See pubmed_screening.csv."
+  },
+  "additional_web_queries_documented": [
+    "\"EXERCISE-MODULATED EXTRACELLULAR VESICLES\" WARS1",
+    "\"WRS\" \"exerkine\" WARS"
+  ],
+  "limitations": "Additional adaptive web/full-text searches were used; this is not a complete log of all search-engine result sets or a PRISMA systematic review. No claim of first publication is made."
+}

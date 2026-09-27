@@ -1,0 +1,249 @@
+uniprot,uniprot_gene,entry_type,annotation_date,locations,location_has_secreted,location_has_membrane,signal_peptide,uniprot_url
+O00622,CCN1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O00622/entry
+O15232,MATN3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O15232/entry
+O15389,SIGLEC5,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/O15389/entry
+O43827,ANGPTL7,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O43827/entry
+O75594,PGLYRP1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasmic granule; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O75594/entry
+O95466,FMNL1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, bleb; Cytoplasm; Cytoplasm, cell cortex; Cytoplasmic vesicle, phagosome",False,True,False,https://www.uniprot.org/uniprotkb/O95466/entry
+O95544,NADK,UniProtKB reviewed (Swiss-Prot),2026-09-02,,False,False,False,https://www.uniprot.org/uniprotkb/O95544/entry
+O15455,TLR3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Early endosome; Endoplasmic reticulum membrane; Endosome membrane,False,True,True,https://www.uniprot.org/uniprotkb/O15455/entry
+O15467,CCL16,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O15467/entry
+O60911,CTSV,UniProtKB reviewed (Swiss-Prot),2026-09-02,Lysosome,False,False,True,https://www.uniprot.org/uniprotkb/O60911/entry
+O76070,SNCG,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cytoskeleton, microtubule organizing center, centrosome; Cytoplasm, cytoskeleton, spindle; Cytoplasm, perinuclear region",False,False,False,https://www.uniprot.org/uniprotkb/O76070/entry
+O95971,CD160,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/O95971/entry
+O00339,MATN2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O00339/entry
+O00584,RNASET2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Endoplasmic reticulum lumen; Lysosome lumen; Mitochondrion intermembrane space; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/O00584/entry
+O15123,ANGPT2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O15123/entry
+O43927,CXCL13,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O43927/entry
+O60243,HS6ST1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,False,https://www.uniprot.org/uniprotkb/O60243/entry
+O00253,AGRP,UniProtKB reviewed (Swiss-Prot),2026-09-02,Golgi apparatus lumen; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O00253/entry
+O14798,TNFRSF10C,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/O14798/entry
+O43505,B4GAT1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Golgi apparatus membrane,False,True,False,https://www.uniprot.org/uniprotkb/O43505/entry
+O43699,SIGLEC6,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/O43699/entry
+O60240,PLIN1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Endoplasmic reticulum; Lipid droplet,False,False,False,https://www.uniprot.org/uniprotkb/O60240/entry
+O76061,STC2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O76061/entry
+O14558,HSPB6,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus; Secreted,True,False,False,https://www.uniprot.org/uniprotkb/O14558/entry
+O15496,PLA2G10,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasmic vesicle, secretory vesicle, acrosome; Lysosome; Secreted",True,False,True,https://www.uniprot.org/uniprotkb/O15496/entry
+O43278,SPINT1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cytoplasm; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/O43278/entry
+O43915,VEGFD,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O43915/entry
+P00797,REN,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P00797/entry
+P01137,TGFB1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted; Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/P01137/entry
+O60462,NRP2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/O60462/entry
+O75054,IGSF3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/O75054/entry
+O95727,CRTAM,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/O95727/entry
+P00750,PLAT,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space",True,False,True,https://www.uniprot.org/uniprotkb/P00750/entry
+O15394,NCAM2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/O15394/entry
+P00749,PLAU,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P00749/entry
+O00292,LEFTY2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O00292/entry
+O95498,VNN2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/O95498/entry
+O60828,PQBP1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasmic granule; Nucleus; Nucleus speckle,False,False,False,https://www.uniprot.org/uniprotkb/O60828/entry
+O95388,CCN4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/O95388/entry
+B1AKI9,ISM1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/B1AKI9/entry
+P02745,C1QA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell surface; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P02745/entry
+P06734,FCER2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,False,https://www.uniprot.org/uniprotkb/P06734/entry
+P06756,ITGAV,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction, focal adhesion; Cell membrane",False,True,True,https://www.uniprot.org/uniprotkb/P06756/entry
+P09758,TACSTD2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/P09758/entry
+P09769,FGR,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, ruffle membrane; Cytoplasm, cytoskeleton; Cytoplasm, cytosol; Mitochondrion inner membrane; Mitochondrion intermembrane space",False,True,False,https://www.uniprot.org/uniprotkb/P09769/entry
+P13686,ACP5,UniProtKB reviewed (Swiss-Prot),2026-09-02,Lysosome; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P13686/entry
+P15090,FABP4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/P15090/entry
+P05164,MPO,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Chromosome; Cytolytic granule; Cytoplasmic vesicle, phagosome; Lysosome; Nucleus; Secreted",True,False,True,https://www.uniprot.org/uniprotkb/P05164/entry
+P08254,MMP3,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm; Nucleus; Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/P08254/entry
+P14778,IL1R1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P14778/entry
+P15289,ARSA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Endoplasmic reticulum; Lysosome,False,False,True,https://www.uniprot.org/uniprotkb/P15289/entry
+P08473,MME,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/P08473/entry
+P10144,GZMB,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytolytic granule; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P10144/entry
+P12544,GZMA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasmic granule; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P12544/entry
+P12724,RNASE3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P12724/entry
+P13725,OSM,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P13725/entry
+P14780,MMP9,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/P14780/entry
+P01589,IL2RA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/P01589/entry
+P02760,AMBP,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cytoplasm, cytosol; Endoplasmic reticulum; Mitochondrion inner membrane; Nucleus membrane; Secreted; Secreted, extracellular space, extracellular matrix",True,True,True,https://www.uniprot.org/uniprotkb/P02760/entry
+P04066,FUCA1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Lysosome,False,False,True,https://www.uniprot.org/uniprotkb/P04066/entry
+P06127,CD5,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P06127/entry
+P06748,NPM1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cytoskeleton, microtubule organizing center, centrosome; Nucleus, nucleolus; Nucleus, nucleoplasm",False,False,False,https://www.uniprot.org/uniprotkb/P06748/entry
+P07949,RET,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Endosome membrane,False,True,True,https://www.uniprot.org/uniprotkb/P07949/entry
+P13726,F3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P13726/entry
+P15311,EZR,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Apical cell membrane; Cell projection; Cell projection, microvillus; Cell projection, microvillus membrane; Cell projection, ruffle membrane; Cytoplasm, cell cortex; Cytoplasm, cytoskeleton",False,True,False,https://www.uniprot.org/uniprotkb/P15311/entry
+P01303,NPY,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasmic vesicle, secretory vesicle, neuronal dense core vesicle; Secreted",True,False,True,https://www.uniprot.org/uniprotkb/P01303/entry
+P02144,MB,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, sarcoplasm",False,False,False,https://www.uniprot.org/uniprotkb/P02144/entry
+P11215,ITGAM,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Membrane raft,False,True,True,https://www.uniprot.org/uniprotkb/P11215/entry
+P11717,IGF2R,UniProtKB reviewed (Swiss-Prot),2026-09-02,Endosome membrane; Golgi apparatus membrane,False,True,True,https://www.uniprot.org/uniprotkb/P11717/entry
+P16871,IL7R,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P16871/entry
+P01732,CD8A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P01732/entry
+P09619,PDGFRB,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cytoplasmic vesicle; Lysosome lumen,False,True,True,https://www.uniprot.org/uniprotkb/P09619/entry
+P14209,CD99,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/P14209/entry
+P15907,ST6GAL1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Golgi apparatus, Golgi stack membrane; Secreted",True,True,False,https://www.uniprot.org/uniprotkb/P15907/entry
+P01258,CALCA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P01258/entry
+P14210,HGF,UniProtKB reviewed (Swiss-Prot),2026-09-02,,False,False,True,https://www.uniprot.org/uniprotkb/P14210/entry
+P01241,GH1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P01241/entry
+P09093,CELA3A,UniProtKB reviewed (Swiss-Prot),2026-09-02,,False,False,True,https://www.uniprot.org/uniprotkb/P09093/entry
+P17538,CTRB1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space",True,False,True,https://www.uniprot.org/uniprotkb/P17538/entry
+P16562,CRISP2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P16562/entry
+P21757,MSR1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/P21757/entry
+P27695,APEX1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm; Endoplasmic reticulum; Mitochondrion; Nucleus; Nucleus speckle; Nucleus, nucleolus",False,False,False,https://www.uniprot.org/uniprotkb/P27695/entry
+P31949,S100A11,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/P31949/entry
+P32942,ICAM3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P32942/entry
+P32970,CD70,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/P32970/entry
+P37023,ACVRL1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P37023/entry
+P19878,NCF2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm,False,False,False,https://www.uniprot.org/uniprotkb/P19878/entry
+P20160,AZU1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasmic granule membrane,False,True,True,https://www.uniprot.org/uniprotkb/P20160/entry
+P35475,IDUA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Lysosome,False,False,True,https://www.uniprot.org/uniprotkb/P35475/entry
+P35625,TIMP3,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/P35625/entry
+P39060,COL18A1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted; Secreted, extracellular space, extracellular matrix; Secreted, extracellular space, extracellular matrix, basement membrane",True,True,True,https://www.uniprot.org/uniprotkb/P39060/entry
+P18065,IGFBP2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P18065/entry
+P22079,LPO,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P22079/entry
+P23141,CES1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Endoplasmic reticulum lumen; Lipid droplet,False,False,True,https://www.uniprot.org/uniprotkb/P23141/entry
+P29474,NOS3,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cytoplasm, cytoskeleton; Golgi apparatus; Membrane, caveola",False,True,False,https://www.uniprot.org/uniprotkb/P29474/entry
+P30203,CD6,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P30203/entry
+P31997,CEACAM8,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cell surface,False,True,True,https://www.uniprot.org/uniprotkb/P31997/entry
+P33241,LSP1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/P33241/entry
+P35052,GPC1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Endosome; Secreted, extracellular space",True,True,True,https://www.uniprot.org/uniprotkb/P35052/entry
+P20062,TCN2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P20062/entry
+P22748,CA4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P22748/entry
+P24158,PRTN3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cytoplasmic granule; Membrane raft; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P24158/entry
+P26010,ITGB7,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P26010/entry
+P18428,LBP,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasmic granule membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P18428/entry
+P20333,TNFRSF1B,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P20333/entry
+P20718,GZMH,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytolytic granule,False,False,True,https://www.uniprot.org/uniprotkb/P20718/entry
+P22894,MMP8,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasmic granule; Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/P22894/entry
+P23381,WARS1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm,False,False,False,https://www.uniprot.org/uniprotkb/P23381/entry
+P24071,FCAR,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P24071/entry
+P31146,CORO1A,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cell cortex; Cytoplasm, cytoskeleton; Cytoplasmic vesicle, phagosome membrane",False,True,False,https://www.uniprot.org/uniprotkb/P31146/entry
+P32926,DSG3,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction; Cell junction, desmosome; Cell junction, tight junction; Cell membrane; Cytoplasm",False,True,True,https://www.uniprot.org/uniprotkb/P32926/entry
+P35442,THBS2,UniProtKB reviewed (Swiss-Prot),2026-09-02,,False,False,True,https://www.uniprot.org/uniprotkb/P35442/entry
+P22105,TNXB,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/P22105/entry
+P26440,IVD,UniProtKB reviewed (Swiss-Prot),2026-09-02,Mitochondrion matrix,False,False,False,https://www.uniprot.org/uniprotkb/P26440/entry
+P31994,FCGR2B,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P31994/entry
+P17948,FLT1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cytoplasm; Endosome; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P17948/entry
+P22749,GNLY,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P22749/entry
+P19440,GGT1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/P19440/entry
+P20273,CD22,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P20273/entry
+P19021,PAM,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasmic vesicle, secretory vesicle membrane; Membrane; Secreted",True,True,True,https://www.uniprot.org/uniprotkb/P19021/entry
+P40121,CAPG,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell projection, lamellipodium; Cell projection, ruffle; Cytoplasm; Melanosome; Nucleus",False,False,False,https://www.uniprot.org/uniprotkb/P40121/entry
+P40259,CD79B,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P40259/entry
+P49771,FLT3LG,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P49771/entry
+P50895,BCAM,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/P50895/entry
+P55259,GP2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Apical cell membrane; Cell membrane; Endosome; Membrane raft; Secreted; Zymogen granule membrane,True,True,True,https://www.uniprot.org/uniprotkb/P55259/entry
+P80303,NUCB2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Endoplasmic reticulum; Golgi apparatus; Membrane; Nucleus envelope; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P80303/entry
+P41218,MNDA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/P41218/entry
+P50591,TNFSF10,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,False,https://www.uniprot.org/uniprotkb/P50591/entry
+Q06141,REG3A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q06141/entry
+P50749,RASSF2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Chromosome, centromere, kinetochore; Cytoplasm; Nucleus",False,False,False,https://www.uniprot.org/uniprotkb/P50749/entry
+P61218,POLR2F,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Nucleus; Nucleus, nucleolus",False,False,False,https://www.uniprot.org/uniprotkb/P61218/entry
+P62166,NCS1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cytoplasm; Cytoplasm, perinuclear region; Golgi apparatus; Membrane; Postsynaptic density",False,True,False,https://www.uniprot.org/uniprotkb/P62166/entry
+P80511,S100A12,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cytoplasm; Cytoplasm, cytoskeleton; Secreted",True,True,False,https://www.uniprot.org/uniprotkb/P80511/entry
+Q07954,LRP1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cytoplasm; Cytoplasm, cytoskeleton, microtubule organizing center; Golgi outpost; Membrane, coated pit; Nucleus",False,True,True,https://www.uniprot.org/uniprotkb/Q07954/entry
+Q13361,MFAP5,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/Q13361/entry
+P42768,WAS,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cytoskeleton; Nucleus",False,False,False,https://www.uniprot.org/uniprotkb/P42768/entry
+P56159,GFRA1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Endosome; Endosome, multivesicular body; Golgi apparatus, trans-Golgi network",False,True,True,https://www.uniprot.org/uniprotkb/P56159/entry
+P78423,CX3CL1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/P78423/entry
+P98073,TMPRSS15,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,False,https://www.uniprot.org/uniprotkb/P98073/entry
+Q01638,IL1RL1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q01638/entry
+Q12846,STX4,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, neuron projection; Cell projection, stereocilium; Cytoplasm, perinuclear region",False,True,False,https://www.uniprot.org/uniprotkb/Q12846/entry
+P40933,IL15,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P40933/entry
+P43234,CTSO,UniProtKB reviewed (Swiss-Prot),2026-09-02,Lysosome,False,False,True,https://www.uniprot.org/uniprotkb/P43234/entry
+P52823,STC1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P52823/entry
+P55773,CCL23,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P55773/entry
+P56279,TCL1A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Endoplasmic reticulum; Microsome; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/P56279/entry
+Q02487,DSC2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction, desmosome; Cell membrane",False,True,True,https://www.uniprot.org/uniprotkb/Q02487/entry
+Q08629,SPOCK1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/Q08629/entry
+P48960,ADGRE5,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Secreted, extracellular space",True,True,True,https://www.uniprot.org/uniprotkb/P48960/entry
+Q02083,NAAA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Lysosome; Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q02083/entry
+Q03405,PLAUR,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, invadopodium membrane; Secreted",True,True,True,https://www.uniprot.org/uniprotkb/Q03405/entry
+P48740,MASP1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell surface; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P48740/entry
+P78380,OLR1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Membrane raft; Secreted,True,True,False,https://www.uniprot.org/uniprotkb/P78380/entry
+P49023,PXN,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction, focal adhesion; Cytoplasm, cell cortex; Cytoplasm, cytoskeleton",False,False,False,https://www.uniprot.org/uniprotkb/P49023/entry
+P50452,SERPINB8,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm,False,False,False,https://www.uniprot.org/uniprotkb/P50452/entry
+P78325,ADAM8,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/P78325/entry
+P39905,GDNF,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P39905/entry
+P63313,TMSB10,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cytoskeleton",False,False,False,https://www.uniprot.org/uniprotkb/P63313/entry
+P55103,INHBC,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/P55103/entry
+P52943,CRIP2,UniProtKB reviewed (Swiss-Prot),2026-09-02,,False,False,False,https://www.uniprot.org/uniprotkb/P52943/entry
+Q14739,LBR,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Endoplasmic reticulum membrane; Nucleus; Nucleus inner membrane,False,True,False,https://www.uniprot.org/uniprotkb/Q14739/entry
+Q15818,NPTX1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasmic vesicle, secretory vesicle; Endoplasmic reticulum; Secreted",True,False,True,https://www.uniprot.org/uniprotkb/Q15818/entry
+Q8IWV2,CNTN4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q8IWV2/entry
+Q8NHL6,LILRB1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q8NHL6/entry
+Q14213,EBI3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q14213/entry
+Q16719,KYNU,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cytosol",False,False,False,https://www.uniprot.org/uniprotkb/Q16719/entry
+Q53H47,SETMAR,UniProtKB reviewed (Swiss-Prot),2026-09-02,Chromosome; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/Q53H47/entry
+Q8N149,LILRA2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q8N149/entry
+Q8NFP4,MDGA1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q8NFP4/entry
+Q13478,IL18R1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q13478/entry
+Q14126,DSG2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction, desmosome; Cell membrane; Cytoplasm; Secreted",True,True,True,https://www.uniprot.org/uniprotkb/Q14126/entry
+Q15116,PDCD1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q15116/entry
+Q2MKA7,RSPO1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Nucleus; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q2MKA7/entry
+Q496F6,CD300E,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q496F6/entry
+Q5VY43,PEAR1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, lamellipodium",False,True,True,https://www.uniprot.org/uniprotkb/Q5VY43/entry
+Q6UXG3,CD300LG,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Apical cell membrane; Basolateral cell membrane; Endosome, multivesicular body membrane",False,True,True,https://www.uniprot.org/uniprotkb/Q6UXG3/entry
+Q86T13,CLEC14A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q86T13/entry
+Q8TDQ0,HAVCR2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell junction; Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q8TDQ0/entry
+Q14773,ICAM4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q14773/entry
+Q16769,QPCT,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q16769/entry
+Q8TCT1,PHOSPHO1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Extracellular vesicle,False,False,False,https://www.uniprot.org/uniprotkb/Q8TCT1/entry
+Q14162,SCARF1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q14162/entry
+Q14767,LTBP2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/Q14767/entry
+Q16663,CCL15,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q16663/entry
+Q6EIG7,CLEC6A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/Q6EIG7/entry
+Q6UXB2,CXCL17,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q6UXB2/entry
+Q6UXB4,CLEC4G,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,False,https://www.uniprot.org/uniprotkb/Q6UXB4/entry
+Q7Z5R6,APBB1IP,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction, focal adhesion; Cell membrane; Cell projection, lamellipodium; Cytoplasm, cytoskeleton",False,True,False,https://www.uniprot.org/uniprotkb/Q7Z5R6/entry
+Q86WV1,SKAP1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cytoplasm; Nucleus,False,True,False,https://www.uniprot.org/uniprotkb/Q86WV1/entry
+Q8N423,LILRB2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q8N423/entry
+Q8N5S9,CAMKK1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/Q8N5S9/entry
+Q6PCB0,VWA1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix, basement membrane",True,True,True,https://www.uniprot.org/uniprotkb/Q6PCB0/entry
+Q13421,MSLN,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Golgi apparatus; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q13421/entry
+Q6YHK3,CD109,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q6YHK3/entry
+Q8TCZ2,CD99L2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell junction; Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q8TCZ2/entry
+Q8TDQ1,CD300LF,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q8TDQ1/entry
+Q14005,IL16,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus; Secreted,True,False,False,https://www.uniprot.org/uniprotkb/Q14005/entry
+Q2VWP7,PRTG,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q2VWP7/entry
+Q6UXH9,PAMR1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q6UXH9/entry
+Q76M96,CCDC80,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/Q76M96/entry
+Q92982,NINJ1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted; Synaptic cell membrane,True,True,False,https://www.uniprot.org/uniprotkb/Q92982/entry
+Q9BXY4,RSPO3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q9BXY4/entry
+Q9H4F8,SMOC1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix, basement membrane",True,True,True,https://www.uniprot.org/uniprotkb/Q9H4F8/entry
+Q9NQX5,NPDC1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9NQX5/entry
+Q9UJA9,ENPP5,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q9UJA9/entry
+Q96I15,SCLY,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm, cytosol",False,False,False,https://www.uniprot.org/uniprotkb/Q96I15/entry
+Q9BZZ2,SIGLEC1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q9BZZ2/entry
+Q9H2A7,CXCL16,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q9H2A7/entry
+Q9UM07,PADI4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Cytoplasmic granule; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/Q9UM07/entry
+Q99972,MYOC,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell projection; Cell projection, cilium; Cytoplasmic vesicle; Endoplasmic reticulum; Golgi apparatus; Mitochondrion; Mitochondrion inner membrane; Mitochondrion intermembrane space; Mitochondrion outer membrane; Rough endoplasmic reticulum; Secreted; Secreted, extracellular exosome; Secreted, extracellular space; Secreted, extracellular space, extracellular matrix",True,True,True,https://www.uniprot.org/uniprotkb/Q99972/entry
+Q9H4D0,CLSTN2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell projection, dendrite; Endoplasmic reticulum membrane; Golgi apparatus membrane; Postsynaptic cell membrane",False,True,True,https://www.uniprot.org/uniprotkb/Q9H4D0/entry
+Q9UGT4,SUSD2,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9UGT4/entry
+Q92765,FRZB,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q92765/entry
+Q96D42,HAVCR1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, phagocytic cup; Cytoplasmic vesicle, phagosome",False,True,True,https://www.uniprot.org/uniprotkb/Q96D42/entry
+Q99731,CCL19,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q99731/entry
+Q9BQB4,SOST,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/Q9BQB4/entry
+Q9HAN9,NMNAT1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/Q9HAN9/entry
+Q9HBG7,LY9,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9HBG7/entry
+Q9P232,CNTN3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9P232/entry
+Q96JA1,LRIG1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q96JA1/entry
+Q9C005,DPY30,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Golgi apparatus, trans-Golgi network; Nucleus",False,False,False,https://www.uniprot.org/uniprotkb/Q9C005/entry
+Q9UHX3,ADGRE2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, ruffle membrane",False,True,True,https://www.uniprot.org/uniprotkb/Q9UHX3/entry
+Q9UKV5,AMFR,UniProtKB reviewed (Swiss-Prot),2026-09-02,Endoplasmic reticulum membrane,False,True,False,https://www.uniprot.org/uniprotkb/Q9UKV5/entry
+Q92752,TNR,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Secreted, extracellular space, extracellular matrix",True,False,True,https://www.uniprot.org/uniprotkb/Q92752/entry
+Q9H156,SLITRK2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell membrane; Cell projection, dendrite; Membrane",False,True,True,https://www.uniprot.org/uniprotkb/Q9H156/entry
+Q9BZW8,CD244,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Membrane; Membrane raft,False,True,True,https://www.uniprot.org/uniprotkb/Q9BZW8/entry
+Q9UKJ1,PILRA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q9UKJ1/entry
+Q9GZT9,EGLN1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Nucleus,False,False,False,https://www.uniprot.org/uniprotkb/Q9GZT9/entry
+Q9NPH3,IL1RAP,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q9NPH3/entry
+Q96AP7,ESAM,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell junction, adherens junction; Cell junction, tight junction; Cell membrane",False,True,True,https://www.uniprot.org/uniprotkb/Q96AP7/entry
+Q9BWV1,BOC,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9BWV1/entry
+Q96F46,IL17RA,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q96F46/entry
+Q9BXN2,CLEC7A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Cytoplasm,False,True,False,https://www.uniprot.org/uniprotkb/Q9BXN2/entry
+Q9H6S3,EPS8L2,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cell projection, stereocilium; Cytoplasm",False,False,False,https://www.uniprot.org/uniprotkb/Q9H6S3/entry
+Q96LA6,FCRL1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q96LA6/entry
+Q96LC7,SIGLEC10,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,True,https://www.uniprot.org/uniprotkb/Q96LC7/entry
+Q9NNX6,CD209,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Membrane raft; Secreted,True,True,False,https://www.uniprot.org/uniprotkb/Q9NNX6/entry
+Q9H3G5,CPVL,UniProtKB reviewed (Swiss-Prot),2026-09-02,,False,False,True,https://www.uniprot.org/uniprotkb/Q9H3G5/entry
+Q9BW30,TPPP3,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Cytoplasm; Cytoplasm, cytoskeleton",False,False,False,https://www.uniprot.org/uniprotkb/Q9BW30/entry
+Q9NTU7,CBLN4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted; Synapse,True,False,True,https://www.uniprot.org/uniprotkb/Q9NTU7/entry
+Q9Y336,SIGLEC9,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9Y336/entry
+Q9Y6D9,MAD1L1,UniProtKB reviewed (Swiss-Prot),2026-09-02,"Chromosome, centromere, kinetochore; Cytoplasm; Cytoplasm, cytoskeleton, microtubule organizing center, centrosome; Cytoplasm, cytoskeleton, spindle; Cytoplasm, cytoskeleton, spindle pole; Nucleus; Nucleus envelope",False,False,False,https://www.uniprot.org/uniprotkb/Q9Y6D9/entry
+Q9Y240,CLEC11A,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cytoplasm; Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q9Y240/entry
+Q9Y5K2,KLK4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q9Y5K2/entry
+Q9UQV4,LAMP3,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell surface; Cytoplasmic vesicle membrane; Early endosome membrane; Lysosome membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9UQV4/entry
+Q9Y5W5,WIF1,UniProtKB reviewed (Swiss-Prot),2026-09-02,Secreted,True,False,True,https://www.uniprot.org/uniprotkb/Q9Y5W5/entry
+Q9Y275,TNFSF13B,UniProtKB reviewed (Swiss-Prot),2026-09-02,Cell membrane; Secreted,True,True,False,https://www.uniprot.org/uniprotkb/Q9Y275/entry
+Q9Y279,VSIG4,UniProtKB reviewed (Swiss-Prot),2026-09-02,Membrane,False,True,True,https://www.uniprot.org/uniprotkb/Q9Y279/entry

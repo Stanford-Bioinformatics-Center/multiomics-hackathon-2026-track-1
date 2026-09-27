@@ -1,0 +1,7 @@
+"source_object","full_model"
+"BLOOD_PROT_OL_DA","~ 0 + group_timepoint +  BMI + calculatedAge + Sex + (1 | pid)"
+"BLOOD_TRNSCRPT_DA","~ 0 + group_timepoint +  Batch + BMI + calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid)"
+"MUSCLE_TRNSCRPT_DA","~ 0 + group_timepoint +  Batch + BMI + calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid)"
+"ADIPOSE_TRNSCRPT_DA","~ 0 + group_timepoint +  Batch + BMI + calculatedAge + codedsiteid + pct_umi_dup + RIN + Sex + (1 | pid)"
+"MUSCLE_PROT_PR_DA","~ 0 + group_timepoint +  BMI + calculatedAge + Sex + (1 | pid)"
+"ADIPOSE_PROT_PR_DA","~ 0 + group_timepoint +  BMI + calculatedAge + Sex + (1 | pid)"

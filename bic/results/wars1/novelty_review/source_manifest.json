@@ -1,0 +1,145 @@
+{
+  "review_date": "2026-09-27",
+  "motrpac_figure_repository_commit": "ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf",
+  "reference_files": [
+    {
+      "file": "reference_data/aas_2023.html",
+      "sha256": "aa445ef75532f548265ec56c8522c003450d0800b7ed569e1e112ae9eddc818d",
+      "bytes": 1256330,
+      "source_url": "https://www.frontiersin.org/journals/physiology/articles/10.3389/fphys.2023.1143966/full",
+      "note": "Sanitized 2026-09-27: redacted one Google Maps API key embedded in the publisher website configuration. Original download checksum retained for provenance; article content unchanged.",
+      "original_download_sha256": "44e50b06cdedcc60c3c4d1497f12f8f3312c773f90be2b3622c876a96afab4ff",
+      "original_download_bytes": 1256335
+    },
+    {
+      "file": "reference_data/current_blood_secreted.xlsx",
+      "sha256": "b9a2536dc666e3c961359c3b726ff9958af16d7703c2d50e860777b5ab724e00",
+      "bytes": 144262,
+      "source_url": "https://raw.githubusercontent.com/MoTrPAC/motrpac-human-presuspension-acute/ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf/figures/blood/final_output_files/Secreted_proteins_summary.xlsx",
+      "note": "Ancillary older blood analysis; not used to override current landscape table"
+    },
+    {
+      "file": "reference_data/current_fig7.R",
+      "sha256": "4c8aa5e2450c3ae891bddf42337ffdf06f09cbf59f1243f66544c230b7e50aaf",
+      "bytes": 7543,
+      "source_url": "https://raw.githubusercontent.com/MoTrPAC/motrpac-human-presuspension-acute/ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf/figures/landscape/figure_7/FIG7.R",
+      "note": ""
+    },
+    {
+      "file": "reference_data/current_fig7.pdf",
+      "sha256": "197b23684715997887427c0f83930755866b60b6d31829a802868dedfa146792",
+      "bytes": 279846,
+      "source_url": "https://raw.githubusercontent.com/MoTrPAC/motrpac-human-presuspension-acute/ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf/figures/landscape/assembled/Figure7_Secretome.pdf",
+      "note": ""
+    },
+    {
+      "file": "reference_data/current_fig7.txt",
+      "sha256": "cbd1c2139ebc1e33609c8a362eede130744b6d6759944ba0fd520cd3e4288495",
+      "bytes": 1776,
+      "source_url": null,
+      "note": "Derived text from current_fig7.pdf"
+    },
+    {
+      "file": "reference_data/current_fig7_helpers.R",
+      "sha256": "e6d6c4fd4f446b2978bbe0e0f3c3aa7997d52f16e23b010bcf49f738e66bc37b",
+      "bytes": 20796,
+      "source_url": "https://raw.githubusercontent.com/MoTrPAC/motrpac-human-presuspension-acute/ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf/figures/landscape/figure_7/FIG7_ED9_helpers.R",
+      "note": ""
+    },
+    {
+      "file": "reference_data/current_table7.xlsx",
+      "sha256": "a1135a5675324294b977826edaa8dec2512137e20000e96bebcd942cdc2f7927",
+      "bytes": 21137,
+      "source_url": "https://raw.githubusercontent.com/MoTrPAC/motrpac-human-presuspension-acute/ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf/figures/landscape/assembled/Landscape_Supplementary_Table_7.xlsx",
+      "note": ""
+    },
+    {
+      "file": "reference_data/current_table7_history.json",
+      "sha256": "7d3eaa774ff24c2013d1449388c328d663a0e870b7bf642da60d85da860b1a21",
+      "bytes": 6169,
+      "source_url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/commits?path=figures%2Flandscape%2Fassembled%2FLandscape_Supplementary_Table_7.xlsx&per_page=5",
+      "note": ""
+    },
+    {
+      "file": "reference_data/motrpac_acute_tree.json",
+      "sha256": "a5470dcbf1ff196154d6336895cc3c38c96a78ec4e1dbd0beca7eef9abdff7fe",
+      "bytes": 164106,
+      "source_url": "https://api.github.com/repos/MoTrPAC/motrpac-human-presuspension-acute/git/trees/ed8d37fd2c9805b47919ec7d38e0aae27aa22ccf?recursive=1",
+      "note": ""
+    },
+    {
+      "file": "reference_data/nurbekov_2015.html",
+      "sha256": "71f949569503e1c07e820b85dd5d1243cea5d145443f5c1690e348584316006d",
+      "bytes": 78808,
+      "source_url": "https://genescells.ru/2313-1829/article/view/120500",
+      "note": ""
+    },
+    {
+      "file": "reference_data/nurbekov_crossref.json",
+      "sha256": "2d02495792ff68fce7a56a5025c43be5d26942534756115d7b185a3b59c1a8e8",
+      "bytes": 10977,
+      "source_url": "https://api.crossref.org/works/10.23868/gc120500",
+      "note": ""
+    },
+    {
+      "file": "reference_data/pubmed_exercise.json",
+      "sha256": "064a4c8cb9317d694aeb4206dfc934a41eaff5eefab6333020bd9727f212f213",
+      "bytes": 4558,
+      "source_url": null,
+      "note": "See search_log.json for Entrez query; API results retained"
+    },
+    {
+      "file": "reference_data/pubmed_exerkine.json",
+      "sha256": "a3284db8d4f2f052587ebbe4d323897194d66c188d59e2c873efd1199c357800",
+      "bytes": 976,
+      "source_url": null,
+      "note": "See search_log.json for Entrez query; API results retained"
+    },
+    {
+      "file": "reference_data/pubmed_refined.json",
+      "sha256": "15fd40ed911bc03e06efb4b2666fc3e5f95d79639583c2e064ff560ed2e45a1c",
+      "bytes": 766,
+      "source_url": null,
+      "note": "See search_log.json for Entrez query; API results retained"
+    },
+    {
+      "file": "reference_data/pubmed_refined_records.xml",
+      "sha256": "369c871c2de2c0bb211dc078f8efabcebd031937ccaf296becf0424f0a3c0fcc",
+      "bytes": 106329,
+      "source_url": null,
+      "note": "See search_log.json for Entrez query; API results retained"
+    }
+  ],
+  "original_table_s8": {
+    "source": "original_preprint_table_s8",
+    "local_file": "results/exerkine_screen/reference_data/table_s8.xlsx",
+    "sheet": "Exerkine_Candidate_List",
+    "rows": 582,
+    "unique_genes": 168,
+    "wars1_rows": 0,
+    "all_sheet_alias_match_counts": {
+      "Legend": 0,
+      "Exerkine_Candidate_List": 0
+    },
+    "md5": "beaf62ed40e4618b6655078fef49d310"
+  },
+  "additional_primary_sources": [
+    {
+      "doi": "10.1016/j.chest.2025.07.3648",
+      "url": "https://journal.chestnet.org/article/S0012-3692%2825%2904480-0/fulltext",
+      "access": "Publisher abstract accessed through web search; full article HTML not archived."
+    },
+    {
+      "doi": "10.1038/s41467-022-31904-1",
+      "url": "https://www.nature.com/articles/s41467-022-31904-1"
+    },
+    {
+      "doi": "10.1074/jbc.C400431200",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/15579907/"
+    },
+    {
+      "doi": "10.1016/j.celrep.2022.111905",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/36640342/"
+    }
+  ]
+}

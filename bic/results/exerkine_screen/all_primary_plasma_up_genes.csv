@@ -1,0 +1,143 @@
+gene_symbol,min_plasma_q,plasma_modes,n_positive_plasma_tests,uniprot,annotation_available,locations,location_has_secreted,location_has_membrane,signal_peptide,in_cached_atlas,in_published_table_s8,published_COMPARTMENTS_score,passes_same_mode_tissue_rule
+MYOC,6.34428604723311e-08,EE-CON;RE-CON,4,Q99972,True,"Cell projection; Cell projection, cilium; Cytoplasmic vesicle; Endoplasmic reticulum; Golgi apparatus; Mitochondrion; Mitochondrion inner membrane; Mitochondrion intermembrane space; Mitochondrion outer membrane; Rough endoplasmic reticulum; Secreted; Secreted, extracellular exosome; Secreted, extracellular space; Secreted, extracellular space, extracellular matrix",True,True,True,False,False,,False
+NADK,7.37249315018633e-08,EE-CON;RE-CON,5,O95544,True,,False,False,False,False,True,1.605,True
+FLT3LG,9.6709027579139e-08,EE-CON;RE-CON,6,P49771,True,Cell membrane; Secreted,True,True,True,False,True,5.0,False
+CAPG,1.75327327280937e-06,EE-CON;RE-CON,5,P40121,True,"Cell projection, lamellipodium; Cell projection, ruffle; Cytoplasm; Melanosome; Nucleus",False,False,False,False,False,,False
+IL16,1.75327327280937e-06,EE-CON;RE-CON,4,Q14005,True,Cytoplasm; Nucleus; Secreted,True,False,False,False,True,5.0,False
+GH1,2.95035481308173e-06,EE-CON;RE-CON,4,P01241,True,Secreted,True,False,True,False,False,,False
+TLR3,1.12036025748849e-05,EE-CON;RE-CON,3,O15455,True,Early endosome; Endoplasmic reticulum membrane; Endosome membrane,False,True,True,False,False,,False
+ANGPTL7,1.12036025748849e-05,EE-CON,2,O43827,True,Secreted,True,False,True,False,False,,False
+ADGRE2,1.14689773128977e-05,EE-CON,1,Q9UHX3,True,"Cell membrane; Cell projection, ruffle membrane",False,True,True,False,True,2.214,False
+AZU1,1.35618061606519e-05,EE-CON,2,P20160,True,Cytoplasmic granule membrane,False,True,True,False,False,,False
+SERPINB8,1.6035152146285e-05,EE-CON;RE-CON,4,P50452,True,Cytoplasm,False,False,False,False,True,4.265,True
+IDUA,3.70497201876768e-05,EE-CON;RE-CON,3,P35475,True,Lysosome,False,False,True,False,True,4.452,False
+LSP1,4.17406281674209e-05,EE-CON;RE-CON,4,P33241,True,Cell membrane,False,True,False,False,True,4.374,False
+PLAT,7.97954766024637e-05,EE-CON,2,P00750,True,"Secreted, extracellular space",True,False,True,False,True,5.0,False
+CD300LF,8.55329870153806e-05,EE-CON,3,Q8TDQ1,True,Cell membrane,False,True,True,False,True,2.263,False
+PRTN3,0.0001709003898385,EE-CON,2,P24158,True,Cell membrane; Cytoplasmic granule; Membrane raft; Secreted,True,True,True,False,False,,False
+NCF2,0.0002056093220439,EE-CON,3,P19878,True,Cytoplasm,False,False,False,False,True,2.407,False
+ANGPT2,0.0002056093220439,EE-CON,1,O15123,True,Secreted,True,False,True,False,True,5.0,True
+NMNAT1,0.0002056093220439,EE-CON;RE-CON,4,Q9HAN9,True,Nucleus,False,False,False,False,True,1.948,False
+CX3CL1,0.0002274167727112,EE-CON,2,P78423,True,Cell membrane; Secreted,True,True,True,True,True,5.0,True
+FCGR2B,0.0002787990100602,EE-CON,3,P31994,True,Cell membrane,False,True,True,False,True,3.402,False
+SIGLEC6,0.000428165661241,EE-CON,1,O43699,True,Cell membrane; Secreted,True,True,True,False,False,,False
+SLITRK2,0.0005286257838109,EE-CON,1,Q9H156,True,"Cell membrane; Cell projection, dendrite; Membrane",False,True,True,False,False,,False
+MATN3,0.000700790874008,EE-CON,2,O15232,True,Secreted,True,False,True,False,False,,False
+NPY,0.0007685604475749,EE-CON,1,P01303,True,"Cytoplasmic vesicle, secretory vesicle, neuronal dense core vesicle; Secreted",True,False,True,False,False,,False
+IL18R1,0.0008838095722793,EE-CON,1,Q13478,True,Membrane,False,True,True,False,True,3.093,False
+MPO,0.0008838095722793,EE-CON,2,P05164,True,"Chromosome; Cytolytic granule; Cytoplasmic vesicle, phagosome; Lysosome; Nucleus; Secreted",True,False,True,False,True,5.0,False
+RNASE3,0.0008950603598023,EE-CON,1,P12724,True,Secreted,True,False,True,False,False,,False
+S100A11,0.0009423857315846,EE-CON,2,P31949,True,Cytoplasm; Nucleus,False,False,False,False,True,4.515,False
+S100A12,0.0009423857315846,EE-CON,4,P80511,True,"Cell membrane; Cytoplasm; Cytoplasm, cytoskeleton; Secreted",True,True,False,False,True,5.0,False
+MMP3,0.0009607685472345,EE-CON;RE-CON,3,P08254,True,"Cytoplasm; Nucleus; Secreted, extracellular space, extracellular matrix",True,False,True,False,False,,False
+PXN,0.0009765871853609,EE-CON;RE-CON,4,P49023,True,"Cell junction, focal adhesion; Cytoplasm, cell cortex; Cytoplasm, cytoskeleton",False,False,False,False,True,2.601,True
+CCN1,0.0010222848520052,EE-CON;RE-CON,2,O00622,True,Secreted,True,False,True,False,True,5.0,True
+EGLN1,0.0010892768853412,EE-CON;RE-CON,3,Q9GZT9,True,Cytoplasm; Nucleus,False,False,False,False,True,2.348,True
+VNN2,0.0011766702195868,EE-CON,2,O95498,True,Cell membrane,False,True,True,False,True,4.566,False
+PRTG,0.0014092159653764,EE-CON,2,Q2VWP7,True,Membrane,False,True,True,False,False,,False
+CD6,0.0014092159653764,EE-CON,2,P30203,True,Cell membrane; Secreted,True,True,True,False,True,4.252,False
+LRIG1,0.0014092159653764,EE-CON,1,Q96JA1,True,Cell membrane,False,True,True,False,True,4.025,False
+CD300LG,0.0017572647278889,EE-CON,1,Q6UXG3,True,"Apical cell membrane; Basolateral cell membrane; Endosome, multivesicular body membrane",False,True,True,False,True,2.246,True
+WIF1,0.0020394095039724,EE-CON,1,Q9Y5W5,True,Secreted,True,False,True,False,False,,False
+LEFTY2,0.002761023984237,EE-CON,1,O00292,True,Secreted,True,False,True,False,False,,False
+MNDA,0.0028006926441622,EE-CON;RE-CON,2,P41218,True,Cytoplasm; Nucleus,False,False,False,False,True,4.308,False
+IGSF3,0.0028006926441622,EE-CON,1,O75054,True,Membrane,False,True,True,False,True,1.719,False
+GNLY,0.0028979485834499,EE-CON,1,P22749,True,Secreted,True,False,True,False,True,5.0,False
+PLAU,0.0031575310771198,EE-CON,1,P00749,True,Secreted,True,False,True,False,True,5.0,False
+SPOCK1,0.0031575310771198,EE-CON,2,Q08629,True,"Secreted, extracellular space, extracellular matrix",True,False,True,False,True,5.0,False
+CXCL17,0.0031575310771198,EE-CON,1,Q6UXB2,True,Secreted,True,False,True,False,False,,False
+HAVCR1,0.0031575310771198,EE-CON,1,Q96D42,True,"Cell membrane; Cell projection, phagocytic cup; Cytoplasmic vesicle, phagosome",False,True,True,False,False,,False
+FMNL1,0.0032800282218268,EE-CON;RE-CON,3,O95466,True,"Cell membrane; Cell projection, bleb; Cytoplasm; Cytoplasm, cell cortex; Cytoplasmic vesicle, phagosome",False,True,False,False,True,4.278,False
+APBB1IP,0.0034245078054628,EE-CON;RE-CON,3,Q7Z5R6,True,"Cell junction, focal adhesion; Cell membrane; Cell projection, lamellipodium; Cytoplasm, cytoskeleton",False,True,False,False,True,1.673,False
+CD5,0.0040695604245451,EE-CON,1,P06127,True,Cell membrane,False,True,True,False,True,4.033,False
+SIGLEC9,0.0040695604245451,EE-CON,1,Q9Y336,True,Membrane,False,True,True,False,True,3.006,False
+FLT1,0.0040695604245451,EE-CON,1,P17948,True,Cell membrane; Cytoplasm; Endosome; Secreted,True,True,True,False,True,5.0,False
+TCL1A,0.0040695604245451,EE-CON,2,P56279,True,Cytoplasm; Endoplasmic reticulum; Microsome; Nucleus,False,False,False,False,True,2.5,False
+CALCA,0.0044811243511051,EE-CON,1,P01258,True,Secreted,True,False,True,False,False,,False
+ADGRE5,0.0048358679778081,EE-CON,1,P48960,True,"Cell membrane; Secreted, extracellular space",True,True,True,False,True,4.419,False
+NOS3,0.0051602796349029,EE-CON,1,P29474,True,"Cell membrane; Cytoplasm, cytoskeleton; Golgi apparatus; Membrane, caveola",False,True,False,False,True,3.235,False
+ITGB7,0.0051602796349029,EE-CON,1,P26010,True,Cell membrane,False,True,True,False,False,,False
+CRIP2,0.0058008539295714,RE-CON,1,P52943,True,,False,False,False,False,True,1.335,False
+CLEC4G,0.0060770280837016,EE-CON,1,Q6UXB4,True,Cell membrane,False,True,False,False,False,,False
+CD22,0.0061159224015473,EE-CON,1,P20273,True,Cell membrane,False,True,True,False,True,4.656,False
+EBI3,0.0067657418221415,EE-CON,1,Q14213,True,Secreted,True,False,True,False,False,,False
+FABP4,0.0067664322323883,EE-CON;RE-CON,3,P15090,True,Cytoplasm; Nucleus,False,False,False,False,False,,False
+ITGAV,0.0068845800969015,EE-CON,1,P06756,True,"Cell junction, focal adhesion; Cell membrane",False,True,True,False,True,4.58,False
+PLIN1,0.0071436680646307,RE-CON,1,O60240,True,Endoplasmic reticulum; Lipid droplet,False,False,False,False,True,2.491,False
+HGF,0.0080758478604871,EE-CON,1,P14210,True,,False,False,True,False,True,4.796,False
+TACSTD2,0.0080758478604871,EE-CON,1,P09758,True,Membrane,False,True,True,False,False,,False
+MMP8,0.0081277911115016,EE-CON,1,P22894,True,"Cytoplasmic granule; Secreted, extracellular space, extracellular matrix",True,False,True,False,True,5.0,False
+CCL16,0.0084751181103289,EE-CON,1,O15467,True,Secreted,True,False,True,False,False,,False
+TNFSF10,0.0086535678847825,EE-CON,1,P50591,True,Cell membrane; Secreted,True,True,False,False,True,4.726,False
+INHBC,0.0086535678847825,EE-CON,1,P55103,True,Secreted,True,False,True,False,False,,False
+IVD,0.0091653639188153,EE-CON;RE-CON,2,P26440,True,Mitochondrion matrix,False,False,False,False,True,1.007,False
+ACVRL1,0.0093288691307144,EE-CON;RE-CON,3,P37023,True,Cell membrane,False,True,True,False,True,2.873,True
+MSR1,0.0093401569796946,EE-CON,1,P21757,True,Cell membrane,False,True,False,False,True,4.102,False
+APEX1,0.0106438230487395,EE-CON,1,P27695,True,"Cytoplasm; Endoplasmic reticulum; Mitochondrion; Nucleus; Nucleus speckle; Nucleus, nucleolus",False,False,False,False,True,2.253,False
+SKAP1,0.0106438230487395,EE-CON,2,Q86WV1,True,Cell membrane; Cytoplasm; Nucleus,False,True,False,False,True,1.45,False
+GPC1,0.0106438230487395,EE-CON,1,P35052,True,"Cell membrane; Endosome; Secreted, extracellular space",True,True,True,False,False,,False
+CTSV,0.0116492460678854,EE-CON,1,O60911,True,Lysosome,False,False,True,False,False,,False
+NPDC1,0.0122722688088504,RE-CON,1,Q9NQX5,True,Membrane,False,True,True,False,True,1.9,False
+STC1,0.0127788405256883,EE-CON,1,P52823,True,Secreted,True,False,True,False,False,,False
+COL18A1,0.0132964748377063,EE-CON,1,P39060,True,"Secreted; Secreted, extracellular space, extracellular matrix; Secreted, extracellular space, extracellular matrix, basement membrane",True,True,True,False,True,4.739,False
+MFAP5,0.013381653418234,EE-CON,1,Q13361,True,"Secreted, extracellular space, extracellular matrix",True,False,True,False,False,,False
+GFRA1,0.0136342748870458,EE-CON,1,P56159,True,"Cell membrane; Endosome; Endosome, multivesicular body; Golgi apparatus, trans-Golgi network",False,True,True,False,False,,False
+NAAA,0.0139393178926027,EE-CON,2,Q02083,True,Lysosome; Membrane,False,True,True,False,True,4.545,False
+CCN4,0.0157147805348879,EE-CON,1,O95388,True,Secreted,True,False,True,False,False,,False
+PGLYRP1,0.0158241085995751,EE-CON,1,O75594,True,Cytoplasmic granule; Secreted,True,False,True,False,True,4.663,False
+CXCL16,0.0158241085995751,EE-CON,1,Q9H2A7,True,Cell membrane; Secreted,True,True,True,False,True,5.0,False
+TPPP3,0.0165408336416754,RE-CON,1,Q9BW30,True,"Cytoplasm; Cytoplasm, cytoskeleton",False,False,False,False,True,1.294,False
+GZMB,0.0173893447083394,EE-CON,1,P10144,True,Cytolytic granule; Secreted,True,False,True,False,True,4.711,False
+MMP9,0.0197640050994096,EE-CON,1,P14780,True,"Secreted, extracellular space, extracellular matrix",True,False,True,False,True,5.0,False
+OLR1,0.0212272644500168,EE-CON,1,P78380,True,Cell membrane; Membrane raft; Secreted,True,True,False,False,False,,False
+HSPB6,0.0218038702130278,EE-CON,1,O14558,True,Cytoplasm; Nucleus; Secreted,True,False,False,False,False,,False
+LY9,0.0221994365010937,EE-CON,1,Q9HBG7,True,Cell membrane; Membrane,False,True,True,False,True,1.864,False
+IL1R1,0.0221994365010937,EE-CON,1,P14778,True,Cell membrane; Membrane; Secreted,True,True,True,False,True,4.367,False
+SCLY,0.0224079996563765,EE-CON;RE-CON,2,Q96I15,True,"Cytoplasm, cytosol",False,False,False,False,True,1.419,True
+VEGFD,0.0226297872080751,EE-CON,1,O43915,True,Secreted,True,False,True,False,False,,False
+FGR,0.02308378760786,EE-CON;RE-CON,2,P09769,True,"Cell membrane; Cell projection, ruffle membrane; Cytoplasm, cytoskeleton; Cytoplasm, cytosol; Mitochondrion inner membrane; Mitochondrion intermembrane space",False,True,False,False,True,4.422,True
+MME,0.0261819159449104,EE-CON,1,P08473,True,Cell membrane,False,True,False,False,True,4.591,False
+CD109,0.0268984791835439,EE-CON,1,Q6YHK3,True,Cell membrane,False,True,True,False,False,,False
+SPINT1,0.0273857124005173,EE-CON,1,O43278,True,Cell membrane; Cytoplasm; Secreted,True,True,True,False,False,,False
+EPS8L2,0.0279832892100459,EE-CON;RE-CON,2,Q9H6S3,True,"Cell projection, stereocilium; Cytoplasm",False,False,False,False,True,4.217,False
+SIGLEC5,0.0280989271876726,EE-CON,1,O15389,True,Membrane,False,True,True,False,False,,False
+F3,0.0280989271876726,EE-CON,1,P13726,True,Membrane; Secreted,True,True,True,False,True,4.727,False
+CELA3A,0.028150605077996,EE-CON,1,P09093,True,,False,False,True,False,False,,False
+MATN2,0.028150605077996,EE-CON,1,O00339,True,Secreted,True,False,True,False,False,,False
+RASSF2,0.028150605077996,EE-CON,1,P50749,True,"Chromosome, centromere, kinetochore; Cytoplasm; Nucleus",False,False,False,False,True,1.374,False
+MASP1,0.0299265189084911,EE-CON,1,P48740,True,Cell surface; Secreted,True,False,True,False,False,,False
+GZMA,0.0300489528923804,EE-CON,1,P12544,True,Cytoplasmic granule; Secreted,True,False,True,False,True,4.249,False
+MB,0.0301493990369047,EE-CON,1,P02144,True,"Cytoplasm, sarcoplasm",False,False,False,False,False,,False
+CEACAM8,0.0303331690560671,EE-CON,1,P31997,True,Cell membrane; Cell surface,False,True,True,False,True,5.0,True
+WARS1,0.0311630516797181,RE-CON,1,P23381,True,Cytoplasm,False,False,False,False,False,,True
+CD79B,0.031961124319811,EE-CON,1,P40259,True,Cell membrane,False,True,True,False,True,4.604,False
+CD300E,0.0325362653124255,EE-CON,1,Q496F6,True,Cell membrane,False,True,True,False,True,2.307,False
+AMBP,0.0325362653124255,EE-CON,1,P02760,True,"Cell membrane; Cytoplasm, cytosol; Endoplasmic reticulum; Mitochondrion inner membrane; Nucleus membrane; Secreted; Secreted, extracellular space, extracellular matrix",True,True,True,False,False,,False
+LAMP3,0.0325362653124255,EE-CON,1,Q9UQV4,True,Cell surface; Cytoplasmic vesicle membrane; Early endosome membrane; Lysosome membrane,False,True,True,False,False,,False
+KYNU,0.0325362653124255,EE-CON,1,Q16719,True,"Cytoplasm, cytosol",False,False,False,False,True,1.973,False
+CD99L2,0.0325362653124255,EE-CON,1,Q8TCZ2,True,Cell junction; Cell membrane; Secreted,True,True,True,False,False,,False
+RSPO1,0.0350406344431873,EE-CON,1,Q2MKA7,True,Nucleus; Secreted,True,False,True,False,False,,False
+CD209,0.0350406344431873,EE-CON,1,Q9NNX6,True,Cell membrane; Membrane raft; Secreted,True,True,False,False,False,,False
+SETMAR,0.0361684482479065,EE-CON,1,Q53H47,True,Chromosome; Nucleus,False,False,False,False,True,1.545,False
+PHOSPHO1,0.036346453584404,EE-CON,1,Q8TCT1,True,Extracellular vesicle,False,False,False,False,True,4.399,False
+ST6GAL1,0.0363847479698353,EE-CON,1,P15907,True,"Golgi apparatus, Golgi stack membrane; Secreted",True,True,False,False,True,5.0,False
+AGRP,0.0372362772772763,EE-CON,1,O00253,True,Golgi apparatus lumen; Secreted,True,False,True,False,False,,False
+GGT1,0.0374773827965404,EE-CON,1,P19440,True,Cell membrane,False,True,False,False,False,,False
+KLK4,0.0376286181250078,EE-CON,1,Q9Y5K2,True,Secreted,True,False,True,False,False,,False
+NRP2,0.0376286181250078,EE-CON,1,O60462,True,Membrane; Secreted,True,True,True,False,False,,False
+SMOC1,0.0376286181250078,EE-CON,1,Q9H4F8,True,"Secreted, extracellular space, extracellular matrix, basement membrane",True,True,True,False,False,,False
+CORO1A,0.0392459177306716,EE-CON,1,P31146,True,"Cytoplasm, cell cortex; Cytoplasm, cytoskeleton; Cytoplasmic vesicle, phagosome membrane",False,True,False,False,True,4.38,False
+CLEC11A,0.0396044380984693,EE-CON,1,Q9Y240,True,Cytoplasm; Secreted,True,False,True,False,False,,False
+TMSB10,0.0402050596830095,RE-CON,2,P63313,True,"Cytoplasm, cytoskeleton",False,False,False,False,True,1.866,True
+DSG2,0.0411227447531188,EE-CON,1,Q14126,True,"Cell junction, desmosome; Cell membrane; Cytoplasm; Secreted",True,True,True,False,False,,False
+POLR2F,0.0431143027310072,RE-CON,1,P61218,True,"Nucleus; Nucleus, nucleolus",False,False,False,False,True,1.428,False
+NINJ1,0.0436418492318359,EE-CON,1,Q92982,True,Cell membrane; Secreted; Synaptic cell membrane,True,True,False,False,True,3.71,False
+NCS1,0.0437048755000156,EE-CON,1,P62166,True,"Cell membrane; Cytoplasm; Cytoplasm, perinuclear region; Golgi apparatus; Membrane; Postsynaptic density",False,True,False,False,False,,False
+B4GAT1,0.0447395730063612,EE-CON,1,O43505,True,Golgi apparatus membrane,False,True,False,False,True,4.519,False
+GZMH,0.0447395730063612,EE-CON,1,P20718,True,Cytolytic granule,False,False,True,False,True,3.644,False
+CD8A,0.0447395730063612,EE-CON,1,P01732,True,Cell membrane; Secreted,True,True,True,False,False,,False
+LRP1,0.0455771912905146,EE-CON,1,Q07954,True,"Cell membrane; Cytoplasm; Cytoplasm, cytoskeleton, microtubule organizing center; Golgi outpost; Membrane, coated pit; Nucleus",False,True,True,False,True,3.48,False
+ARSA,0.0463413629109067,EE-CON,1,P15289,True,Endoplasmic reticulum; Lysosome,False,False,True,False,True,4.317,False
+THBS2,0.0465462449474956,EE-CON,1,P35442,True,,False,False,True,False,False,,False
+CNTN3,0.048450491968081,EE-CON,1,Q9P232,True,Cell membrane,False,True,True,False,False,,False
+CAMKK1,0.0495801734489838,RE-CON,1,Q8N5S9,True,Cytoplasm; Nucleus,False,False,False,False,True,1.331,True

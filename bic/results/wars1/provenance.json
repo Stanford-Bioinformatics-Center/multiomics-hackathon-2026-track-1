@@ -1,0 +1,62 @@
+{
+  "date": "2026-09-26",
+  "dataset": "human-precovid-sed-adu c2.0",
+  "package_version": "2.0.8",
+  "commit": "535b4044e7417413de471104c619120337602b77",
+  "input_sha256": {
+    "HUMAN_FEATURE_TO_GENE.rda": "e346ebc8d0e2ab6e1f1790fee5b770683d0f9e3d81a6eed8c17eefe774eba7d2",
+    "BLOOD_PROT_OL_DA.rda": "0744e323a0e929ab0e76f32ab2d4392b9afdd623b4196b65514f5ba2dfd6d1e1",
+    "BLOOD_TRNSCRPT_DA.rda": "240a00ecc6e41d5be8aca1322fb557fa253e9a3727b899092b219456e2878f3b",
+    "MUSCLE_TRNSCRPT_DA.rda": "b18c90fa1b2dbc449e30044b2a6801fa0c62e9fe8bee1217429b049690890e33",
+    "ADIPOSE_TRNSCRPT_DA.rda": "e27627bf7954c666f27b2a0bebd0d291db3141776bbb9eaf49ac92d6e23f8f7b",
+    "MUSCLE_PROT_PR_DA.rda": "0e367db6dfb606ca0353881c763aa7302dcc17165382896a4dfcd22526bd65bc",
+    "ADIPOSE_PROT_PR_DA.rda": "726a1f9d7efeb8173c4be15f4af8e8e3b88057cb9ee37eb00fef8e6b29933e54",
+    "MUSCLE_PROT_PH_DA.rda": "d7dc682f0c1f40e4328be39352a11907ca4ea2ef1aeb9dc4a80ab7eb6df6ffba",
+    "ADIPOSE_PROT_PH_DA.rda": "ac7233e74eb423ec4cb58b062ea135aec17a079c43fd916d22635925bfee7795",
+    "BLOOD_METAB_DA.rda": "b9b3fe33b5419d3cf6f18d7470cd791185aa074540982c32209f1e28a814430a",
+    "MUSCLE_METAB_DA.rda": "8dba8b3bb9bbeff026501c82213142c58e01c1a4e9fed7b102112b25c6cd542d",
+    "ADIPOSE_METAB_DA.rda": "650bd8ace338819dd07b700f5381bd6188ab5d801ddc7a6cf77303336695353a",
+    "METABOLOMICS_CVS.rda": "0877ad6784f792e8fcb2ad5d74880ffe441481cb6581a96629a05686a27c9971"
+  },
+  "reference_sha256": {
+    "interval_wars1_genetics_2025.xml": "a01d0b9d5bfdd55061f85e838c5538dbb13acb4c06a32d68dbc9f3e7640fbd8d",
+    "mini_wars_vascular_2022.xml": "5e159f09a0a9ffdc2ae0d9b23a09011bc5aacc1c8eb6b82b2e1cd8727632efa4",
+    "uluvar_2026_esm_tables.xlsx": "f62bdea3485ba074c92ab68b70a2b80fc0900551c9409a85cf1c30db63fb16d2",
+    "uniprot_P23381.json": "51353407a521aa039541417795291812edc761f946c88c9be05eac1b6e3b7996",
+    "wars1_sepsis_2024.xml": "c7cd74f47272add50b55f60007863d7ca7c58fdf27ec954b95024b6333d2fe83",
+    "wars1_trem1_2020.xml": "fc81c33bee62e9aa70abe12473d569a2274f3f2fbe88246fc8d3d50c7f520298"
+  },
+  "source_urls": {
+    "secretion": "https://pubmed.ncbi.nlm.nih.gov/36640342/",
+    "immune": "https://doi.org/10.3390/biom10091283",
+    "mini_wars": "https://doi.org/10.1038/s41467-022-31904-1",
+    "t2_wars": "https://doi.org/10.1074/jbc.C400431200",
+    "insulin": "https://doi.org/10.1007/s00018-023-05082-2",
+    "hypertension": "https://doi.org/10.1038/s41588-025-02096-3",
+    "ogtt_genetics": "https://doi.org/10.1007/s00125-026-06800-8",
+    "ogtt_tables": "https://media.springernature.com/original/springer-static/esm/art%3A10.1007%2Fs00125-026-06800-8/MediaObjects/125_2026_6800_MOESM2_ESM.xlsx",
+    "prior_exercise_transcript": "https://genescells.ru/2313-1829/issue/view/6122",
+    "olink": "https://olink.com/assay/explore/neurology/tryptophan-trna-ligase-cytoplasmic",
+    "uniprot": "https://www.uniprot.org/uniprotkb/P23381/entry",
+    "motrpac": "https://github.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/tree/535b4044e7417413de471104c619120337602b77"
+  },
+  "versions": {
+    "python": "3.9.15",
+    "numpy": "1.26.4",
+    "pandas": "2.2.3"
+  },
+  "counts": {
+    "source_WARS1_contrasts": 180,
+    "primary_WARS1_contrasts": 52,
+    "primary_BH_hits": 3,
+    "BH_families_verified": 159,
+    "background_feature_tests_verified": 2068077,
+    "maximum_BH_difference": 4.88498130835069e-15,
+    "prior_screen_rows_reproduced": 58
+  },
+  "model_fitting": "Source p-values, estimates and CIs; no participant-level refit.",
+  "primary_definition": "contrast_type==exercise_with_controls, not contrast_category alone",
+  "metabolite_limitation": "Source q-values retained; correction not independently reproduced with the two tested groupings. See saved diagnostics.",
+  "genetic_analysis": "Extracted author-reported results; no new GWAS, MR or colocalization. ESM17 G-allele slopes flipped to C; ESM16 original lead-SNP effects preserved.",
+  "selection_limitation": "WARS1 was selected in the preceding assay-wide screen; this is not an independent validation cohort."
+}

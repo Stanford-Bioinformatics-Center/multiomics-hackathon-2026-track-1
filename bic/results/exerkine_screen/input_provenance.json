@@ -1,0 +1,76 @@
+{
+  "analysis_date": "2026-09-26",
+  "dataset": "human-precovid-sed-adu c2.0",
+  "package_version": "2.0.8",
+  "motrpac_commit": "535b4044e7417413de471104c619120337602b77",
+  "input_sha256": {
+    "HUMAN_FEATURE_TO_GENE.rda": "e346ebc8d0e2ab6e1f1790fee5b770683d0f9e3d81a6eed8c17eefe774eba7d2",
+    "BLOOD_PROT_OL_DA.rda": "0744e323a0e929ab0e76f32ab2d4392b9afdd623b4196b65514f5ba2dfd6d1e1",
+    "BLOOD_TRNSCRPT_DA.rda": "240a00ecc6e41d5be8aca1322fb557fa253e9a3727b899092b219456e2878f3b",
+    "MUSCLE_TRNSCRPT_DA.rda": "b18c90fa1b2dbc449e30044b2a6801fa0c62e9fe8bee1217429b049690890e33",
+    "ADIPOSE_TRNSCRPT_DA.rda": "e27627bf7954c666f27b2a0bebd0d291db3141776bbb9eaf49ac92d6e23f8f7b",
+    "MUSCLE_PROT_PR_DA.rda": "0e367db6dfb606ca0353881c763aa7302dcc17165382896a4dfcd22526bd65bc",
+    "ADIPOSE_PROT_PR_DA.rda": "726a1f9d7efeb8173c4be15f4af8e8e3b88057cb9ee37eb00fef8e6b29933e54"
+  },
+  "reference_sha256": {
+    "results/exerkine_screen/reference_data/motrpac_landscape.xml": "815eb3fd57833208baa08a93f64a721fbba9a2493c1610f67e9bde483a69a19c",
+    "results/exerkine_screen/reference_data/table_s8.xlsx": "1576c81dec5593ae7d702a9aa402195d475cd59e84e3f5b87a86aa9e6e9f29b1",
+    "results/exerkine_screen/reference_data/uniprot_1.json": "fb3a3fbb24cab25b4759a7a800040f2a9926e8356e73de4ecd4c7e0fa1515c98",
+    "results/exerkine_screen/reference_data/uniprot_2.json": "9bf2767814a90ccb73ae4a42a65c7e45076ca732640af29857fe7f26d9676ac4",
+    "results/exerkine_screen/reference_data/uniprot_3.json": "dfe6486e9823e587ad8464b1b271f8300a29dff2d1afa78709f4331501470c6b",
+    "results/exerkine_screen/reference_data/uniprot_4.json": "44fabb252cd841fb31b69643c042632ab5437a220fed70d53417bd120174cf3f",
+    "results/exerkine_screen/reference_data/uniprot_5.json": "8f4b018a576f67e7d97f5c8e01561179670ef929570cfbf509c83c8f065a37a4",
+    "results/exerkine_screen/reference_data/uniprot_6.json": "0752620ae0028968d7dcb098b71584ec33d8f6499e82f5bef103fb4a850f6fc5",
+    "results/exerkine_screen/reference_data/uniprot_7.json": "120f853b9bc91f0c27d9232405b930d708bea4264e8067db2d8d4388926c3144",
+    "results/exerkine_screen/reference_data/uniprot_requests.json": "957a2b3f10af0f5db32bbfbd1a2301fdab1f0dc5eff8d4e3b0eec3c69f12ecac"
+  },
+  "source_urls": {
+    "motrpac": "https://github.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis/tree/535b4044e7417413de471104c619120337602b77",
+    "landscape": "https://doi.org/10.64898/2026.02.27.702183",
+    "CD300LG": "https://doi.org/10.7554/eLife.96535.3",
+    "ANGPT2": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5391203/",
+    "WARS1": "https://doi.org/10.1016/j.celrep.2022.111905",
+    "FLT3LG": "https://pmc.ncbi.nlm.nih.gov/articles/PMC9999360/",
+    "ANGPTL7": "https://doi.org/10.1371/journal.pone.0173024",
+    "atlas": "https://exerkineatlas.org/"
+  },
+  "published_candidates_source": "https://www.ebi.ac.uk/europepmc/webservices/rest/PMC13184684/supplementaryFiles",
+  "published_candidates_file": "media-8.xlsx / Exerkine_Candidate_List; original MD5 verified against article XML",
+  "raw_p_values": "Supplied by MoTrPAC; no participant-level model refit.",
+  "BH_family": [
+    "tissue",
+    "assay",
+    "platform",
+    "contrast"
+  ],
+  "primary_rule": "Plasma logFC>0 and source BH<0.05; positive muscle/adipose RNA or total protein source BH<0.05 for same gene and exercise mode, at any sampled time.",
+  "threshold_sensitivity": "Separate exploratory screen at 0.10; not primary discoveries.",
+  "pooled_plasma_sensitivity": "BH over all 14170 primary plasma feature-comparison raw p values; different family from source BH.",
+  "annotation_rule": "UniProt structured location starts with Secreted; membrane/signal peptide flags separate; published nonclassical/membrane release evidence curated separately.",
+  "scope": "Protein exerkines measured by Olink; not metabolites, unmeasured proteins, or tissue-restricted paracrine signals.",
+  "counts": {
+    "source_BH_families_validated": 58,
+    "source_feature_contrasts_validated": 713660,
+    "max_BH_difference": 4.44089209850063e-15,
+    "plasma_assay_features": 1417,
+    "plasma_primary_tests": 14170,
+    "plasma_features_unmapped_or_ambiguous": 3,
+    "primary_plasma_up_genes": 142,
+    "primary_same_mode_genes": 15,
+    "primary_explicit_secreted_location_genes": 3,
+    "primary_any_tissue_at_or_before_plasma": 0,
+    "exploratory_010_plasma_up_genes": 247,
+    "exploratory_010_same_mode_genes": 38,
+    "pooled_BH_positive_plasma_genes": 97,
+    "uniprot_accessions_annotated": 248,
+    "published_table_s8_genes": 168,
+    "primary_genes_in_published_table_s8": 14,
+    "primary_genes_absent_published_table_s8": [
+      "WARS1"
+    ],
+    "benchmarks_reproduced": {
+      "CCN1": 10,
+      "CX3CL1": 10
+    }
+  }
+}
