@@ -45,8 +45,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Sequence
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from exvideo import audio, lyrics, network, render, walk  # noqa: E402
+HERE = Path(__file__).resolve().parent
+# Use the video tools' own environment (network/video/.venv, made by setup.sh) when it exists and this Python lacks
+# faster-whisper (needed to sync the lyrics to the song); re-start this script under it once.
+_VENV = HERE / ".venv" / "bin" / "python"
+try:
+    import faster_whisper  # noqa: F401
+except ImportError:
+    if _VENV.exists() and os.environ.get("EXVIDEO_REEXEC") != "1":
+        os.environ["EXVIDEO_REEXEC"] = "1"; os.execv(str(_VENV), [str(_VENV), str(Path(__file__).resolve()), *sys.argv[1:]])
+sys.path.insert(0, str(HERE))
+from exvideo import align, audio, lyrics, network, render, walk  # noqa: E402
 from exvideo.errors import VideoStageError, WalkError  # noqa: E402
 
 ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
@@ -77,7 +86,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--size", default="1280x720", help="video size WxH (default %(default)s)")
     ap.add_argument("--intro", type=float, help="seconds before the first bar (default: 10%% of the song, max 8)")
     ap.add_argument("--outro", type=float, help="seconds after the last bar (default: 10%% of the song, max 8)")
-    ap.add_argument("--sung-headers", action="store_true", help="the song also sings each section header (e.g. 'I. HYOU1: the lookout'); time a slot for it")
+    ap.add_argument("--sync", choices=("whisper", "even"), default="whisper",
+                    help="whisper (default): listen to the song and start every line when its first word is sung; even: spread the lines evenly")
+    ap.add_argument("--whisper-model", default="small.en", help="faster-whisper model for --sync whisper (default %(default)s; base.en is faster)")
+    ap.add_argument("--sung-headers", action="store_true", help="(--sync even only) the song also sings each section header; time a slot for it")
     ap.add_argument("--no-open", action="store_true", help="do not open Suno / the finished video")
     ap.add_argument("--out", default=os.environ.get("HACK_OUT", str(Path.home() / "Desktop/output/hackathon-2026-track1/network")))
     ap.add_argument("--fig", default=os.environ.get("HACK_FIG", str(Path.home() / "Desktop/output/hackathon")))
@@ -152,8 +164,22 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 print("      waiting for the download ...")
                 song = audio.wait_for_download(Path(args.downloads).expanduser(), since)
         total = audio.duration(song)
-        heads = {n: f"{ROMAN[i]}. {n}: {lyr['personas'].get(n, '')}".rstrip(": ") for i, n in enumerate(path)} if args.sung_headers else None
-        tl = audio.timeline(lyr["bars"], path, total, args.intro, args.outro, heads)
+        heads = {n: f"{ROMAN[i]}. {n}: {lyr['personas'].get(n, '')}".rstrip(": ") for i, n in enumerate(path)}
+        tl = None
+        if args.sync == "whisper":
+            try:
+                print(f"      syncing the lyrics to the song (Whisper {args.whisper_model}; cached after the first run) ...")
+                t = time.time(); words = align.transcribe(song, dest / "transcript.json", args.whisper_model)
+                lines = [ln for n in path for ln in ([{"bar": 0, "node": n, "text": heads[n], "header": True}] + [b for b in lyr["bars"] if b["node"] == n])]
+                timed, rep = align.sync_lines(lines, words, total)
+                (dest / "sync_report.json").write_text(json.dumps(rep, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+                tl = audio.timeline_from_lines(timed, path, total)
+                print(f"      synced in {time.time() - t:.0f} s: {rep['matched_words']} of {rep['lyric_words']} lyric words heard; vocals {tl['intro']:.1f}-{total - tl['outro']:.1f} s"
+                      + (f"; {len(rep['dropped_headers'])} unsung headers left out" if rep["dropped_headers"] else ""))
+            except VideoStageError as err:
+                print(f"      could not sync with Whisper ({err}); spreading the lines evenly instead", file=sys.stderr)
+        if tl is None:
+            tl = audio.timeline(lyr["bars"], path, total, args.intro, args.outro, heads if args.sung_headers else None)
         rec = {"walk": list(path), "seed": seed, "title": lyr["title"], "suno_style": lyr["suno_style"], "personas": lyr["personas"],
                "audio": str(song), **tl, "model": args.model, "backend": args.backend, "created": datetime.now(timezone.utc).isoformat(timespec="seconds")}
         (dest / "lyrics.json").write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

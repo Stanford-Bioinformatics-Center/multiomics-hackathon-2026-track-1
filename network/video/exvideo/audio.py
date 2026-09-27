@@ -52,6 +52,19 @@ def duration(audio: Path) -> float:
     return d
 
 
+def timeline_from_lines(timed: Sequence[Dict[str, Any]], walk: Sequence[str], total: float) -> Dict[str, Any]:
+    """The video timeline from lines that already carry their sung start / end (see align.sync_lines)."""
+    segs = []
+    for n in walk:
+        mine = [b for b in timed if b["node"] == n]
+        if not mine:
+            raise InputError(f"no lyric line of {n} could be placed in the song")
+        segs.append({"node": n, "start": min(b["start"] for b in mine), "end": max(b["end"] for b in mine)})
+    for a, b in zip(segs, segs[1:]):                  # contiguous node segments: the camera moves on when the next node starts
+        a["end"] = b["start"]
+    return {"duration": round(total, 3), "intro": segs[0]["start"], "outro": round(total - segs[-1]["end"], 3), "bars": list(timed), "segments": segs, "sync": "whisper"}
+
+
 def timeline(bars: Sequence[Dict[str, Any]], walk: Sequence[str], total: float, intro: Optional[float] = None, outro: Optional[float] = None,
              headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """Spread the bars evenly over the vocal part of the song: [intro, total - outro].

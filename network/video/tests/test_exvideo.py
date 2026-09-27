@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from exvideo import audio, lyrics, walk  # noqa: E402
+from exvideo import align, audio, lyrics, walk  # noqa: E402
 from exvideo.errors import InputError, ModelError, WalkError  # noqa: E402
 from exvideo.network import Edge, Network  # noqa: E402
 
@@ -104,6 +104,24 @@ class AudioTests(unittest.TestCase):
     def test_clean_path(self) -> None:
         self.assertEqual(audio.clean_path("'/tmp/my song.mp3' "), Path("/tmp/my song.mp3"))
         self.assertEqual(audio.clean_path("/tmp/my\\ song.mp3"), Path("/tmp/my song.mp3"))
+
+
+class AlignTests(unittest.TestCase):
+    def test_normalise(self) -> None:
+        self.assertEqual(align.normalise("Four hours, I'm the ONE"), ["4", "hours", "im", "the", "1"])
+
+    def test_sync_lines(self) -> None:
+        lines = [{"node": "A", "text": "I. A: the lookout", "header": True}, {"node": "A", "text": "four hours after the whistle"},
+                 {"node": "A", "text": "endurance or the iron"}, {"node": "B", "text": "six sugars on my jacket"}]
+        heard = "4 hours after the whistle endurance of the eye and 6 sugars on my jacket".split()
+        words = [{"word": w, "start": 10.0 + i, "end": 10.8 + i} for i, w in enumerate(heard)]   # mishearings on purpose
+        timed, rep = align.sync_lines(lines, words, 40.0)
+        self.assertEqual(rep["dropped_headers"], ["I. A: the lookout"])              # not sung: left out
+        self.assertEqual([t["start"] for t in timed], [10.0, 15.0, 20.0])            # each line starts at its first word ("6" is the 11th heard word)
+        self.assertEqual(timed[0]["end"], timed[1]["start"])
+        tl = audio.timeline_from_lines(timed, ["A", "B"], 40.0)
+        self.assertEqual(tl["intro"], 10.0)
+        self.assertEqual(tl["segments"][0]["end"], tl["segments"][1]["start"])
 
 
 if __name__ == "__main__":

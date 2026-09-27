@@ -18,3 +18,4 @@
 # music video renderer: installed Node packages (npm install in network/video/render)
 network/video/render/node_modules/
 __pycache__/
+network/video/.venv/
