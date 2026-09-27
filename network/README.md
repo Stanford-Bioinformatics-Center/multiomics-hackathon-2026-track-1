@@ -164,7 +164,7 @@ default `~/Desktop/output/hackathon`).
 
 ```bash
 bash network/run_all.sh                     # every step in order, then validation (section 7) and the reproducibility manifest
-bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 99v 99m)
+bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 18d 18c 99v 99m)
 REFRESH_ONLINE=1 bash network/run_all.sh    # also redo the web lookups of step 1c
 ```
 
@@ -197,6 +197,7 @@ Rscript network/17_filter_stats.R             # statistics, modules (CAMERA-PR) 
 Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/17_interactive; Cytoscape files -> $HACK_OUT/17_cytoscape
 Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/18_disease_modules.R          # disease filter vs overlay modules (Amar 2024 disease sets) -> figures 18a / 18b
+Rscript network/18_option_c_graphical_modules.R  # option C: paper-style repfdr modules + direction concordance -> figure 18c
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
 Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
@@ -732,6 +733,37 @@ scores are partly circular (the within-graph permutation mitigates, Chae did not
 tissue-mismatched to our exercise data; direction matches are not evidence of treatment. Full tables:
 `18_module_summary.csv`, `18_approach_comparison.csv`, `reports/18_disease_modules.md`.
 
+**Step 18c — option C: modules and disease links as in Amar et al. 2024 (figure 18c).** Follows the paper's
+methodology (read from its saved graphical-analysis objects, not its code) for module identification and disease
+connection; the network itself (nodes, edges, layout) is unchanged. (1) Selection: muscle features (RNA, protein,
+metabolites; all features, as the paper worked per tissue) with adj. p < 0.05 in any of 6 cells (EE / RE vs
+control × 0.5 / 4 / 24 h; the two arms replace the paper's two sexes, since the human results are sex-adjusted):
+9,069 features. (2) repfdr (Heller & Yekutieli 2014): prior over the 3^6 up / down / null configurations, the most
+probable kept up to 86% of the prior mass (as the paper's 190 / 86%): 52 configurations; each feature assigned its
+maximum-posterior configuration. (3) Graphical node sets (state at one time, e.g. `4h_EE1_RE1`) and edge sets
+(transitions between consecutive times), ≥ 10 features; a module = a set's features on our network nodes, ≥ 5
+nodes: **35 modules, 188 nodes**. (4) Disease connection: per module and arm, direction concordance of its genes
+with each disease set's significant genes, binomial sign test, BH within set; T2D muscle is the only tissue match.
+(5) Network coherence (our addition): internal edges vs 10,000 random same-size node sets.
+
+| | A any disease | At T2D filter | B overlay | B' overlay, strength | **C paper method** |
+|---|---|---|---|---|---|
+| modules / nodes | 13 / 279 | 9 / 116 | 16 / 308 | 12 / 159 | 35 / 188 |
+| disease-blind module definition | no | no | yes | yes | yes |
+| T2D-linked modules (significant) | 0 | 2 | 0 | 1 | 0 (FDR < 0.05) |
+| network-coherent modules | by construction | by construction | by construction | by construction | 0 / 35 |
+
+Findings: no option-C module is T2D-linked at FDR < 0.05, but the strongest are all **discordant** (exercise
+moves the genes against their T2D change): 5 / 5 genes for the sustained-up and resistance-only 24 h sets
+(p 0.062), 8 / 10 for genes up after both arms at 4 h (p 0.11); across all exercise-responsive network proteins
+that are T2D-significant, only 29% (endurance, 7 / 24) and 38% (resistance, 10 / 26) move in the T2D direction.
+The only FDR-significant links are to liver cirrhosis (tissue-mismatched): genes up 4 h after either arm are up in
+cirrhosis (21 / 22), probably a shared acute stress / injury response. Response-pattern modules are **not**
+connected on our network (0 / 35), unlike the paper's clusters on genome-wide STRING: our graph is sparse (434
+protein–protein edges among 471 genes). Tables: `18c_module_summary.csv`, `18c_module_disease.csv`,
+`18_approach_comparison_ABC.csv`. **Read with care:** acute human exercise (2 arms × 3 times) replaces 8-week rat
+training (2 sexes × 4 times); the any-cell selection replaces the paper's F-test; thresholds are scaled to our data.
+
 **Step 17 — interactive networks and Cytoscape files.** Nothing is recomputed: nodes, edges, weights and
 layouts come from steps 3, 6, 10, 14 and 15 (step 10 now saves its layout so every view matches the static
 figures). Each network (mnet inputs — joint: 353 nodes / 704 edges, class-grouped layout of 15a / 15b; genes:
@@ -797,7 +829,7 @@ and tables, and how to extend it are in `network/neo4j/README.md`. Tested end to
 
 ## 7. Validation
 
-Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **37 hard checks** (table
+Run `Rscript network/99_validate_outputs.R` after the pipeline. It runs **38 hard checks** (table
 sizes; no unexpected missing values; no self-linked or duplicated edges; every weight equals the dot
 product of the node vectors; normalised values within −1..+1 with each ome's extreme exactly 1; sigmoid correct; class counts add up to 450; metabolite edges obey the class and shared-protein rules; joint-network cross-edges are Rhea links and their weights equal the doubled-embedding dot product; the class-grouped layout covers exactly the joint-network nodes; the Cytoscape files match the source networks and weights) and compares the headline numbers below, printing "same" or "CHANGED".
 
@@ -949,6 +981,7 @@ network/
                                  queries.cypher, run_local_neo4j.sh, README.md (graph model, key-file map)
   18_t2d_lipid_classes.R         step 18  T2D-relevant lipid classes per arm (tables behind section 7b)
   18_disease_modules.R           step 18d disease-filtered vs disease-overlaid modules (Amar 2024 disease sets), figures 18a / 18b
+  18_option_c_graphical_modules.R  step 18c option C: modules + disease links as in Amar et al. 2024 (repfdr, graphical sets), figure 18c
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)

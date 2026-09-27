@@ -241,6 +241,11 @@ dm <- rd("18_disease_modules.csv"); jn18 <- rd("14_joint_nodes.csv"); cmp18 <- r
 check(all(dm$node %in% jn18$node) && all(dm[, .N, by = module]$N >= 5) && setequal(cmp18$approach, unique(dm$approach)),
       "step 18d: disease modules are joint-network nodes, >= 5 members, all approaches compared")
 note("step18d_T2Dfilter_modules_t2d_sig", cmp18[approach == "At", modules_t2d_sig], 2)
+# Option C: modules are graphical sets of selected muscle features mapped to joint-network nodes (>= 5 nodes)
+mc <- rd("18c_modules.csv"); fs <- rd("18c_feature_states.csv")
+check(all(mc$node %in% jn18$node) && all(mc[, .N, by = module]$N >= 5) && all(unlist(strsplit(mc$features, ";")) %in% fs$feature),
+      "step 18c: option-C modules are joint-network nodes (>= 5) built from selected, state-assigned features")
+note("step18c_modules", uniqueN(mc$module), 35)
 
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
