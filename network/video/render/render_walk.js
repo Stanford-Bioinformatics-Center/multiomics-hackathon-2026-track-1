@@ -110,7 +110,8 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
         center.querySelector('.s').textContent = i < 0 ? S.subtitle : 'TEAM 2-PAC · physical links, exercise-weighted'; }
       const b = S.bars.findIndex(x => t >= x.start && t < x.end);
       barsBox.style.display = b >= 0 ? 'block' : 'none';
-      if (b >= 0) { document.getElementById('mv-now').textContent = S.bars[b].text; document.getElementById('mv-next').textContent = b + 1 < S.bars.length ? S.bars[b + 1].text : ''; }
+      if (b >= 0) { const now = document.getElementById('mv-now'); now.textContent = S.bars[b].text; now.style.color = S.bars[b].header ? '#F2A900' : '#fff';
+        document.getElementById('mv-next').textContent = b + 1 < S.bars.length ? S.bars[b + 1].text : ''; }
       return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
     };
     return 'ok';

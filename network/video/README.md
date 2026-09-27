@@ -22,7 +22,9 @@ python3 network/video/01_lyrics_from_walk.py --start CDC37                      
 | 5 | **The song**: drag the file into the terminal, or press Enter and it picks up the new download in `~/Downloads` | — |
 | 6 | **The video** (`render/render_walk.js`, Puppeteer + ffmpeg): the figure 17 page full screen with arm-specific edges on (red = endurance only, blue = resistance only); title card; the camera flies node to node, each walked edge turns gold; each node's persona and fact card; the current bar large and the next bar faded; the whole walk at the end; the song underneath → `music_video.mp4` | ~1 s per second of song |
 
-Bars are spread evenly over the vocal part of the song (10% intro and outro, at most 8 s each; tune with
+If the song also sings the section headers ("I. HYOU1: the lookout"), add `--sung-headers`: each node's segment then
+starts with a slot for its header (shown in gold). To film a song you already have: `--lyrics <lyrics.json> --audio <song>`
+(skips the lyrics and Suno steps). Bars are spread evenly over the vocal part of the song (10% intro and outro, at most 8 s each; tune with
 `--intro` / `--outro` and re-render). Suno style prompts must not name artists; the one Claude writes does not.
 
 ## Files (`$HACK_OUT/video/<walk>/`)

@@ -77,6 +77,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--size", default="1280x720", help="video size WxH (default %(default)s)")
     ap.add_argument("--intro", type=float, help="seconds before the first bar (default: 10%% of the song, max 8)")
     ap.add_argument("--outro", type=float, help="seconds after the last bar (default: 10%% of the song, max 8)")
+    ap.add_argument("--sung-headers", action="store_true", help="the song also sings each section header (e.g. 'I. HYOU1: the lookout'); time a slot for it")
     ap.add_argument("--no-open", action="store_true", help="do not open Suno / the finished video")
     ap.add_argument("--out", default=os.environ.get("HACK_OUT", str(Path.home() / "Desktop/output/hackathon-2026-track1/network")))
     ap.add_argument("--fig", default=os.environ.get("HACK_FIG", str(Path.home() / "Desktop/output/hackathon")))
@@ -127,14 +128,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         (dest / "lyrics.md").write_text("\n".join(md), encoding="utf-8")
         print(f"      done in {time.time() - t:.0f} s\n\n" + "\n".join(md[4:]))
 
-        # 4. Suno
-        if shutil.which("pbcopy"):
+        # 4. Suno (skipped when the song already exists: saved lyrics + a given audio file)
+        if saved is not None and args.audio:
+            print("[3/4] Suno: skipped (saved lyrics and the song were given)")
+        elif shutil.which("pbcopy"):
             subprocess.run(["pbcopy"], input=suno, text=True)
-        print("[3/4] SUNO: the lyrics are on your clipboard (also in suno_lyrics.txt). In Suno, Create -> Custom:")
-        print(f"      paste the lyrics; style: {lyr['suno_style']}")
-        print(f"      title: {lyr['title']}")
-        if not args.no_open:
-            webbrowser.open("https://suno.com/create")
+        if not (saved is not None and args.audio):
+            print("[3/4] SUNO: the lyrics are on your clipboard (also in suno_lyrics.txt). In Suno, Create -> Custom:")
+            print(f"      paste the lyrics; style: {lyr['suno_style']}")
+            print(f"      title: {lyr['title']}")
+            if not args.no_open:
+                webbrowser.open("https://suno.com/create")
 
         # 5. the song
         if args.audio:
@@ -148,7 +152,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                 print("      waiting for the download ...")
                 song = audio.wait_for_download(Path(args.downloads).expanduser(), since)
         total = audio.duration(song)
-        tl = audio.timeline(lyr["bars"], path, total, args.intro, args.outro)
+        heads = {n: f"{ROMAN[i]}. {n}: {lyr['personas'].get(n, '')}".rstrip(": ") for i, n in enumerate(path)} if args.sung_headers else None
+        tl = audio.timeline(lyr["bars"], path, total, args.intro, args.outro, heads)
         rec = {"walk": list(path), "seed": seed, "title": lyr["title"], "suno_style": lyr["suno_style"], "personas": lyr["personas"],
                "audio": str(song), **tl, "model": args.model, "backend": args.backend, "created": datetime.now(timezone.utc).isoformat(timespec="seconds")}
         (dest / "lyrics.json").write_text(json.dumps(rec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")

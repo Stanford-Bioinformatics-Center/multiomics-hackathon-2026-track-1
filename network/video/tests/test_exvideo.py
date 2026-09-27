@@ -93,6 +93,14 @@ class AudioTests(unittest.TestCase):
         with self.assertRaises(InputError):
             audio.timeline(bars, w, 10.0, intro=4, outro=4)
 
+    def test_timeline_sung_headers(self) -> None:
+        w = ["A", "B", "C", "D"]
+        bars = lyrics.parse_lyrics(answer(w), w)["bars"]
+        tl = audio.timeline(bars, w, 60.0, headers={n: f"{n} header" for n in w})
+        self.assertEqual(len(tl["bars"]), 20)                        # 16 bars + 4 sung headers
+        self.assertTrue(tl["bars"][0]["header"] and tl["bars"][5]["header"])
+        self.assertEqual(tl["segments"][1]["start"], tl["bars"][5]["start"])   # a node's segment starts with its header
+
     def test_clean_path(self) -> None:
         self.assertEqual(audio.clean_path("'/tmp/my song.mp3' "), Path("/tmp/my song.mp3"))
         self.assertEqual(audio.clean_path("/tmp/my\\ song.mp3"), Path("/tmp/my song.mp3"))

@@ -52,17 +52,25 @@ def duration(audio: Path) -> float:
     return d
 
 
-def timeline(bars: Sequence[Dict[str, Any]], walk: Sequence[str], total: float, intro: Optional[float] = None, outro: Optional[float] = None) -> Dict[str, Any]:
+def timeline(bars: Sequence[Dict[str, Any]], walk: Sequence[str], total: float, intro: Optional[float] = None, outro: Optional[float] = None,
+             headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     """Spread the bars evenly over the vocal part of the song: [intro, total - outro].
 
     Default intro / outro = 10% of the song, at most 8 s each (Suno songs open and close with a few bars of beat).
-    Every node gets an equal segment; every bar an equal slot within it.
+    Every node gets an equal segment; every bar an equal slot within it. With `headers` (node -> header text), the
+    song also sings each section header, so every node's segment starts with one extra slot for its header
+    (returned among the bars with "header": true).
     """
     intro = min(8.0, 0.10 * total) if intro is None else intro
     outro = min(8.0, 0.10 * total) if outro is None else outro
     if intro + outro >= total - 5:
         raise InputError(f"intro ({intro} s) + outro ({outro} s) leave no time for the verses in a {total:.1f} s song")
-    per_bar = (total - intro - outro) / len(bars)
-    timed: List[Dict[str, Any]] = [{**b, "start": round(intro + i * per_bar, 3), "end": round(intro + (i + 1) * per_bar, 3)} for i, b in enumerate(bars)]
+    lines: List[Dict[str, Any]] = []
+    for n in walk:
+        if headers is not None:
+            lines.append({"bar": 0, "node": n, "text": headers[n], "header": True})
+        lines += [b for b in bars if b["node"] == n]
+    per_bar = (total - intro - outro) / len(lines)
+    timed: List[Dict[str, Any]] = [{**b, "start": round(intro + i * per_bar, 3), "end": round(intro + (i + 1) * per_bar, 3)} for i, b in enumerate(lines)]
     segs = [{"node": n, "start": min(b["start"] for b in timed if b["node"] == n), "end": max(b["end"] for b in timed if b["node"] == n)} for n in walk]
     return {"duration": round(total, 3), "intro": round(intro, 3), "outro": round(outro, 3), "bars": timed, "segments": segs}
