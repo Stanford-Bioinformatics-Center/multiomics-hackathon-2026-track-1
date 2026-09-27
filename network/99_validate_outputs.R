@@ -256,6 +256,15 @@ note("step18c_modules", uniqueN(mc$module), 35)
 bcd <- rd("18bc_module_disease.csv")
 check(all(bcd$module %in% dm[approach == "B", module]) && all(bcd[n > 0, concordant + discordant == n]), "step 18bc: B+C tests use option-B modules; concordant + discordant = n")
 
+# Step 19: T2D stories — tests well-formed, primary muscle test present, only the T2D sets used
+nt19 <- rd("19_t2d_node_tests.csv"); st19 <- rd("19_t2d_subgraph_tests.csv"); cp19 <- rd("19_t2d_components.csv")
+check(all(nt19$set %in% c("ohman_2021", "chae_2018")) && all(unlist(nt19[, .(p_EE, p_RE, p_diff, p_diff_armswap)]) > 0 & unlist(nt19[, .(p_EE, p_RE, p_diff, p_diff_armswap)]) <= 1),
+      "step 19: only the T2D (muscle) disease sets are used; permutation p-values in (0, 1]")
+check(nrow(nt19[set == "ohman_2021" & tissue == "muscle"]) == 2 && all(cp19$size >= 2) && all(st19[!is.na(p), p > 0 & p <= 1]),
+      "step 19: primary muscle tests present; story-1 pieces have >= 2 proteins; subgraph p-values in (0, 1]")
+note("step19_T2D_muscle_471_p_diff", signif(nt19[set == "ohman_2021" & nodes == "all 471" & tissue == "muscle", p_diff], 2), 0.0088)
+note("step19_story2_nodes", st19[grepl("^largest connected piece \\(T2D proteins \\+", test), observed], 42)
+
 # ---- report ------------------------------------------------------------------------------------------
 # All hard checks passed if we got here.
 cat(sprintf("\n%d hard checks passed.\n\nExpected headline numbers (as of 2026-09-26):\n", n_ok))
