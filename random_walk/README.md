@@ -357,38 +357,8 @@ Reading tips:
 - **Say "more likely in endurance / resistance"**, not "stronger". The weights are signed, and an
   unlikely step can be a strongly negative relationship.
 
-**Turn a walk into lyrics (`lyrics_gen.R`).** Sends one walk's graph data to Claude and asks for 16
-bars of 2Pac-style rap, 4 per node, telling the most interesting story in those data (the prompt a
-teammate first used by hand, made repeatable).
-
-```bash
-Rscript random_walk/t2d_consensus.R                         # once: T2D table (runs itself if missing)
-Rscript random_walk/lyrics_gen.R                            # random walk, endurance weights
-Rscript random_walk/lyrics_gen.R PARK7 EE 1                 # start, arm, seed (as random_walks.R)
-Rscript random_walk/lyrics_gen.R "HYOU1,HSP90B1,CDC37,SRC" EE   # a given walk (every step an edge)
-```
-
-| | |
-|---|---|
-| Graph data in the prompt | step 14 node table (type, class, links, response and strength per arm); each node's 4 largest log fold changes (steps 1 / 1b); the 3 steps with w, p per arm and evidence (STRING score, shared enzymes, Rhea reactions); T2D direction in muscle for the walk's nodes |
-| T2D table | `$HACK_OUT/17_t2d_consensus.csv` if step 17 ran, else `t2d_consensus.csv` from `t2d_consensus.R` |
-| Model | `LYRICS_MODEL`, default `claude-opus-5`; needs `ANTHROPIC_API_KEY` for a new song |
-| Outputs (this folder or `$RW_OUT`) | `lyrics_prompt.txt` (always), `lyrics.md`, `lyrics_cache/<model>_<md5 of prompt>.txt` |
-| Reproducibility | the model cannot be made deterministic, so replies are cached: the same walk, data and model give the same song; `LYRICS_FRESH=1` asks for a new one. Without a key, paste `lyrics_prompt.txt` into Claude |
-
-**T2D table (`t2d_consensus.R`).** Downloads Öhman 2021 (muscle SWATH proteome) and Chae 2018 (muscle,
-significant peptides only) from the Amar et al. 2024 repository
-([MoTrPAC/motrpac-rat-training-mitochondria](https://github.com/MoTrPAC/motrpac-rat-training-mitochondria),
-`disease_datasets/`, pinned commit `299e540`) to `$DISEASE_EXT/amar_2024/`, once. Per protein: Öhman
-log2(T2D / NGT) from the group means with the four-group ANOVA p; Chae's lowest-FDR peptide. "Consensus"
-= Öhman p < 0.05 and the same direction in Chae, as in step 17. Result (2026-09-26): 231 proteins in
-both studies, 95 consensus (82 lower, 13 higher in T2D); 7 consensus proteins are in the joint network
-(PARK7, PRDX5, DIABLO, DCXR, HSPB6, BLVRB, DCTN1). **Caveat:** Öhman's p compares all four glucose
-groups, not T2D vs NGT alone, so this table can differ slightly from the week 6 build
-(`DISEASE_SCORES`) that step 17 reads.
-
-Lyrics are generated text: treat them as a way to present a walk, not as findings. The facts behind
-each song are in `lyrics_prompt.txt`.
+**Turn a walk into lyrics:** the music video does this (`network/video/01_lyrics_from_walk.py`, which calls
+this walker; see `network/video/README.md`).
 
 ## 12. Validation
 
@@ -493,7 +463,7 @@ Compared with `main`:
 
 | Change | Detail |
 |---|---|
-| Added `random_walk/` | `random_walks.R`, `lyrics_gen.R`, `t2d_consensus.R` and this README |
+| Added `random_walk/` | `random_walks.R` and this README |
 | Removed `network/neo4j/` | the Neo4j export (`export_neo4j.R`, `import.cypher`, `queries.cypher`, `run_local_neo4j.sh`, `README.md`). It is still on `main` and in the history (commits `27ce353`, `d60097d`) |
 | Edited `network/README.md` | removed the paragraph on the Neo4j graph and its line in the file tree, since the folder is gone |
 
