@@ -154,6 +154,8 @@ META <- rbind(META, data.table(set = c("kjaergaard_2025_prot_pooled", "t2d_muscl
 META[set == "kjaergaard_2025_prot_discovery", primary := FALSE]   # the pooled set replaces it as new T2D's primary protein set
 DS <- DS[set %in% META$set]
 fwrite(DS, file.path(OUT, "20_disease_scores.csv"))
+# The sets themselves (chunk, label, readout tissue, level, "altered" threshold, primary), with their row counts.
+fwrite(merge(META, DS[, .(n_rows = .N), by = set], by = "set", all.x = TRUE)[order(chunk, set)], file.path(OUT, "20_disease_sets.csv"))
 
 # ---- 2. exercise responses ------------------------------------------------------------------------------------
 EEg <- fread(file.path(OUT, "01_nodes_EE.csv")); REg <- fread(file.path(OUT, "01_nodes_RE.csv")); GENES471 <- EEg$gene_symbol
