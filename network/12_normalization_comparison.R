@@ -173,7 +173,7 @@ draw_grid <- function(ed, summ, node_order, edge_order, groups, title, file, lab
     geom_point(data = N, aes(x, y, size = rel_delta), shape = 21, fill = "grey80", colour = "grey30", stroke = 0.2) +
     # node labels that avoid each other
     geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = if (label_all) 1.7 else 2, colour = "grey15",
-                    min.segment.length = 0.2, segment.size = 0.12, max.overlaps = Inf, seed = SEED) +
+                    min.segment.length = 0.2, segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
     # class labels (metabolites)
     (if (!is.null(GL)) geom_text(data = GL, aes(x, y, label = lab), size = 2.3, colour = "grey35", fontface = "bold.italic") else NULL) +
     # one panel per option

@@ -126,7 +126,7 @@ hulls <- function(P) geom_mark_hull(data = P[node_type == "metabolite"], aes(x, 
 # Helper: class names that repel each other and the nodes.
 class_text <- function(D, size) geom_text_repel(data = D, aes(x, y, label = class), size = size, colour = "grey30", fontface = "bold.italic",
                                                 box.padding = 0.15, min.segment.length = 0.3, segment.size = 0.15,
-                                                segment.colour = "grey50", max.overlaps = Inf, seed = SEED)
+                                                segment.colour = "grey50", max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4)
 
 # ---- figure 15a: endurance (top) and resistance (bottom), one identical grouped layout -------------------
 # Two layers with the same positions: EE in the top band, RE in the bottom band.
@@ -156,7 +156,7 @@ p <- ggplot() +
   # class names, protein labels, layer names
   class_text(cn, 2.3) +
   geom_text_repel(data = lab[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
-                  segment.size = 0.12, max.overlaps = Inf, seed = SEED) +
+                  segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
   geom_text(data = SL, aes(x, y, label = lab), angle = 90, size = 2.6, colour = "grey30", fontface = "bold", lineheight = 0.9) +
   # scales
   scale_colour_manual(values = TYPE_COL, name = "edge type") +
@@ -191,7 +191,7 @@ q <- ggplot() +
   # class names and protein labels
   class_text(class_names(N), 2.4) +
   geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
-                  segment.size = 0.12, max.overlaps = Inf, seed = SEED) +
+                  segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
   # scales
   scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-lim_d, lim_d), oob = scales::squish,
                          breaks = c(-lim_d, 0, lim_d), labels = c("higher in resistance\n(w_RE > w_EE)", "same", "higher in endurance\n(w_EE > w_RE)"),

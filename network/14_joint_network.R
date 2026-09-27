@@ -216,7 +216,7 @@ p <- ggplot() +
   geom_point(data = lay, aes(x, y, fill = resp, size = strength, shape = node_type), colour = "grey25", stroke = 0.22) +
   # labels
   geom_text_repel(data = lab[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
-                  segment.size = 0.12, max.overlaps = Inf, seed = SEED) +
+                  segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
   # layer names
   geom_text(data = SL, aes(x, y, label = lab), angle = 90, size = 2.6, colour = "grey30", fontface = "bold", lineheight = 0.9) +
   # scales
@@ -252,7 +252,7 @@ q <- ggplot() +
   geom_point(data = N, aes(x, y, size = abs_delta, shape = node_type), fill = "grey80", colour = "grey30", stroke = 0.22) +
   # labels
   geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.1, colour = "grey15", min.segment.length = 0.2,
-                  segment.size = 0.12, max.overlaps = Inf, seed = SEED) +
+                  segment.size = 0.12, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
   # scales
   scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-lim_d, lim_d), oob = scales::squish,
                          breaks = c(-lim_d, 0, lim_d), labels = c("higher in resistance\n(w_RE > w_EE)", "same", "higher in endurance\n(w_EE > w_RE)"),

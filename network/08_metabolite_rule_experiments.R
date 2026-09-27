@@ -1,6 +1,8 @@
 #!/usr/bin/env Rscript
 # =====================================================================================================
 # 08_metabolite_rule_experiments.R — STEP 8: HOW MUCH DOES EACH PART OF THE METABOLITE EDGE RULE MATTER?
+# NOTE (2026-09-26): report-only experiments on the LEGACY inputs (direct Rhea, first curated STRING file); the
+# pipeline itself now uses the team's mnet resource (EDGE_SOURCE=mnet, steps 2 / 5).
 # =====================================================================================================
 #
 # WHAT THIS SCRIPT DOES (plain language)
@@ -180,9 +182,16 @@ res[, change_vs_baseline := metabolites_in_network - metabolites_in_network[1]]
 s6 <- fread(file.path(OUT, "06_metabolite_summary.csv")); v6 <- setNames(s6$value, s6$metric)
 # (row 1 = main class, row 3 = super class, row 5 = super class + STRING-interacting proteins; our 471 genes)
 row6 <- if (v6[["class_level"]] == "main_class") 1 else if (v6[["link_rule"]] == "shared") 3 else 5
-# (edges and metabolites in the network must match step 6's summary)
-stopifnot(res$edges[row6] == as.numeric(v6[["edges_same_class"]]),
-          res$metabolites_in_network[row6] == as.numeric(v6[["metabolites_with_edges"]]))
+# (edges and metabolites in the network must match step 6's summary). These experiments are built on the LEGACY
+# inputs (direct Rhea + the first curated STRING file); since 2026-09-26 step 6 uses the team's mnet resource by
+# default, so with EDGE_SOURCE=mnet the check is against the legacy step 6 result instead (147 edges, 44 metabolites).
+if (Sys.getenv("EDGE_SOURCE", unset = "mnet") == "legacy") {
+  stopifnot(res$edges[row6] == as.numeric(v6[["edges_same_class"]]),
+            res$metabolites_in_network[row6] == as.numeric(v6[["metabolites_with_edges"]]))
+} else {
+  stopifnot(res$edges[5] == 147, res$metabolites_in_network[5] == 44)
+  message("rule experiments use the legacy inputs; experiment 3 reproduces the legacy step 6 (147 edges, 44 metabolites)")
+}
 # Save and show.
 fwrite(res, file.path(OUT, "08_metabolite_rule_experiments.csv"))
 # Show it.

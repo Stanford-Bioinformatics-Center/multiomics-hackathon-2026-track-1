@@ -119,7 +119,7 @@ draw_diff <- function(node_order, edges, nodes, title, shape_values, shape_name,
     geom_point(data = N, aes(x, y, size = abs(delta), shape = shape_key), fill = "grey80", colour = "grey30", stroke = 0.22) +
     # labels that avoid each other and the nodes
     geom_text_repel(data = N[!is.na(lab)], aes(x, y, label = lab), size = 2.3, colour = "grey15",
-                    min.segment.length = 0.2, segment.size = 0.15, max.overlaps = Inf, seed = SEED) +
+                    min.segment.length = 0.2, segment.size = 0.15, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
     # the class label above each group (only when requested, i.e. for metabolites)
     (if (group_labels) geom_text(data = GL, aes(x, y, label = lab), size = 2.9, colour = "grey35",
                                  fontface = "bold.italic") else NULL) +

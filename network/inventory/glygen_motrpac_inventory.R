@@ -91,9 +91,12 @@ setcolorder(P, c("entrez_gene", "gene_symbol", "uniprot", "glygen_ac", "mapped_v
 fwrite(P, file.path(INV, "protein_inventory.csv"))
 
 # ---- metabolites: GlyGen glycans and GlyGen (Rhea) reaction participants --------------------------------------
-xc <- fread(paste0(GG, "glycan_xref_chebi.csv"), colClasses = "character")
-xp <- fread(paste0(GG, "glycan_xref_pubchem.csv"), colClasses = "character")[grepl("compound", xref_key)]
-xi <- fread(paste0(GG, "glycan_sequences_inchi.csv"), colClasses = "character", select = c("glytoucan_ac", "inchi_key"))
+# GlyGen files are downloaded once into inventory/glygen_files and reused, so reruns are reproducible
+gget <- function(f) { d <- file.path(INV, "glygen_files"); dir.create(d, showWarnings = FALSE); p <- file.path(d, f)
+  if (!file.exists(p)) download.file(paste0(GG, f), p, quiet = TRUE); p }
+xc <- fread(gget("glycan_xref_chebi.csv"), colClasses = "character")
+xp <- fread(gget("glycan_xref_pubchem.csv"), colClasses = "character")[grepl("compound", xref_key)]
+xi <- fread(gget("glycan_sequences_inchi.csv"), colClasses = "character", select = c("glytoucan_ac", "inchi_key"))
 # our metabolites' ChEBI IDs (all candidates, numbers only), PubChem CID and InChIKey
 mets[, chebi_nums := lapply(strsplit(fifelse(is.na(chebi_all) | chebi_all == "", fifelse(is.na(chebi_id), "", chebi_id), chebi_all), "[;|, ]+"),
                             function(v) unique(sub("^CHEBI:", "", v[v != ""])))]

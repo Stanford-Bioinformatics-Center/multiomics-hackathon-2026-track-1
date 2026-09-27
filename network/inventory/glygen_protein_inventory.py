@@ -55,6 +55,14 @@ def get(url, tries=4):
             if i == tries - 1: raise
             time.sleep(3 * (i + 1))
 
+def cached(name):
+    """A GlyGen data file, downloaded once into the inventory folder and reused (reproducible reruns)."""
+    f = os.path.join(INV, "glygen_files", name)
+    if not os.path.exists(f):
+        os.makedirs(os.path.dirname(f), exist_ok=True)
+        open(f, "w").write(get(DATA + name))
+    return open(f).read()
+
 def read_csv_text(text):
     """Parse CSV text into a list of dicts."""
     return list(csv.DictReader(io.StringIO(text)))
@@ -62,8 +70,8 @@ def read_csv_text(text):
 # ---- 1. our genes -> GlyGen canonical accession --------------------------------------------------------
 genes = read_csv_text(open(os.path.join(OUT, "02_nodes_string.csv")).read())
 # GlyGen's Entrez cross-references (canonical accession <-> Entrez) and masterlist (all isoforms per canonical).
-xref = read_csv_text(get(DATA + "human_protein_xref_geneid.csv"))
-master = read_csv_text(get(DATA + "human_protein_masterlist.csv"))
+xref = read_csv_text(cached("human_protein_xref_geneid.csv"))
+master = read_csv_text(cached("human_protein_masterlist.csv"))
 by_entrez = {}
 for r in xref: by_entrez.setdefault(r["xref_id"], []).append(r["uniprotkb_canonical_ac"])
 by_acc = {}

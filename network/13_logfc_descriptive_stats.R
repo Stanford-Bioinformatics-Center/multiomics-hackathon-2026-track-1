@@ -189,6 +189,10 @@ writeLines(tex, tex_file)
 # Compile it to PDF with pdflatex (TinyTeX installs any missing LaTeX package automatically).
 old <- setwd(FIG); on.exit(setwd(old), add = TRUE)
 # (compile; returns the PDF file name)
+# Reproducible PDF: pdfTeX takes its creation date and document ID from SOURCE_DATE_EPOCH when
+# FORCE_SOURCE_DATE=1 (fixed at 2026-09-26 unless set by the caller), so reruns give a byte-identical file.
+if (Sys.getenv("SOURCE_DATE_EPOCH") == "") Sys.setenv(SOURCE_DATE_EPOCH = as.character(as.integer(as.POSIXct("2026-09-26", tz = "UTC"))))
+Sys.setenv(FORCE_SOURCE_DATE = "1")
 pdf <- tinytex::pdflatex(basename(tex_file))
 # Report where it was written, and show the numbers.
 message("-> ", file.path(FIG, pdf))

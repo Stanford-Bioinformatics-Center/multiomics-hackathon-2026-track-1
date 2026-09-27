@@ -548,6 +548,8 @@ page <- function(P, net, types, classes, hulls, file, title, subtitle) {
     visInteraction(navigationButtons = TRUE, hover = TRUE, tooltipDelay = 80, hideEdgesOnDrag = TRUE, multiselect = TRUE) |>
     onRender(JS, data = cfg)
   w <- prependContent(w, CSS)
+  # a fixed widget ID (visNetwork ignores elementId as an argument), so reruns write byte-identical pages
+  w$elementId <- paste0("hk-", net)
   saveWidget(w, file.path(HTML_DIR, file), selfcontained = TRUE, title = title)
   unlink(file.path(HTML_DIR, sub("\\.html$", "_files", file)), recursive = TRUE)
   message("-> ", file.path(HTML_DIR, file))

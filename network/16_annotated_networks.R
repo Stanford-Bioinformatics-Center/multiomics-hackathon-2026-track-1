@@ -149,7 +149,7 @@ base_plot <- function() ggplot() +
   # metabolites: grey triangles, as 15b
   geom_point(data = N[node_type == "metabolite"], aes(x, y, size = abs_delta, shape = node_type), fill = "grey80", colour = "grey25", stroke = 0.22) +
   geom_text_repel(data = cn, aes(x, y, label = class), size = 2.4, colour = "grey30", fontface = "bold.italic", box.padding = 0.15,
-                  min.segment.length = 0.3, segment.size = 0.15, segment.colour = "grey50", max.overlaps = Inf, seed = SEED) +
+                  min.segment.length = 0.3, segment.size = 0.15, segment.colour = "grey50", max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
   scale_colour_gradient2(low = COL_RE, mid = COL_SAME, high = COL_EE, midpoint = 0, limits = c(-lim_d, lim_d), oob = scales::squish,
                          breaks = c(-lim_d, 0, lim_d), labels = c("higher in resistance\n(w_RE > w_EE)", "same", "higher in endurance\n(w_EE > w_RE)"),
                          name = "edge difference  w_EE − w_RE",
@@ -245,7 +245,7 @@ tagged <- function(layers, labels, title, caption, file) {
     geom_text(data = Tg[!is.na(more)], aes(hx, hy, label = paste0("+", more)), size = 1.4, colour = "grey10", fontface = "bold") +
     geom_text(data = Tg[!is.na(n) & n > 1], aes(cx, cy, label = n), size = 1.25, colour = "grey20") +
     geom_text_repel(data = labels, aes(x, y, label = lab), size = 2.05, colour = "grey10", min.segment.length = 0.1, segment.size = 0.15,
-                    box.padding = 0.45, max.overlaps = Inf, seed = SEED) +
+                    box.padding = 0.45, max.overlaps = Inf, seed = SEED, max.time = 60, max.iter = 1e4) +
     guides(colour = guide_colourbar(order = 2, barwidth = unit(6, "cm"), barheight = unit(0.25, "cm"), title.position = "top", title.hjust = 0.5),
            linetype = guide_legend(order = 3, override.aes = list(colour = "grey30", linewidth = 0.6))) +
     labs(title = title, caption = caption)

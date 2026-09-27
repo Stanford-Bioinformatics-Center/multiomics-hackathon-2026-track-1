@@ -117,12 +117,18 @@ flowchart LR
 | `data.table` | 1.18 | tables |
 | `igraph` | 2.2 | network components |
 | `ggplot2`, `ggrepel` | 3.5.2, 0.9.8 | figures (steps 10-15) |
-| `ggforce` | 0.5.0 | step 15 (class outlines) |
+| `ggforce`, `ggnewscale` | 0.5.0, 0.5.2 | steps 15-16 (class outlines; extra legend scales for the PTM tags) |
+| `limma`, `TMSig` (Bioconductor) | 3.62.2, 1.0.0 | step 17 module tests (MoTrPAC `run_cameraPR()` / `run_ORA()` need TMSig) |
+| `curl`, `rmarkdown`, `tinytex` | 7.0.0, 2.30, 0.58 | step 0 (GlyGen release lookup), pandoc detection, step 13 PDF |
 | `visNetwork`, `htmlwidgets`, `htmltools`, `jsonlite` + pandoc | 2.1.4, 1.6.4 | step 17 (interactive pages; pandoc ships with RStudio / Positron / Quarto) |
 | `nanoparquet` | 0.4 | reading the STRING `.parquet` file |
 | Python | 3.9+ (3.12.4 used), standard library only | steps 1c (web lookups) and 1d |
 | TinyTeX (R `tinytex`) | via `tinytex::install_tinytex()` | step 13 (compiles the LaTeX table to PDF) |
-| Internet | — | step 1c only |
+| Internet | — | first run only: step 1c (RefMet / UniChem / PubChem), step 5 (Rhea download), inventory (GlyGen API); all cached afterwards |
+| Node.js + Puppeteer (optional) | 22.5 | only for the headless-browser test of the pages (not needed to run the pipeline) |
+
+Exact versions of everything used for the committed results are recorded in **`network/ENVIRONMENT.md`**
+(written by `00_environment.R` on every run), with MD5 fingerprints of every external input.
 
 **Install**
 
@@ -131,7 +137,10 @@ if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install(version = "3.20")                      # R 4.4; see the MoTrPAC package README for R 4.5/4.6
 if (!require("pak", quietly = TRUE)) install.packages("pak")
 pak::pak("MoTrPAC/MotrpacHumanPreSuspensionAnalysis")       # github.com/MoTrPAC/MotrpacHumanPreSuspensionAnalysis
-install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "ggrepel", "ggforce", "visNetwork", "htmlwidgets", "htmltools", "jsonlite"))
+install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "ggrepel", "ggforce", "ggnewscale",
+                   "visNetwork", "htmlwidgets", "htmltools", "jsonlite", "curl", "rmarkdown", "tinytex"))
+BiocManager::install(c("limma", "TMSig"))                   # module tests in step 17
+tinytex::install_tinytex()                                  # step 13 PDF (once)
 ```
 
 **Data**
@@ -139,7 +148,9 @@ install.packages(c("data.table", "igraph", "nanoparquet", "Matrix", "ggplot2", "
 | Input | Where it comes from | Setting |
 |---|---|---|
 | MoTrPAC results | inside the R package above (no download) | — |
-| STRING network | curated file supplied by the team: `Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet` (received 2026-09-26; STRING release not recorded in the file) | `STRING_PARQUET` (default `~/Downloads/<that file>`) |
+| **Team mnet resource** (default edge + PTM source) | built by a teammate; STRING v12, Rhea, ChEBI, SwissLipids, UniProt (release 2026_03), OmniPath — see its own README; received and used 2026-09-26 | `MNET_DIR` (default `~/Desktop/output/hackathon/resources/mo_annotation`); `EDGE_SOURCE=mnet` |
+| STRING network (legacy) | first curated file supplied by the team: `Metabolomics_database_watershed_template_data_p_value_string_network_ge700.parquet` (received 2026-09-26; STRING release not recorded in the file); used only with `EDGE_SOURCE=legacy` and by step 8 | `STRING_PARQUET` (default `~/Downloads/<that file>`) |
+| GlyGen (inventory, steps 16-17) | api.glygen.org and data.glygen.org, release 2.11.1, accessed 2026-09-26; answers cached under `$HACK_OUT/inventory/` | — |
 | Rhea (step 5) | downloaded automatically from ftp.expasy.org/databases/rhea/ on first run (release 142) | `HACK_EXT` (default `~/Desktop/output/hackathon-2026-track1/external/rhea`) |
 | Results folder | created by step 1 | `HACK_OUT` (default `~/Desktop/output/hackathon-2026-track1/network`) |
 
@@ -149,7 +160,16 @@ default `~/Desktop/output/hackathon`).
 
 ## 5. Inputs, outputs and quick start
 
-**Quick start** (from the repo root; about 3 minutes: step 1c ~2.5 min of web lookups, everything else ~30 s)
+**Quick start — one command** (from the repo root; about 2.5 minutes with the caches in place):
+
+```bash
+bash network/run_all.sh                     # every step in order, then validation (section 7) and the reproducibility manifest
+bash network/run_all.sh 14 17i              # a range of steps (labels: 00 01 01b 01c 01d 02 03 05 06 07 08 09 10 11 12 13 14 15 inv1 inv2 inv3 16 17s 17i 18 99v 99m)
+REFRESH_ONLINE=1 bash network/run_all.sh    # also redo the web lookups of step 1c
+```
+
+Logs go to `$HACK_OUT/logs/<step>.log`; the run stops at the first failing step and shows its log. The
+individual steps, in the order `run_all.sh` runs them (after `Rscript network/00_environment.R`):
 
 ```bash
 Rscript network/01_node_embeddings.R          # gene nodes
@@ -169,11 +189,15 @@ Rscript network/12_normalization_comparison.R # four normalisations side by side
 Rscript network/13_logfc_descriptive_stats.R  # descriptive statistics of log fold changes -> LaTeX PDF in $HACK_FIG
 Rscript network/14_joint_network.R            # joint protein + metabolite network, figures 14a / 14b -> $HACK_FIG
 Rscript network/15_joint_network_classes.R    # joint network, metabolites grouped by class, figures 15a / 15b -> $HACK_FIG
-Rscript network/16_annotated_networks.R       # 15b annotated: phospho 16a / glycosylation 16b / both + crosstalk 16c -> $HACK_FIG (needs network/inventory first)
+python3 network/inventory/glygen_protein_inventory.py   # GlyGen per-protein counts (API, cached)
+Rscript network/inventory/glygen_motrpac_inventory.R    # MoTrPAC phospho + GlyGen coverage tables
+Rscript network/inventory/export_phospho_features.R     # all MoTrPAC phospho feature IDs
+Rscript network/16_annotated_networks.R       # 15b with PTM tags: phospho 16a / glycosylation 16b / both + crosstalk 16c -> $HACK_FIG
 Rscript network/17_filter_stats.R             # statistics, modules (CAMERA-PR) and annotation layers for the interactive pages
 Rscript network/17_interactive_networks.R     # interactive pages -> $HACK_FIG/17_interactive; Cytoscape files -> $HACK_OUT/17_cytoscape
 Rscript network/18_t2d_lipid_classes.R        # T2D-relevant lipid classes per arm + clinical NEFA (descriptive)
 Rscript network/99_validate_outputs.R         # checks everything; see section 7
+Rscript network/99_manifest.R                 # fingerprints every output and compares with the reference run
 ```
 
 **Output files** (all in `$HACK_OUT`)
@@ -611,32 +635,27 @@ and metabolites triangles. A colour-by-class version was tried and not kept. **R
 positions are shaped by the class links, so distances are not comparable with 14a / 14b, and grouping
 says nothing about whether the metabolites of a class behave alike.
 
-**Step 16 — the joint difference network annotated with phospho and glycosylation (sample).** Figure 15b
-is redrawn unchanged (layout, class bubbles, edges = w_EE − w_RE, node sizes, grey metabolite triangles)
-and only the protein circles (297 with mnet) are recoloured. **16a, MoTrPAC phosphoproteomics** (measured; muscle 0.5 /
-4 / 24 h, adipose 4 h; a site "responds" at adj. p < 0.05 in that arm's exercise-vs-control contrast at any
-time point): not measured 161, measured with no responding site 83, a site responds after endurance only
-6, after resistance only 26, after both 21; labels give responding / measured sites for the 12 proteins
-with the most responding sites (e.g. GYS1 21/44, BAG3 17/31, HSPB1 12/15). **16b, glycosylation**
-(UniProt sites via mnet; GlyGen release 2.11.1 for protein-level evidence and glycans; database knowledge —
-MoTrPAC has no glycoproteomics): no record 99, glycosylated with the site unknown (GlyGen protein-level, mostly
-the O-GlcNAc Database) 97, N-linked sites only 73, O-linked only (incl. O-GlcNAc) 6, both 22 (UniProt lists far
-fewer O-sites than GlyGen, which merges O-GlcNAc databases); labels give site and glycan-structure counts for the 12 most glycosylated proteins.
-Counts come from `network/inventory/` (see its README). **Read with care:** colours are protein-level
-summaries (the site, tissue and time are in `16_protein_annotation.csv`); glycosylation is prior knowledge,
-not an exercise response; nothing here is tested.
+**Step 16 — the joint difference network with PTM tags (phospho, glycosylation, crosstalk).** Figure 15b is
+redrawn unchanged (layout, class bubbles, edges = w_EE − w_RE, node sizes; grey proteins and metabolites), and
+post-translational modifications are drawn as **tags**: a short stalk from the protein ending in a symbol, fanned
+clockwise from the upper right, so several modifications can be shown at once.
+- **MoTrPAC phosphosites (measured)**: one "P" pin per site responding at adj. p < 0.05 vs control at any time
+  point (muscle 0.5 / 4 / 24 h, adipose 4 h), up to 6 then "+n"; **red** = responds after endurance only, **blue** =
+  after resistance only, **purple** = after both (sites mapped to our genes via `HUMAN_FEATURE_TO_GENE`).
+- **Glycosylation (database knowledge)** in SNFG symbols (Symbol Nomenclature for Glycans), number = sites:
+  blue square = N-linked (GlcNAc), yellow square = O-linked mucin-type (GalNAc), blue square with a white dot =
+  O-GlcNAc (UniProt sites via mnet); white square = glycosylated, site unknown (GlyGen protein-level evidence).
+- **Crosstalk**: a diamond where a MoTrPAC phosphosite is the same residue as a known O-glycosylation site
+  (UniProt via mnet or GlyGen), mapped with mnet's isoform-aware bridge; gold if such a residue responds.
 
-**16c — both layers and site-level crosstalk.** Fill = the 16a phospho category, ring = glycosylated or not
-(any type, site known or protein-level; the types are in 16b), and a diamond on proteins where a phosphosite
-MoTrPAC measured is the **same residue** as a known O-glycosylation site (UniProt via mnet, or GlyGen's O-GlcNAc
-and other databases): MoTrPAC features are mapped to canonical sites with mnet's isoform-aware bridge (residue
-mismatches excluded; multi-site features contribute each residue). Phosphorylation and O-GlcNAcylation compete for the same serine / threonine
-hydroxyl, so these are candidate switch sites. **60 residues on 27 proteins** (15 of them drawn in the joint
-network), almost all O-GlcNAc sites; **15 respond** (8 after resistance only, 7 after both; none after endurance
-only) — BAG3 S65 / S173 / S177 / S291, EIF4B S497 / S498 / S504, HSPB1 S176 / T184 / S199, FOXO3 S284, PDLIM7
-S111, HNRNPK T118 (newly matched through the mnet bridge), and EIF4G1 T207 and GYS1 T721. Gold diamond = at least one shared residue responds. **Read with care:** the shared residue
-is measured as phosphorylated; its O-GlcNAc state is database knowledge from other studies, so these are
-candidates for competition, not observed switching.
+16a shows the phospho tags, 16b the glycosylation tags, 16c all three with the crosstalk residues labelled. With
+mnet inputs: responding phosphosites on 11 (endurance only), 36 (resistance only) and 21 (both) drawn proteins;
+**60 crosstalk residues on 27 proteins, 15 responding** (8 after resistance only, 7 after both, none after
+endurance only) — BAG3 S65 / S173 / S177 / S291, EIF4B S497 / S498 / S504, HSPB1 S176 / T184 / S199, FOXO3 S284,
+PDLIM7 S111, HNRNPK T118, EIF4G1 T207, GYS1 T721 (`16_crosstalk_sites.csv`; per-protein counts in
+`16_protein_annotation.csv`). **Read with care:** the shared residue is measured as phosphorylated; its O-GlcNAc
+state is database knowledge from other studies, so these are candidates for competition, not observed switching;
+glycosylation is not measured in MoTrPAC; nothing here is tested.
 
 **Step 17 — filters, module statistics and annotation layers (2026-09-26 update).** `17_filter_stats.R`
 precomputes, and the pages use: (1) for every node the MoTrPAC log fold change and adj. p in each tissue × ome ×
@@ -653,7 +672,9 @@ pairs between our proteins (via mnet), and 21 fields per protein (mnet PTM count
 colours, significance outlines and **edge weights** (dot products restricted to the selected dimensions; with
 everything selected they equal the pipeline weights, checked in a headless browser to < 1e-6); the **module**
 menu marks modules significant in the selection and shows each module's test table; **colour nodes by** switches
-to MoTrPAC phosphosite responses (filtered), any mnet PTM field or any GlyGen field; the legend box on the network
+to any non-PTM annotation (kinase role, GlyGen mutations, disease, pathways, ...); **PTM tags** (multi-select:
+MoTrPAC phosphosites per arm, known phosphosites, N-linked, O-linked, O-GlcNAc, site-unknown glycosylation,
+crosstalk) are drawn on the proteins as in figure 16, recomputed for the selected tissues, times and threshold; the legend box on the network
 is rebuilt for every mode (gradients with tick values, categories and count bins with the number of nodes in each); **kinase → substrate** arrows turn red when a
 substrate site responds in the selection. **Read with care:** CAMERA-PR is competitive (a module moves more than
 other features of that ome); FDR is within each cell, not across the many cells a user can browse; modules are
@@ -759,6 +780,17 @@ product of the node vectors; normalised values within −1..+1 with each ome's e
 | Joint network edges / cor(w_EE, w_RE) of metabolite–protein edges | 704 / 0.232 |
 | Metabolite classes on the joint network | 9 |
 
+**Reproducibility check (2026-09-26).** `network/99_manifest.R` fingerprints every output (96 files: all
+tables, figures, the PDF and the interactive pages) and compares them with a reference run. Two complete runs of
+`network/run_all.sh` from step 0 gave **96 of 96 byte-identical files**. What makes this hold: fixed seeds for every
+layout, community detection and label placement (with a fixed iteration budget, since ggrepel's default 0.5-s time
+limit made label positions depend on CPU load), fixed widget IDs in the HTML pages, a fixed build date for the
+LaTeX PDF (`SOURCE_DATE_EPOCH`), and cached online inputs (step 1c lookups, Rhea, GlyGen) fingerprinted in
+`network/ENVIRONMENT.md`. **Known failure modes:** a missing `MNET_DIR` or GlyGen cache stops the dependent steps
+with a message; refreshing online lookups (`REFRESH_ONLINE=1`) or a new GlyGen / mnet release changes inputs and
+therefore outputs (the manifest shows which); different package versions (see `ENVIRONMENT.md`) can change figure
+rendering even when tables are identical.
+
 **Result, stated carefully.** The two arms' gene edge weights correlate at r = 0.44 (metabolite edges:
 r = 0.18), and 152 of 434 gene edges (52 of 143 metabolite edges) change sign between arms (mnet inputs). Without a
 test against measurement noise, none of these differences is established: most responses are small
@@ -854,6 +886,9 @@ README.md                  challenge description (organisers)
 LICENSE                    MIT
 network/
   README.md                this document
+  run_all.sh               one command: every step in order, validation, reproducibility manifest
+  ENVIRONMENT.md           software versions and input fingerprints of the committed results (written by step 0)
+  00_environment.R         step 0   records versions and fingerprints of external inputs
   01_node_embeddings.R     step 1   gene nodes
   01b_metabolite_embeddings.R  step 1b  metabolite nodes
   01c_metabolite_ids.py    step 1c  metabolite IDs (ChEBI etc.)
@@ -870,7 +905,7 @@ network/
   13_logfc_descriptive_stats.R   step 13  descriptive statistics of log fold changes (LaTeX PDF)
   14_joint_network.R             step 14  joint protein + metabolite network and figures 14a / 14b
   15_joint_network_classes.R     step 15  joint network with metabolites grouped by class (figures 15a / 15b)
-  16_annotated_networks.R        step 16  15b annotated with MoTrPAC phospho (16a) and GlyGen glycosylation (16b)
+  16_annotated_networks.R        step 16  15b with PTM tags: MoTrPAC phospho (16a), glycosylation (16b), both + crosstalk (16c)
   17_filter_stats.R              step 17  statistics, modules (CAMERA-PR) and annotation layers for the pages
   17_interactive_networks.R      step 17  interactive pages of all three networks + Cytoscape files
   inventory/                     which MoTrPAC phospho + GlyGen (human) data exist for the 471 proteins / 450
@@ -881,7 +916,8 @@ network/
   resource/
     README.md              how to regenerate the feature lists, and their columns
     export_feature_lists.R step 9   writes proteins_471.csv and metabolites_450.csv to $HACK_RES (not committed)
-  99_validate_outputs.R    checks
+  99_validate_outputs.R    checks (36 hard checks + headline numbers)
+  99_manifest.R            reproducibility: output fingerprints compared with a reference run
 ```
 
 Every script is commented line by line in plain language, with a header covering what it does, the
